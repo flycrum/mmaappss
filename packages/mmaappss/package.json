@@ -1,0 +1,23 @@
+{
+  "name": "@mmaappss/mmaappss",
+  "version": "0.0.0",
+  "description": "Define once and share rules, commands, skills, and agent plugins across teams and coding agents, with minimal config and powerful options when needed.",
+  "private": true,
+  "type": "module",
+  "license": "Unlicense",
+  "files": ["scripts"],
+  "scripts": {
+    "hello": "tsx scripts/hello.ts",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@mmaappss/eslint-config": "workspace:*",
+    "@mmaappss/typescript-config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "tsx": "^4.19.0",
+    "typescript": "5.9.3"
+  }
+}

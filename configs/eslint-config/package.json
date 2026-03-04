@@ -1,0 +1,24 @@
+{
+  "name": "@mmaappss/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.js",
+    "./base.js": "./base.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.4.0",
+    "globals": "^15.12.0",
+    "typescript-eslint": "^8.15.0"
+  },
+  "files": [
+    "base.js"
+  ],
+  "scripts": {
+    "lint": "eslint ."
+  }
+}
