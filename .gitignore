@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Turbo cache (root and per-package)
+**/.turbo/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
