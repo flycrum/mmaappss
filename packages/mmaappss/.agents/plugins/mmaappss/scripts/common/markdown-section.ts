@@ -11,6 +11,12 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** 1-6 for #..######, 0 if line is not a heading. */
+function getHeadingLevel(line: string): number {
+  const m = line.trimStart().match(/^(#{1,6})\s/);
+  return m ? m[1]!.length : 0;
+}
+
 /**
  * Surgical markdown section edit utilities.
  */
@@ -71,7 +77,8 @@ export const markdownSection = {
 
   /**
    * Replace a section by heading, or append if it doesn't exist.
-   * Section runs from the heading line to the next ## at start of line or EOF.
+   * Section runs from the heading line to the next same-or-higher-level heading (## or #) or EOF.
+   * Subsections (### etc.) are part of the section and get replaced.
    */
   replaceOrAddSection(filePath: string, heading: string, newContent: string): Result<void, Error> {
     try {
@@ -94,8 +101,11 @@ export const markdownSection = {
       let newLines: string[];
 
       if (headingLineIndex >= 0) {
+        const headingLevel = getHeadingLevel(lines[headingLineIndex]!);
         let endIndex = headingLineIndex + 1;
-        while (endIndex < lines.length && !/^#{1,6}\s/.test(lines[endIndex])) {
+        while (endIndex < lines.length) {
+          const level = getHeadingLevel(lines[endIndex]!);
+          if (level > 0 && level <= headingLevel) break;
           endIndex++;
         }
         newLines = [...lines.slice(0, headingLineIndex), sectionBlock, ...lines.slice(endIndex)];
@@ -113,6 +123,7 @@ export const markdownSection = {
 
   /**
    * Remove a section by heading. Leaves file unchanged if section doesn't exist.
+   * Section ends at next same-or-higher-level heading (### is subsection, not end).
    */
   removeSection(filePath: string, heading: string): Result<void, Error> {
     try {
@@ -125,8 +136,11 @@ export const markdownSection = {
 
       if (headingLineIndex < 0) return ok(undefined);
 
+      const headingLevel = getHeadingLevel(lines[headingLineIndex]!);
       let endIndex = headingLineIndex + 1;
-      while (endIndex < lines.length && !/^#{1,6}\s/.test(lines[endIndex])) {
+      while (endIndex < lines.length) {
+        const level = getHeadingLevel(lines[endIndex]!);
+        if (level > 0 && level <= headingLevel) break;
         endIndex++;
       }
 
