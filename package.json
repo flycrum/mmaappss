@@ -6,8 +6,8 @@
   "license": "Unlicense",
   "scripts": {
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "hello": "tsx packages/mmaappss/scripts/hello.ts",
     "lint": "eslint .",
+    "test": "turbo run test",
     "type-check": "turbo run type-check",
     "postinstall": "tsx scripts/ensure-agents-symlink.ts"
   },

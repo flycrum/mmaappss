@@ -89,6 +89,9 @@ importers:
       '@mmaappss/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
+      '@mmaappss/vitest-config':
+        specifier: workspace:*
+        version: link:../../configs/vitest-config
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.13
@@ -110,6 +113,9 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@22.19.13)(tsx@4.21.0)
 
 packages:
 

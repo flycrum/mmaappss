@@ -7,27 +7,29 @@
   "license": "Unlicense",
   "files": ["scripts", ".agents"],
   "scripts": {
-    "hello": "tsx scripts/hello.ts",
-    "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "mmaappss:marketplaces:all:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-sync.ts",
     "mmaappss:marketplaces:all:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-sync-test.ts",
     "mmaappss:marketplaces:claude:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-claude-sync.ts",
     "mmaappss:marketplaces:claude:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-claude-sync-test-all-conditions.ts",
+    "mmaappss:marketplaces:codex:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-codex-sync.ts",
+    "mmaappss:marketplaces:codex:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-codex-sync-test-all-conditions.ts",
     "mmaappss:marketplaces:cursor:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-cursor-sync.ts",
     "mmaappss:marketplaces:cursor:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-cursor-sync-test-all-conditions.ts",
-    "mmaappss:marketplaces:codex:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-codex-sync.ts",
-    "mmaappss:marketplaces:codex:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-codex-sync-test-all-conditions.ts"
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@mmaappss/eslint-config": "workspace:*",
     "@mmaappss/typescript-config": "workspace:*",
+    "@mmaappss/vitest-config": "workspace:*",
     "@types/node": "^22.10.0",
     "dotenv": "^17.3.1",
-    "fast-json-patch": "^3.1.1",
     "eslint": "^9.15.0",
+    "fast-json-patch": "^3.1.1",
     "globals": "^15.12.0",
     "tsx": "^4.19.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^3.0.0"
   }
 }
