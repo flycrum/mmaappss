@@ -6,9 +6,10 @@
 import type { MmaappssConfig } from './.agents/plugins/mmaappss/scripts/common/config-helpers.js';
 
 export const mmaappssConfigExample = {
-  marketplaceAll: true,
-  marketplaceClaude: true,
-  marketplaceCursor: true,
-  marketplaceCodex: false,
+  marketplacesEnabled: {
+    claude: true,
+    cursor: true,
+    codex: false,
+  },
   excludeDirectories: ['node_modules', 'dist', '.turbo'],
 } satisfies MmaappssConfig;

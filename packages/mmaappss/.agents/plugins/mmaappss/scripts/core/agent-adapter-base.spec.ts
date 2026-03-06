@@ -235,7 +235,9 @@ describe('AgentAdapterBase', () => {
       }
       const adapter = new HookedAdapter();
       const repoRoot = pathHelpers.repoRoot;
-      const result = adapter.run(repoRoot, { marketplaceCodex: false });
+      const result = adapter.run(repoRoot, {
+        marketplacesEnabled: { claude: false, cursor: false, codex: false },
+      });
       expect(result.isOk()).toBe(true);
       expect(calls).toContain(`beforeTeardown:${repoRoot}`);
       expect(calls).toContain(`afterTeardown:${repoRoot}`);

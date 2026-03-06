@@ -100,10 +100,11 @@ export abstract class IntegrationTestAdapterBase {
         try {
           if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackup);
           const fullConfig = {
-            marketplaceAll: true,
-            marketplaceClaude: true,
-            marketplaceCursor: true,
-            marketplaceCodex: true,
+            marketplacesEnabled: {
+              claude: true,
+              cursor: true,
+              codex: true,
+            },
             ...step.configOverride,
           };
           fs.writeFileSync(

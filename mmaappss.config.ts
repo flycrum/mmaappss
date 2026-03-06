@@ -5,10 +5,11 @@
 import type { MmaappssConfig } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/common/config-helpers.js';
 
 const mmaappssConfig: MmaappssConfig = {
-  marketplaceAll: false,
-  marketplaceClaude: false,
-  marketplaceCursor: true,
-  marketplaceCodex: false,
+  marketplacesEnabled: {
+    claude: false,
+    cursor: true,
+    codex: false,
+  },
   excludeDirectories: ['./packages/mmaappss'],
 };
 

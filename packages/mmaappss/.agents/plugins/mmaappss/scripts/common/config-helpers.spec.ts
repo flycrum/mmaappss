@@ -16,15 +16,23 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     vi.unstubAllEnvs();
   });
 
-  it('returns true when tsConfig has marketplaceClaude true and no env override', () => {
+  it('returns true when tsConfig has marketplacesEnabled.claude true and no env override', () => {
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceClaude: true }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: true, cursor: false, codex: false } },
+        'claude'
+      )
     ).toBe(true);
   });
 
-  it('returns false when tsConfig has marketplaceClaude false and no env override', () => {
+  it('returns false when tsConfig has marketplacesEnabled.claude false and no env override', () => {
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceClaude: false }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: false, cursor: false, codex: false } },
+        'claude'
+      )
     ).toBe(false);
   });
 
@@ -32,17 +40,25 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(configHelpers.general.getMarketplaceEnabled(ROOT, null, 'claude')).toBe(false);
   });
 
-  it('env overrides tsConfig: ENV_CLAUDE=true wins over marketplaceClaude: false', () => {
+  it('env overrides tsConfig: ENV_CLAUDE=true wins over marketplacesEnabled.claude: false', () => {
     vi.stubEnv(VARS.ENV_CLAUDE, 'true');
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceClaude: false }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: false, cursor: false, codex: false } },
+        'claude'
+      )
     ).toBe(true);
   });
 
-  it('env overrides tsConfig: ENV_CLAUDE=false wins over marketplaceClaude: true', () => {
+  it('env overrides tsConfig: ENV_CLAUDE=false wins over marketplacesEnabled.claude: true', () => {
     vi.stubEnv(VARS.ENV_CLAUDE, 'false');
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceClaude: true }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: true, cursor: false, codex: false } },
+        'claude'
+      )
     ).toBe(false);
   });
 
@@ -50,7 +66,11 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     vi.stubEnv(VARS.ENV_ALL, 'false');
     vi.stubEnv(VARS.ENV_CLAUDE, 'true');
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceClaude: true }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: true, cursor: false, codex: false } },
+        'claude'
+      )
     ).toBe(false);
   });
 
@@ -58,33 +78,44 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     vi.stubEnv(VARS.ENV_ALL, 'true');
     vi.stubEnv(VARS.ENV_CLAUDE, 'false');
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceClaude: true }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: true, cursor: false, codex: false } },
+        'claude'
+      )
     ).toBe(false);
   });
 
-  it('falls back to marketplaceAll when per-agent tsConfig unset', () => {
+  it("marketplacesEnabled: 'all' enables all agents", () => {
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceAll: true }, 'claude')
+      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplacesEnabled: 'all' }, 'claude')
     ).toBe(true);
     expect(
-      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplaceAll: false }, 'claude')
-    ).toBe(false);
+      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplacesEnabled: 'all' }, 'cursor')
+    ).toBe(true);
+    expect(
+      configHelpers.general.getMarketplaceEnabled(ROOT, { marketplacesEnabled: 'all' }, 'codex')
+    ).toBe(true);
   });
 
-  it('per-agent tsConfig overrides marketplaceAll', () => {
+  it('marketplacesEnabled object: only specified agents enabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        {
-          marketplaceAll: false,
-          marketplaceClaude: true,
-        },
+        { marketplacesEnabled: { claude: true, cursor: false, codex: false } },
         'claude'
       )
     ).toBe(true);
+    expect(
+      configHelpers.general.getMarketplaceEnabled(
+        ROOT,
+        { marketplacesEnabled: { claude: true, cursor: false, codex: false } },
+        'cursor'
+      )
+    ).toBe(false);
   });
 
-  it('works for cursor and codex agents', () => {
+  it('works for cursor and codex agents via env', () => {
     vi.stubEnv(VARS.ENV_CURSOR, 'true');
     vi.stubEnv(VARS.ENV_CODEX, 'true');
     expect(configHelpers.general.getMarketplaceEnabled(ROOT, null, 'cursor')).toBe(true);

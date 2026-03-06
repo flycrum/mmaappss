@@ -13,14 +13,14 @@ import { parseBool } from './parse-bool.js';
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
  */
 export interface MmaappssConfig {
-  /** Master switch for all marketplaces. When false, disables all regardless of per-agent flags. */
-  marketplaceAll?: boolean;
-  /** Enable/disable Claude Code local marketplace sync. */
-  marketplaceClaude?: boolean;
-  /** Enable/disable Cursor local marketplace sync. */
-  marketplaceCursor?: boolean;
-  /** Enable/disable Codex marketplace sync (AGENTS.override.md section). */
-  marketplaceCodex?: boolean;
+  /** Enable all marketplaces ('all') or per-agent flags. Env (MMAAPPSS_MARKETPLACE_*) overrides. */
+  marketplacesEnabled?:
+    | 'all'
+    | {
+        claude: boolean;
+        cursor: boolean;
+        codex: boolean;
+      };
   /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
   excludeDirectories?: string[];
 }
@@ -54,13 +54,13 @@ export const configHelpers = {
             ? process.env[VARS.ENV_CURSOR]
             : process.env[VARS.ENV_CODEX];
 
-      const fromTs =
-        agent === 'claude'
-          ? tsConfig?.marketplaceClaude
-          : agent === 'cursor'
-            ? tsConfig?.marketplaceCursor
-            : tsConfig?.marketplaceCodex;
-      const defaultPer = fromTs ?? tsConfig?.marketplaceAll ?? false;
+      const enabled = tsConfig?.marketplacesEnabled;
+      const defaultPer =
+        enabled === 'all'
+          ? true
+          : enabled && typeof enabled === 'object'
+            ? (enabled[agent] ?? false)
+            : false;
       const allEnabled = parseBool(allEnv, true);
       const perEnabled = parseBool(agentEnv, defaultPer);
       return allEnabled && perEnabled;
