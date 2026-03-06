@@ -7,6 +7,14 @@
   "scripts": {
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "lint": "eslint .",
+    "mmaappss:marketplaces:all:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync",
+    "mmaappss:marketplaces:all:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync:test",
+    "mmaappss:marketplaces:claude:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:claude:sync",
+    "mmaappss:marketplaces:claude:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:claude:sync:test",
+    "mmaappss:marketplaces:codex:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:codex:sync",
+    "mmaappss:marketplaces:codex:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:codex:sync:test",
+    "mmaappss:marketplaces:cursor:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync",
+    "mmaappss:marketplaces:cursor:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync:test",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
     "postinstall": "tsx scripts/ensure-agents-symlink.ts"
