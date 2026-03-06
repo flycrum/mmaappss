@@ -67,6 +67,8 @@ export const rulesSync = {
           manifestPath,
           JSON.stringify({ rules: created } satisfies RulesSyncManifest, null, 2)
         );
+      } else if (fs.existsSync(manifestPath)) {
+        fs.unlinkSync(manifestPath);
       }
 
       return ok(created);
