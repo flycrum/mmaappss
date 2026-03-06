@@ -16,7 +16,7 @@ function applyOps<T>(doc: T, ops: Operation[]): Result<T, Error> {
   try {
     const validateErr = patchApi.validate(ops);
     if (validateErr) throw validateErr;
-    const result = patchApi.applyPatch(doc, ops, true, true);
+    const result = patchApi.applyPatch(doc, ops, true, false);
     return ok((result.newDocument ?? doc) as T);
   } catch (e) {
     return err(e instanceof Error ? e : new Error(String(e)));
