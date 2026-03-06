@@ -3,6 +3,6 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["scripts"],
+  "include": ["scripts", ".agents"],
   "exclude": ["node_modules"]
 }
