@@ -171,7 +171,7 @@ The **mmaappss** plugin lives at `.agents/plugins/mmaappss/` (under this package
 ## Configuration
 
 - **Env vars:** `MMAAPPSS_MARKETPLACE_ALL`, `MMAAPPSS_MARKETPLACE_CLAUDE`, `MMAAPPSS_MARKETPLACE_CURSOR`, `MMAAPPSS_MARKETPLACE_CODEX`. Defaults in `.env`; overrides in `.envrc.local` (gitignored).
-- **TypeScript config:** `mmaappss.config.ts` for same enable/disable semantics. Env overrides TS config.
+- **TypeScript config:** `mmaappss.config.ts` at repo root for same enable/disable semantics. Env overrides TS config.
 - **Exclusions:** Directory exclusions supported; plugin/file exclusions planned.
 
 See [plugin README](.agents/plugins/mmaappss/README.md#configuration) for full configuration details.

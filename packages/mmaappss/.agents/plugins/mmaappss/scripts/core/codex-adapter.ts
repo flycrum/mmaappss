@@ -7,6 +7,7 @@
 import path from 'node:path';
 import { markdownSection } from '../common/markdown-section.js';
 import type { DiscoveredMarketplace } from '../common/types.js';
+import type { AdapterAgentConfig } from './agent-adapter-base.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
 
 /** Codex checks AGENTS.override.md before AGENTS.md per directory; we write only the override. */
@@ -14,10 +15,10 @@ const CODEX_AGENTS_FILE = 'AGENTS.override.md';
 
 const CONFIG = {
   agent: 'codex' as const,
-  usesMarkdownSection: true,
   agentsFile: CODEX_AGENTS_FILE,
   sectionHeading: markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, ''),
-};
+  usesMarkdownSection: true,
+} satisfies AdapterAgentConfig;
 
 export const codexAdapter = new (class CodexAdapter extends AgentAdapterBase {
   constructor() {

@@ -2,19 +2,20 @@
  * Cursor adapter: .cursor-plugin/marketplace.json, rules symlinks.
  */
 
+import type { AdapterAgentConfig } from './agent-adapter-base.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
 
 const CONFIG = {
   agent: 'cursor' as const,
-  usesMarketplaceJson: true,
   manifestFilter: 'cursor' as const,
-  sourceFormat: 'relative' as const,
   marketplaceFile: '.cursor-plugin/marketplace.json',
-  usesRulesSync: true,
-  rulesDir: '.cursor/rules',
-  syncManifest: '.cursor/.mmaappss-cursor-sync.json',
   marketplaceName: 'mmaappss-plugins',
-};
+  rulesDir: '.cursor/rules',
+  sourceFormat: 'relative' as const,
+  syncManifest: '.cursor/.mmaappss-cursor-sync.json',
+  usesMarketplaceJson: true,
+  usesRulesSync: true,
+} satisfies AdapterAgentConfig;
 
 export const cursorAdapter = new (class CursorAdapter extends AgentAdapterBase {
   constructor() {

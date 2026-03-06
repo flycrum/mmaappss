@@ -8,6 +8,7 @@ import { sortBy, uniq } from 'lodash-es';
 import { err, ok, Result } from 'neverthrow';
 import fs from 'node:fs';
 import path from 'node:path';
+import { claudeMdSync } from '../common/claude-md-sync.js';
 import type { MmaappssConfig } from '../common/config-helpers.js';
 import { configHelpers } from '../common/config-helpers.js';
 import { discoverMarketplaces } from '../common/discovery.js';
@@ -23,16 +24,23 @@ import type {
 
 /** Plugin entry for marketplace.json */
 export interface MarketplacePluginEntry {
-  name: string;
-  source: string;
+  /** Plugin description */
   description?: string;
+  /** Plugin name */
+  name: string;
+  /** Plugin source path */
+  source: string;
+  /** Plugin version */
   version?: string;
 }
 
 /** Canonical marketplace.json shape (Claude + Cursor) */
 export interface MarketplaceJson {
+  /** Marketplace name */
   name: string;
+  /** Marketplace owner */
   owner: { name: string };
+  /** Marketplace plugins */
   plugins: MarketplacePluginEntry[];
 }
 
@@ -41,25 +49,34 @@ export interface MarketplaceJson {
  */
 export interface AdapterAgentConfig {
   agent: Agent;
-  /** Uses JSON marketplace file (.claude-plugin or .cursor-plugin) */
-  usesMarketplaceJson?: boolean;
+  /** Codex-only: file to edit (e.g. AGENTS.override.md) */
+  agentsFile?: string;
   /** Which manifest to filter by when building plugin entries */
   manifestFilter?: 'claude' | 'cursor';
+  /** Uses JSON marketplace file (.claude-plugin or .cursor-plugin) */
+  marketplaceFile?: string;
+  /** Name of the marketplace (e.g. 'mmaappss-plugins') */
+  marketplaceName?: string;
+  /** Symlink rules into target dir */
+  rulesDir?: string;
+  /** Codex-only: section heading in agentsFile */
+  sectionHeading?: string;
+  /** Claude-only: merge extraKnownMarketplaces + enabledPlugins */
+  settingsFile?: string;
   /** Source path format: prefixed = ./path, relative = path */
   sourceFormat?: 'prefixed' | 'relative';
-  marketplaceFile?: string;
-  /** Symlink rules into target dir */
-  usesRulesSync?: boolean;
-  rulesDir?: string;
+  /** File to track sync state */
   syncManifest?: string;
-  /** Claude-only: merge extraKnownMarketplaces + enabledPlugins */
-  usesSettingsMerge?: boolean;
-  settingsFile?: string;
-  marketplaceName?: string;
+  /** Claude-only: symlink CLAUDE.md from AGENTS.md (root and nested) */
+  usesClaudeMdSymlink?: boolean;
   /** Codex-only: surgical edit of AGENTS.override.md section */
   usesMarkdownSection?: boolean;
-  agentsFile?: string;
-  sectionHeading?: string;
+  /** Uses JSON marketplace file */
+  usesMarketplaceJson?: boolean;
+  /** Symlink rules into target dir */
+  usesRulesSync?: boolean;
+  /** Claude-only: merge settings */
+  usesSettingsMerge?: boolean;
 }
 
 const MARKETPLACE_OWNER = 'mmaappss';
@@ -75,6 +92,7 @@ export abstract class AgentAdapterBase {
       | 'usesRulesSync'
       | 'usesSettingsMerge'
       | 'usesMarkdownSection'
+      | 'usesClaudeMdSymlink'
     >
   > &
     AdapterAgentConfig;
@@ -85,6 +103,7 @@ export abstract class AgentAdapterBase {
       usesRulesSync: false,
       usesSettingsMerge: false,
       usesMarkdownSection: false,
+      usesClaudeMdSymlink: false,
       ...config,
     };
   }
@@ -99,7 +118,7 @@ export abstract class AgentAdapterBase {
     const marketplaces = discoverMarketplaces(repoRoot, tsConfig);
 
     if (enabled) {
-      return this.runEnable(repoRoot, marketplaces);
+      return this.runEnable(repoRoot, marketplaces, tsConfig);
     }
     return this.runDisable(repoRoot);
   }
@@ -178,6 +197,9 @@ export abstract class AgentAdapterBase {
   private runDisable(repoRoot: string): Result<SyncOutcome, Error> {
     return Result.combine([this.beforeTeardown(repoRoot)])
       .andThen(() =>
+        this.config.usesClaudeMdSymlink ? claudeMdSync.clearClaudeMd(repoRoot) : ok(undefined)
+      )
+      .andThen(() =>
         this.config.usesRulesSync && this.config.rulesDir && this.config.syncManifest
           ? rulesSync.clearRules(
               repoRoot,
@@ -207,9 +229,15 @@ export abstract class AgentAdapterBase {
 
   private runEnable(
     repoRoot: string,
-    marketplaces: DiscoveredMarketplace[]
+    marketplaces: DiscoveredMarketplace[],
+    tsConfig: MmaappssConfig | null
   ): Result<SyncOutcome, Error> {
     return Result.combine([this.beforeSync(repoRoot, marketplaces)])
+      .andThen(() =>
+        this.config.usesClaudeMdSymlink
+          ? claudeMdSync.syncClaudeMd(repoRoot, tsConfig).map(() => undefined)
+          : ok(undefined)
+      )
       .andThen(() =>
         this.config.usesMarketplaceJson && this.config.marketplaceFile
           ? this.syncMarketplaceJson(repoRoot, marketplaces)

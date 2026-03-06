@@ -23,3 +23,5 @@ dist/
 # Recursively ingore these (not required by the mmaappss system definitions for their plugins)
 .claude/
 .cursor/
+# mmaappss: symlinked from AGENTS.md for Claude (when Claude marketplace sync is enabled)
+CLAUDE.md
