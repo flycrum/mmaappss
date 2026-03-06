@@ -11,9 +11,9 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "mmaappss:marketplaces:all:clear": "MMAAPPSS_MARKETPLACE_ALL=true MMAAPPSS_MARKETPLACE_CLAUDE=true MMAAPPSS_MARKETPLACE_CURSOR=true MMAAPPSS_MARKETPLACE_CODEX=true tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-clear.ts",
+    "mmaappss:marketplaces:all:clear": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-clear.ts",
     "mmaappss:marketplaces:all:clear:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-clear-integration-test.ts all",
-    "mmaappss:marketplaces:all:sync": "MMAAPPSS_MARKETPLACE_ALL=true MMAAPPSS_MARKETPLACE_CLAUDE=true MMAAPPSS_MARKETPLACE_CURSOR=true MMAAPPSS_MARKETPLACE_CODEX=true tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-sync.ts",
+    "mmaappss:marketplaces:all:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-sync.ts",
     "mmaappss:marketplaces:all:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-sync-integration-test.ts all",
     "mmaappss:marketplaces:claude:clear": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-claude-clear.ts",
     "mmaappss:marketplaces:claude:clear:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-clear-integration-test.ts claude",

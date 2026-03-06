@@ -4,7 +4,9 @@
  */
 
 import { config as loadDotenv } from 'dotenv';
+import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parseBool } from './parse-bool.js';
 
 /**
@@ -100,9 +102,16 @@ export const configHelpers = {
       configHelpers.env.loadEnv(root);
       const configPath = path.join(root, 'mmaappss.config.ts');
       try {
-        const mod = await import(configPath);
+        const fileUrl = pathToFileURL(configPath).href;
+        const mod = await import(fileUrl);
         return (mod.default ?? mod) as MmaappssConfig;
-      } catch {
+      } catch (err) {
+        if (fs.existsSync(configPath)) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(
+            `[mmaappss] Could not load mmaappss.config.ts from ${configPath}: ${msg}. Using env/defaults only.`
+          );
+        }
         return null;
       }
     },
