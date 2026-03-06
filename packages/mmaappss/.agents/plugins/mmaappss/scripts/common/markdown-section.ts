@@ -101,10 +101,12 @@ export const markdownSection = {
       let newLines: string[];
 
       if (headingLineIndex >= 0) {
-        const headingLevel = getHeadingLevel(lines[headingLineIndex]!);
+        const headingLineTrimmed = lines[headingLineIndex]!.trim();
+        const headingLevel = getHeadingLevel(headingLineTrimmed);
         let endIndex = headingLineIndex + 1;
         while (endIndex < lines.length) {
-          const level = getHeadingLevel(lines[endIndex]!);
+          const lineTrimmed = lines[endIndex]!.trim();
+          const level = getHeadingLevel(lineTrimmed);
           if (level > 0 && level <= headingLevel) break;
           endIndex++;
         }
@@ -136,10 +138,12 @@ export const markdownSection = {
 
       if (headingLineIndex < 0) return ok(undefined);
 
-      const headingLevel = getHeadingLevel(lines[headingLineIndex]!);
+      const headingLineTrimmed = lines[headingLineIndex]!.trim();
+      const headingLevel = getHeadingLevel(headingLineTrimmed);
       let endIndex = headingLineIndex + 1;
       while (endIndex < lines.length) {
-        const level = getHeadingLevel(lines[endIndex]!);
+        const lineTrimmed = lines[endIndex]!.trim();
+        const level = getHeadingLevel(lineTrimmed);
         if (level > 0 && level <= headingLevel) break;
         endIndex++;
       }
