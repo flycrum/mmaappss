@@ -49,3 +49,29 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
 
   return ok(outcomes);
 }
+
+/**
+ * Force teardown (clear) for the given agents. Ignores config; runs disable logic only.
+ */
+export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], Error>> {
+  const repoRoot = pathHelpers.repoRoot;
+  configHelpers.env.loadEnv(repoRoot);
+
+  const outcomes: SyncOutcome[] = [];
+
+  for (const agent of agents) {
+    const adapter = AGENT_ADAPTERS_ALL[agent];
+    if (!adapter) {
+      outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
+      continue;
+    }
+
+    const result = adapter.clear(repoRoot);
+    if (result.isErr()) {
+      return err(result.error);
+    }
+    outcomes.push(result.value);
+  }
+
+  return ok(outcomes);
+}

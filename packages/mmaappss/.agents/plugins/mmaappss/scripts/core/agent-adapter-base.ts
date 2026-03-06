@@ -104,6 +104,11 @@ export abstract class AgentAdapterBase {
     return this.runDisable(repoRoot);
   }
 
+  /** Force teardown (clear) for this agent. Ignores config; runs disable logic only. */
+  clear(repoRoot: string): Result<SyncOutcome, Error> {
+    return this.runDisable(repoRoot);
+  }
+
   /** Hook: called before teardown. Override for agent-specific prep. */
   protected beforeTeardown(_repoRoot: string): Result<void, Error> {
     return ok(undefined);
