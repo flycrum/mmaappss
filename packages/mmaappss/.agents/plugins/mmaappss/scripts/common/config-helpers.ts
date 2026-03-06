@@ -17,7 +17,7 @@ export interface MmaappssConfig {
   marketplaceClaude?: boolean;
   /** Enable/disable Cursor local marketplace sync. */
   marketplaceCursor?: boolean;
-  /** Enable/disable Codex marketplace sync (AGENTS.md section). */
+  /** Enable/disable Codex marketplace sync (AGENTS.override.md section). */
   marketplaceCodex?: boolean;
   /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
   excludeDirectories?: string[];

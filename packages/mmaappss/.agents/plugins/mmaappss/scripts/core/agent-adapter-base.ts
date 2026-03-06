@@ -56,7 +56,7 @@ export interface AdapterAgentConfig {
   usesSettingsMerge?: boolean;
   settingsFile?: string;
   marketplaceName?: string;
-  /** Codex-only: surgical edit of AGENTS.md section */
+  /** Codex-only: surgical edit of AGENTS.override.md section */
   usesMarkdownSection?: boolean;
   agentsFile?: string;
   sectionHeading?: string;

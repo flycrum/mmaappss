@@ -58,7 +58,7 @@ Focus here is **local marketplaces** (repo-as-marketplace), not public Cursor Ma
         <div>❓ no official support</div>
         <ul>
           <li>no plugin marketplace</li>
-          <li>workaround: sync rules to AGENTS.md or add MCP to config??</li>
+          <li>workaround: we sync plugin list to <code>AGENTS.override.md</code> (Codex-only)</li>
         </ul>
         <a href="https://developers.openai.com/codex">Codex</a>, <a href="https://developers.openai.com/codex/mcp">MCP</a>
       </td>
@@ -113,7 +113,7 @@ Focus here is **local marketplaces** (repo-as-marketplace), not public Cursor Ma
           <li><code>~/AGENTS.md</code></li>
           <li>can also have `AGENTS.override.md`</li>
         </ul>
-        <a href="https://developers.openai.com/codex/guides/agents-md">Custom instructions with AGENTS.md</a>
+        <a href="https://developers.openai.com/codex/guides/agents-md/">Custom instructions with AGENTS.md</a>
       </td>
       <!-- CURSOR -->
       <td>
@@ -178,4 +178,4 @@ See [plugin README](.agents/plugins/mmaappss/README.md#configuration) for full c
 
 ## Root and nested context
 
-Cursor and Codex use `AGENTS.md` natively; Claude uses `CLAUDE.md`. We symlink `CLAUDE.md` from `AGENTS.md` (recursively) so Claude sees the same instructions. Symlinked `CLAUDE.md` files go in `.gitignore`. See [plugin README](.agents/plugins/mmaappss/README.md#root-and-nested-context).
+Cursor and Codex can use `AGENTS.md` natively; Claude uses `CLAUDE.md`. We symlink `CLAUDE.md` from `AGENTS.md` (recursively) so Claude sees the same instructions. Symlinked `CLAUDE.md` files go in `.gitignore`. For Codex we write the generated plugin list to **`AGENTS.override.md`** so your `AGENTS.md` stays hand-editable. See [plugin README](.agents/plugins/mmaappss/README.md#root-and-nested-context) and [Codex sync target](.agents/plugins/mmaappss/README.md#codex-sync-target-agentsoverridemd).

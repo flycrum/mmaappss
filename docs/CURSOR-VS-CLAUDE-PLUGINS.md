@@ -291,5 +291,6 @@ The following are **not** stated in the official plugin/skills/hooks docs cited 
 - [Cursor – Agent Skills](https://cursor.com/docs/context/skills)
 - [Cursor – Hooks](https://cursor.com/docs/agent/hooks)
 - [Claude Code – Hooks reference](https://code.claude.com/docs/en/hooks)
+- [Codex – Custom instructions with AGENTS.md](https://developers.openai.com/codex/guides/agents-md/) (AGENTS.override.md is Codex-only.)
 
 *This document was fact-checked against the linked official documentation. Claims in sections 1–14 are attributed to those sources; anything not stated there is called out in [Not in official documentation (but known to be true)](#not-in-official-documentation-but-known-to-be-true).*

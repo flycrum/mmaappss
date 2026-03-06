@@ -164,7 +164,7 @@ describe('AgentAdapterBase', () => {
           super({
             agent: 'codex',
             usesMarkdownSection: true,
-            agentsFile: 'AGENTS.md',
+            agentsFile: 'AGENTS.override.md',
             sectionHeading: 'Codex Marketplace',
           });
         }
@@ -217,7 +217,7 @@ describe('AgentAdapterBase', () => {
           super({
             agent: 'codex',
             usesMarkdownSection: true,
-            agentsFile: 'AGENTS.md',
+            agentsFile: 'AGENTS.override.md',
             sectionHeading: 'Codex Marketplace',
           });
         }

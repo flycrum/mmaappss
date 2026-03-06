@@ -246,29 +246,35 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
   }
 }
 
+/** Codex sync target; see https://developers.openai.com/codex/guides/agents-md/ */
+const CODEX_AGENTS_FILE = 'AGENTS.override.md';
+
 export class CodexIntegrationAdapter extends IntegrationTestAdapterBase {
   readonly agent = 'codex' as const;
   readonly envVar = configHelpers.env.VARS.ENV_CODEX;
-  readonly backupPaths = [{ from: withRoot('AGENTS.md'), to: withRoot('AGENTS.md.testing-123') }];
+  readonly backupPaths = [
+    { from: withRoot(CODEX_AGENTS_FILE), to: withRoot(`${CODEX_AGENTS_FILE}.testing-123`) },
+  ];
 
   private readonly sectionHeading = markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, '');
 
   assertEnabled(root: string): string[] {
     const errors: string[] = [];
-    const agentsFile = path.join(root, 'AGENTS.md');
-    if (!fs.existsSync(agentsFile)) return ['AGENTS.md missing'];
+    const agentsFile = path.join(root, CODEX_AGENTS_FILE);
+    if (!fs.existsSync(agentsFile)) return [`${CODEX_AGENTS_FILE} missing`];
     const content = fs.readFileSync(agentsFile, 'utf8');
     const re = new RegExp(
       `^#+\\s+${this.sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
       'im'
     );
-    if (!re.test(content)) errors.push(`AGENTS.md missing ## ${this.sectionHeading} section`);
+    if (!re.test(content))
+      errors.push(`${CODEX_AGENTS_FILE} missing ## ${this.sectionHeading} section`);
     return errors;
   }
 
   assertDisabled(root: string): string[] {
     const errors: string[] = [];
-    const agentsFile = path.join(root, 'AGENTS.md');
+    const agentsFile = path.join(root, CODEX_AGENTS_FILE);
     if (!fs.existsSync(agentsFile)) return [];
     const content = fs.readFileSync(agentsFile, 'utf8');
     const re = new RegExp(
@@ -276,7 +282,9 @@ export class CodexIntegrationAdapter extends IntegrationTestAdapterBase {
       'im'
     );
     if (re.test(content))
-      errors.push(`AGENTS.md should not contain ## ${this.sectionHeading} section when disabled`);
+      errors.push(
+        `${CODEX_AGENTS_FILE} should not contain ## ${this.sectionHeading} section when disabled`
+      );
     return errors;
   }
 }
