@@ -13,4 +13,13 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
-main();
+main().catch((err: unknown) => {
+  const msg =
+    err != null && typeof err === 'object' && 'error' in err
+      ? String((err as { error?: unknown }).error ?? err)
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  console.error(msg);
+  process.exit(1);
+});

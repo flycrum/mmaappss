@@ -67,4 +67,7 @@ async function main(): Promise<void> {
   process.exit(code);
 }
 
-main();
+main().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+});

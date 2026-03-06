@@ -13,4 +13,12 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
-main();
+main().catch((err: unknown) => {
+  if (err instanceof Error) {
+    console.error(err.message);
+    if (err.stack) console.error(err.stack);
+  } else {
+    console.error(String(err));
+  }
+  process.exit(1);
+});
