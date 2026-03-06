@@ -1,0 +1,6 @@
+{
+  "name": "mmaappss",
+  "version": "0.1.0",
+  "description": "Driver plugin: sync local marketplaces and plugins for Claude, Cursor, and Codex; rules, skills, and scripts to run, enforce, and audit the system.",
+  "author": { "name": "mmaappss" }
+}

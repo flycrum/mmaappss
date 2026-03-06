@@ -25,6 +25,14 @@
 - `configs/` — shared configs (eslint, prettier, typescript, vitest, vite)
 - `packages/mmaappss/` — scripts and tooling
 
+## core vs usage at root (monorepo layout)
+
+Two distinct concepts:
+
+- **Core (source of truth):** The sync system, markdown, and plugin definitions live in **`packages/mmaappss`** (including `.agents/plugins` and the mmaappss driver plugin).
+- **Usage at repo root:** The monorepo root is where the system is *used*: local marketplaces are registered at root (e.g. `.claude-plugin/`, `.cursor-plugin/`). To avoid defining plugins in two places, we keep a single definition under `packages/mmaappss/.agents/plugins/` and **symlink** `packages/mmaappss/.agents/plugins` → root `.agents/plugins`. The symlink is created by **postInstall**; only **`.agents/plugins/mmaappss`** at the root is gitignored. Other plugins under `.agents/plugins/` (e.g. future team plugins) are committed.
+- [Read the mmaappss package docs](packages/mmaappss/README.md) for plugins, configuration, and sync details.
+
 ## development
 
 - **install:** `pnpm install`

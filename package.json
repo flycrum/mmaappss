@@ -8,7 +8,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "hello": "tsx packages/mmaappss/scripts/hello.ts",
     "lint": "eslint .",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "postinstall": "tsx scripts/ensure-agents-symlink.ts"
   },
   "devDependencies": {
     "@mmaappss/eslint-config": "workspace:*",
