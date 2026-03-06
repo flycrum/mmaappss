@@ -246,8 +246,12 @@ export abstract class AgentAdapterBase {
     if (manifest.name === name && Object.keys(manifest).length <= 3) {
       try {
         fs.unlinkSync(filePath);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        const nodeErr = err as NodeJS.ErrnoException;
+        if (nodeErr?.code !== 'ENOENT') {
+          console.error(`Failed to unlink ${filePath}:`, err);
+          return err(err instanceof Error ? err : new Error(String(err)));
+        }
       }
       return ok(undefined);
     }
