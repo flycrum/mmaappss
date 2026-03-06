@@ -15,9 +15,13 @@ const CURSOR_MANIFEST = '.cursor-plugin/plugin.json';
 /** Default directories to exclude from scanning (always applied). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
 
+/**
+ * Returns true if the directory should be excluded from scanning.
+ * @param dirName - Simple directory entry name (e.g. "node_modules"), not a full path.
+ */
 function isExcluded(dirName: string, config: MmaappssConfig | null): boolean {
   const exclude = [...DEFAULT_EXCLUDE, ...(config?.excludeDirectories ?? [])];
-  return exclude.some((e) => dirName === e || dirName.endsWith(path.sep + e));
+  return exclude.some((e) => dirName === e);
 }
 
 function loadManifest(
