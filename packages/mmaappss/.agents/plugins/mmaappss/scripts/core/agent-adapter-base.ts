@@ -280,9 +280,9 @@ export abstract class AgentAdapterBase {
     }
 
     const ops: Operation[] = [
-      { op: 'replace', path: '/name', value: canonical.name },
-      { op: 'replace', path: '/owner', value: canonical.owner },
-      { op: 'replace', path: '/plugins', value: canonical.plugins },
+      { op: 'add', path: '/name', value: canonical.name },
+      { op: 'add', path: '/owner', value: canonical.owner },
+      { op: 'add', path: '/plugins', value: canonical.plugins },
     ];
     const patched = jsonPatch.applyPatch(res.value, ops);
     if (patched.isErr()) return err(patched.error);
