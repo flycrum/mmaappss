@@ -30,12 +30,13 @@ class TestAdapter extends AgentAdapterBase {
 
 function mockPlugin(overrides: Partial<DiscoveredPlugin>): DiscoveredPlugin {
   const base = {
+    description: 'Test',
+    hasClaudeManifest: true,
+    hasCodexManifest: false,
+    hasCursorManifest: true,
     name: 'test-plugin',
     path: '/repo/.agents/plugins/test-plugin',
     relativePath: '.agents/plugins/test-plugin',
-    hasClaudeManifest: true,
-    hasCursorManifest: true,
-    description: 'Test',
     version: '1.0.0',
   };
   const merged = { ...base, ...overrides };
@@ -47,10 +48,10 @@ function mockMarketplace(
   relativePath = '.agents/plugins'
 ): DiscoveredMarketplace {
   return {
-    pluginsDir: '/repo/' + relativePath,
-    relativePath,
     label: relativePath === '.agents/plugins' ? 'Root marketplace' : `${relativePath} marketplace`,
     plugins,
+    pluginsDir: '/repo/' + relativePath,
+    relativePath,
   };
 }
 

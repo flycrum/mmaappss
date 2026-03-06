@@ -11,6 +11,7 @@ import type { DiscoveredMarketplace, DiscoveredPlugin } from './types.js';
 const PLUGINS_SUBDIR = '.agents/plugins';
 const CLAUDE_MANIFEST = '.claude-plugin/plugin.json';
 const CURSOR_MANIFEST = '.cursor-plugin/plugin.json';
+const CODEX_MANIFEST = '.codex-plugin/plugin.json';
 
 /** Default directories to exclude from scanning (always applied). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
@@ -49,8 +50,10 @@ function discoverPluginsInDir(
     const pluginPath = path.join(pluginsDir, ent.name);
     const claudeManifestPath = path.join(pluginPath, CLAUDE_MANIFEST);
     const cursorManifestPath = path.join(pluginPath, CURSOR_MANIFEST);
+    const codexManifestPath = path.join(pluginPath, CODEX_MANIFEST);
     const hasClaude = fs.existsSync(claudeManifestPath);
     const hasCursor = fs.existsSync(cursorManifestPath);
+    const hasCodex = fs.existsSync(codexManifestPath);
 
     if (!hasClaude && !hasCursor) continue;
 
@@ -58,13 +61,14 @@ function discoverPluginsInDir(
     const relativePath = path.join(relativePluginsPath, ent.name);
 
     plugins.push({
+      description: manifest?.description,
+      hasClaudeManifest: hasClaude,
+      hasCodexManifest: hasCodex,
+      hasCursorManifest: hasCursor,
+      manifestName: manifest?.name ?? ent.name,
       name: ent.name,
       path: pluginPath,
       relativePath,
-      hasClaudeManifest: hasClaude,
-      hasCursorManifest: hasCursor,
-      manifestName: manifest?.name ?? ent.name,
-      description: manifest?.description,
       version: manifest?.version,
     });
   }

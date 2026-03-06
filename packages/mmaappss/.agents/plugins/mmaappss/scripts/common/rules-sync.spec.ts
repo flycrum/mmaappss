@@ -15,11 +15,12 @@ function createPlugin(repoRoot: string, name: string, hasRules = true): Discover
     fs.writeFileSync(path.join(rulesDir, 'bar.mdc'), '# Bar');
   }
   return {
+    hasClaudeManifest: false,
+    hasCodexManifest: false,
+    hasCursorManifest: false,
     name,
     path: pluginDir,
     relativePath: `.agents/plugins/${name}`,
-    hasClaudeManifest: false,
-    hasCursorManifest: false,
   };
 }
 
