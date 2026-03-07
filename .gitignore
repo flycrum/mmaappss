@@ -20,7 +20,7 @@ dist/
 # Note: plugin dirs under .agents/ (e.g. .agents/plugins/*/.claude-plugin/) remain tracked (as required by the mmaappss system definitions for their plugins)
 /.claude-plugin/
 /.cursor-plugin/
-# Recursively ingore these (not required by the mmaappss system definitions for their plugins)
+# Recursively ignore these (not required by the mmaappss system definitions for their plugins)
 .claude/
 .cursor/
 # mmaappss: symlinked from AGENTS.md for Claude (when Claude marketplace sync is enabled)

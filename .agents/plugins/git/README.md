@@ -11,4 +11,4 @@ Local agent plugin for **git workflow commands**: commit staged files with push 
 
 - **commands/** — `git-commit-staged-files.md`: workflow and rules for `/git-commit-staged-files`
 - **commands/** — `git-pr-fillout-template.md`: workflow and rules for `/git-pr-fillout-template`
-- **rules/** — `git-explicit-commit-authorization.md`: global rule for commit/push authorization
+- **rules/** — `git-no-commit-from-inferred-intent.md`: do not run commit/push when intent is inferred (does not apply to commands/skills)

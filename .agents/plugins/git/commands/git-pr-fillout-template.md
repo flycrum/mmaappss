@@ -1,6 +1,6 @@
 # Fill PR template from git diff vs parent branch
 
-**What it does:** Detect current branch + most likely parent branch, analyze changes between parent and `HEAD`, and fill `.github/pull_request_template.md` into a copy-ready markdown PR description for AI agents
+**What it does:** Detect current branch + most likely parent branch, analyze changes between parent and `HEAD`, and fill `.github/pull_request_template.md` with generated contents into a copy-ready markdown PR description for AI agents
 
 **Usage:** `/git-pr-fillout-template` -> detect parent -> inspect diff/log/stat -> output completed markdown in a fenced code block
 

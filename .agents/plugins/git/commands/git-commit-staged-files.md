@@ -42,7 +42,9 @@ Push fails → stop, report, wait. No workarounds.
 
 - Write for the target audience of AI Agents
 - Keep condensed and succinct; sacrifice grammar for concision
-- Exclude punctuation at end of bullet points or end of lines
+- Exclude punctuation at end of bullet points or end of linesVerify each finding against the current code and only fix it if needed.
+
+In @.agents/plugins/git/commands/git-commit-staged-files.md at line 91, Update the "Good" example to include the required emoji at the end of the subject line: replace the example string "feat(auth): [LADA-1980] Add token expiry handling in AuthService" with the same text but append the proper emoji (e.g., "🔒") so the example demonstrates the full semantic commit format including the emoji.
 
 ---
 

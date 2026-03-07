@@ -304,8 +304,12 @@ export abstract class AgentAdapterBase {
     }
     const manifest = res.value;
     const name = this.config.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
+    const managedKeys = new Set(['name', 'owner', 'plugins']);
+    const keys = Object.keys(manifest);
+    const onlyManagedKeys =
+      manifest.name === name && keys.length > 0 && keys.every((k) => managedKeys.has(k));
 
-    if (manifest.name === name && Object.keys(manifest).length <= 3) {
+    if (onlyManagedKeys) {
       try {
         fs.unlinkSync(filePath);
       } catch (e) {
@@ -383,7 +387,7 @@ export abstract class AgentAdapterBase {
 
   /** Override for Claude: merge settings. */
   protected syncSettings(
-    _repoRoot: string,
+    repoRoot: string,
     marketplaces: DiscoveredMarketplace[]
   ): Result<void, Error> {
     const name = this.config.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
@@ -399,7 +403,7 @@ export abstract class AgentAdapterBase {
       enabledPlugins,
     };
 
-    const filePath = path.join(_repoRoot, this.config.settingsFile!);
+    const filePath = path.join(repoRoot, this.config.settingsFile!);
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     let existing: Record<string, unknown>;
     if (res.isErr()) {

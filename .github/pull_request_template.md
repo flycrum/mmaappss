@@ -14,6 +14,8 @@
 
 - [ ] `pnpm run type-check` passes
 - [ ] `pnpm run lint` passes (or changes are intentional)
+- [ ] `pnpm run format` (or `pnpm format`) — formatting verified
+- [ ] `pnpm run test` — tests pass
 - [ ] Docs/README updated if behavior or config changed
 - [ ] No PII or secrets in logs or committed files
 

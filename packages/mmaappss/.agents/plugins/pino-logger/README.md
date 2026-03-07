@@ -98,8 +98,8 @@ Set `MMAAPPSS_LOGGING_ENABLED=true` in `.env` or `.envrc.local` at repo root. Lo
 # Tail live
 tail -f .mmaappss/logs/mmaappss.log
 
-# Pretty-print last 20 lines (jq)
-tail -20 .mmaappss/logs/mmaappss.log | jq -c .
+# Pretty-print last 20 lines (requires jq; use "jq ." for pretty-printed JSON, "jq -c" for compact single-line)
+tail -20 .mmaappss/logs/mmaappss.log | jq .
 
 # Grep for errors
 grep '"level":50' .mmaappss/logs/mmaappss.log

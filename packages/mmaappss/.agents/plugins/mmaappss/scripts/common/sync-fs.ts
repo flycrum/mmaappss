@@ -155,12 +155,16 @@ export const syncFs = {
 
   /**
    * Symlink sourcePath at linkPath using a relative path from linkPath to sourcePath.
-   * Unlinks linkPath first if it already exists (including broken symlinks). Throws on error.
+   * Removes any existing file, symlink, or directory at linkPath first so symlink creation does not fail with EEXIST. Throws on error.
    */
   symlinkRelative(sourcePath: string, linkPath: string): void {
     try {
       const st = fs.lstatSync(linkPath);
-      if (st.isSymbolicLink()) fs.unlinkSync(linkPath);
+      if (st.isSymbolicLink() || st.isFile()) {
+        fs.unlinkSync(linkPath);
+      } else if (st.isDirectory()) {
+        fs.rmSync(linkPath, { recursive: true, force: true });
+      }
     } catch (e) {
       const code = (e as Error & { code?: string }).code;
       if (code !== 'ENOENT') throw e;
@@ -182,15 +186,16 @@ export const syncFs = {
   },
 
   /**
-   * Unlink each path (repoRoot + relPath). Idempotent; ignores missing or errors.
+   * Unlink each path (repoRoot + relPath). Uses lstatSync so broken symlinks are removed (existsSync returns false for them). Idempotent; ignores missing or errors.
    */
   unlinkPaths(repoRoot: string, relPaths: string[]): void {
     for (const rel of relPaths) {
       const full = path.join(repoRoot, rel);
       try {
-        if (fs.existsSync(full)) fs.unlinkSync(full);
+        fs.lstatSync(full);
+        fs.unlinkSync(full);
       } catch {
-        // ignore
+        // ignore (e.g. ENOENT, or non-file/symlink)
       }
     }
   },

@@ -102,11 +102,24 @@ export function removeIfExists(p: string): void {
 
 /**
  * Rename from -> to if from exists. Removes to first if it exists.
+ * Defensive: on rename failure (e.g. cross-device), fallback to copy then remove so callers in finally can proceed.
  */
 function renameIfExists(from: string, to: string): void {
-  if (fs.existsSync(from)) {
+  if (!fs.existsSync(from)) return;
+  try {
     if (fs.existsSync(to)) fs.rmSync(to, { recursive: true });
     fs.renameSync(from, to);
+  } catch (e) {
+    try {
+      fs.copyFileSync(from, to);
+      removeIfExists(from);
+    } catch (fallbackErr) {
+      // Log and swallow so teardown continues
+      console.error(
+        'renameIfExists failed, fallback copy+remove also failed:',
+        (fallbackErr as Error).message
+      );
+    }
   }
 }
 
@@ -283,7 +296,15 @@ export class ClaudeIntegrationAdapter extends IntegrationTestAdapterBase {
       errors.push(`${PATHS.CLAUDE_PLUGIN_DIR}/${PATHS.MARKETPLACE_JSON} missing`);
     if (!fs.existsSync(settings)) errors.push(`${PATHS.CLAUDE_DIR}/${PATHS.SETTINGS_JSON} missing`);
     if (fs.existsSync(settings)) {
-      const s = JSON.parse(fs.readFileSync(settings, 'utf8')) as Record<string, unknown>;
+      let s: Record<string, unknown>;
+      try {
+        s = JSON.parse(fs.readFileSync(settings, 'utf8')) as Record<string, unknown>;
+      } catch (parseErr) {
+        errors.push(
+          `${PATHS.CLAUDE_DIR}/${PATHS.SETTINGS_JSON}: invalid JSON — ${(parseErr as Error).message}`
+        );
+        return errors;
+      }
       const ek = s.extraKnownMarketplaces as Record<string, unknown> | undefined;
       if (!ek?.[PATHS.MMAAPPSS_PLUGINS_NAME])
         errors.push(`settings.json missing extraKnownMarketplaces.${PATHS.MMAAPPSS_PLUGINS_NAME}`);
@@ -302,15 +323,27 @@ export class ClaudeIntegrationAdapter extends IntegrationTestAdapterBase {
       );
     }
     if (fs.existsSync(marketplace)) {
-      const m = JSON.parse(fs.readFileSync(marketplace, 'utf8')) as { name?: string };
-      if (m.name === PATHS.MMAAPPSS_PLUGINS_NAME)
-        errors.push('marketplace.json should be removed or stripped when disabled');
+      try {
+        const m = JSON.parse(fs.readFileSync(marketplace, 'utf8')) as { name?: string };
+        if (m.name === PATHS.MMAAPPSS_PLUGINS_NAME)
+          errors.push('marketplace.json should be removed or stripped when disabled');
+      } catch (parseErr) {
+        errors.push(
+          `${PATHS.CLAUDE_PLUGIN_DIR}/${PATHS.MARKETPLACE_JSON}: invalid JSON — ${(parseErr as Error).message}`
+        );
+      }
     }
     if (fs.existsSync(settings)) {
-      const s = JSON.parse(fs.readFileSync(settings, 'utf8')) as Record<string, unknown>;
-      const ek = s.extraKnownMarketplaces as Record<string, unknown> | undefined;
-      if (ek?.[PATHS.MMAAPPSS_PLUGINS_NAME])
-        errors.push(`settings.json should not have ${PATHS.MMAAPPSS_PLUGINS_NAME} when disabled`);
+      try {
+        const s = JSON.parse(fs.readFileSync(settings, 'utf8')) as Record<string, unknown>;
+        const ek = s.extraKnownMarketplaces as Record<string, unknown> | undefined;
+        if (ek?.[PATHS.MMAAPPSS_PLUGINS_NAME])
+          errors.push(`settings.json should not have ${PATHS.MMAAPPSS_PLUGINS_NAME} when disabled`);
+      } catch (parseErr) {
+        errors.push(
+          `${PATHS.CLAUDE_DIR}/${PATHS.SETTINGS_JSON}: invalid JSON — ${(parseErr as Error).message}`
+        );
+      }
     }
     return errors;
   }

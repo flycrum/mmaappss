@@ -24,13 +24,17 @@ describe('discoverMarketplaces', () => {
     expect(hasNested).toBe(false);
   });
 
-  it('excludes plugin by path (.agents/plugins/git) and by segment (git)', () => {
+  it.skipIf(() => {
+    const baseline = discoverMarketplaces(pathHelpers.repoRoot, null);
+    const rootMarket = baseline.find((m) => m.relativePath === '.agents/plugins');
+    return !rootMarket?.plugins.some((p) => p.name === 'git');
+  })('excludes plugin by path (.agents/plugins/git) and by segment (git)', () => {
     const repoRoot = pathHelpers.repoRoot;
     const baseline = discoverMarketplaces(repoRoot, null);
     const rootMarket = baseline.find((m) => m.relativePath === '.agents/plugins');
     const hasGit = rootMarket?.plugins.some((p) => p.name === 'git');
-
-    if (!hasGit) return;
+    expect(rootMarket).toBeDefined();
+    expect(hasGit).toBe(true);
 
     const byPath = discoverMarketplaces(repoRoot, {
       excluded: ['.agents/plugins/git'],
