@@ -1,0 +1,14 @@
+#!/bin/sh
+# Runs after successful git merge (e.g. after git pull).
+# Syncs marketplaces (Claude/Cursor/Codex) when postMergeSyncEnabled is true in mmaappss.config.ts or MMAAPPSS_POST_MERGE_SYNC_ENABLED.
+# CWD is repo root when the hook runs.
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "post-merge: pnpm not found, skipping mmaappss sync"
+  exit 0
+fi
+pnpm --filter @mmaappss/mmaappss run mmaappss:post-merge
+status=$?
+if [ "$status" -ne 0 ]; then
+  echo "post-merge: mmaappss sync failed (merge succeeded)" >&2
+fi
+exit 0

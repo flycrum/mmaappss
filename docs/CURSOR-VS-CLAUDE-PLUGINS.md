@@ -216,6 +216,17 @@ Overlap: **same idea** (one repo, many plugins); **difference** in manifest loca
 
 ---
 
+### Cursor: local marketplaces not supported (as of this writing)
+
+Cursor does **not** support "local" marketplaces (i.e. a repo on disk whose `.cursor-plugin/marketplace.json` is discovered by the IDE). Only these are supported:
+
+- **Public marketplace** — Install plugins from [cursor.com/marketplace](https://cursor.com/marketplace).
+- **Team marketplace** — Add a GitHub repo URL in the Cursor dashboard; Cursor fetches and parses that repo (including `marketplace.json`).
+
+For local plugin content (e.g. under `.agents/plugins/`), mmaappss therefore **syncs content** into `.cursor/` instead of relying on `marketplace.json`: rules are copied as `.mdc` files with `alwaysApply: true` frontmatter, and commands, skills, and agents are symlinked into `.cursor/commands/`, `.cursor/skills/`, and `.cursor/agents/`. At the time of this writing, Cursor project rules under `.cursor/rules/` require `.mdc` and frontmatter for reliable behavior; mmaappss generates these from plugin `.md` sources.
+
+---
+
 ## 13. Unique vs Shared Summary
 
 ### Shared / overlapping
@@ -291,5 +302,6 @@ The following are **not** stated in the official plugin/skills/hooks docs cited 
 - [Cursor – Agent Skills](https://cursor.com/docs/context/skills)
 - [Cursor – Hooks](https://cursor.com/docs/agent/hooks)
 - [Claude Code – Hooks reference](https://code.claude.com/docs/en/hooks)
+- [Codex – Custom instructions with AGENTS.md](https://developers.openai.com/codex/guides/agents-md/) (AGENTS.override.md is Codex-only.)
 
 *This document was fact-checked against the linked official documentation. Claims in sections 1–14 are attributed to those sources; anything not stated there is called out in [Not in official documentation (but known to be true)](#not-in-official-documentation-but-known-to-be-true).*

@@ -6,9 +6,18 @@
 import type { MmaappssConfig } from './.agents/plugins/mmaappss/scripts/common/config-helpers.js';
 
 export const mmaappssConfigExample = {
-  marketplaceAll: true,
-  marketplaceClaude: true,
-  marketplaceCursor: true,
-  marketplaceCodex: false,
-  excludeDirectories: ['node_modules', 'dist', '.turbo'],
+  /** Enable all marketplaces (Claude, Cursor, Codex). */
+  marketplacesEnabled: 'all',
+  /** Per-agent: enable/disable specific marketplaces. */
+  // marketplacesEnabled: {
+  //   claude: true,
+  //   cursor: true,
+  //   codex: false,
+  // },
+  // excluded: ['node_modules', 'dist', '.turbo'],
+  // excluded: ['.agents/plugins/git'],
+  // excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
+  // excluded: ['**/git/**'],
+  // loggingEnabled: true,
+  // postMergeSyncEnabled: true,
 } satisfies MmaappssConfig;

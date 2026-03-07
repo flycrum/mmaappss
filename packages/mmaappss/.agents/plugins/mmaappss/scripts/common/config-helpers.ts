@@ -4,31 +4,79 @@
  */
 
 import { config as loadDotenv } from 'dotenv';
+import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parseBool } from './parse-bool.js';
+import type { Agent } from './types.js';
+
+const DEFAULT_POST_MERGE_MARKETPLACES: Agent[] = ['claude', 'cursor', 'codex'];
+const VALID_AGENTS: readonly Agent[] = ['claude', 'cursor', 'codex'];
 
 /**
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
  */
 export interface MmaappssConfig {
-  /** Master switch for all marketplaces. When false, disables all regardless of per-agent flags. */
-  marketplaceAll?: boolean;
-  /** Enable/disable Claude Code local marketplace sync. */
-  marketplaceClaude?: boolean;
-  /** Enable/disable Cursor local marketplace sync. */
-  marketplaceCursor?: boolean;
-  /** Enable/disable Codex marketplace sync (AGENTS.md section). */
-  marketplaceCodex?: boolean;
-  /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
-  excludeDirectories?: string[];
+  /**
+   * Glob patterns for paths/segments to exclude. Applied in discovery (walk + plugin filter), Cursor content sync (destination paths), and Claude MD sync.
+   * Examples: 'packages', '.agents/plugins/git', '.cursor/commands/git/git-pr-fillout-template.md'. Paths normalized to forward slashes.
+   */
+  excluded?: string[];
+  /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
+  loggingEnabled?: boolean;
+  /**
+   * Enable all marketplaces ('all') or per-agent flags. Env (MMAAPPSS_MARKETPLACE_*) overrides.
+   * Object variant: `{ claude, cursor, codex }` booleans. Example: `{ claude: true, cursor: false, codex: true }`.
+   */
+  marketplacesEnabled?:
+    | 'all'
+    | {
+        claude: boolean;
+        cursor: boolean;
+        codex: boolean;
+      };
+  /** When true, post-merge git hook (if installed) runs marketplace sync after pull/merge. Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides. */
+  postMergeSyncEnabled?: boolean;
+  /** Agents to sync in post-merge (e.g. ['claude', 'cursor', 'codex']). Defaults to all three if missing or invalid. */
+  postMergeSyncMarketplaces?: (Agent | string)[];
 }
 
 /**
  * Namespaced config utilities for env loading, TS config, and marketplace enable flags.
  */
 export const configHelpers = {
-  /** General config resolution (enable flags, etc.). */
+  /** General config resolution (enable flags, logging, etc.). */
   general: {
+    /**
+     * Resolve whether file logging is enabled. Env MMAAPPSS_LOGGING_ENABLED overrides TS config.
+     */
+    getLoggingEnabled(_root: string, tsConfig: MmaappssConfig | null): boolean {
+      const envVal = process.env[configHelpers.env.VARS.ENV_LOGGING];
+      const defaultVal = tsConfig?.loggingEnabled ?? false;
+      return parseBool(envVal, defaultVal);
+    },
+
+    /**
+     * Resolve whether post-merge sync is enabled (for git hook). Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides TS config.
+     */
+    getPostMergeSyncEnabled(_root: string, tsConfig: MmaappssConfig | null): boolean {
+      const envVal = process.env[configHelpers.env.VARS.ENV_POST_MERGE_SYNC];
+      const defaultVal = tsConfig?.postMergeSyncEnabled ?? false;
+      return parseBool(envVal, defaultVal);
+    },
+
+    /**
+     * Resolve list of agents to sync in post-merge. Uses postMergeSyncMarketplaces from config; defaults to ['claude','cursor','codex'] if missing or invalid.
+     */
+    getPostMergeSyncMarketplaces(_root: string, tsConfig: MmaappssConfig | null): Agent[] {
+      const raw = tsConfig?.postMergeSyncMarketplaces;
+      if (!Array.isArray(raw) || raw.length === 0) return [...DEFAULT_POST_MERGE_MARKETPLACES];
+      const filtered = raw.filter(
+        (a): a is Agent => typeof a === 'string' && VALID_AGENTS.includes(a as Agent)
+      );
+      return filtered.length > 0 ? filtered : [...DEFAULT_POST_MERGE_MARKETPLACES];
+    },
+
     /**
      * Resolve marketplace enable flags for a given agent.
      * Env overrides TS config; MMAAPPSS_MARKETPLACE_ALL acts as master switch.
@@ -52,21 +100,22 @@ export const configHelpers = {
             ? process.env[VARS.ENV_CURSOR]
             : process.env[VARS.ENV_CODEX];
 
-      const fromTs =
-        agent === 'claude'
-          ? tsConfig?.marketplaceClaude
-          : agent === 'cursor'
-            ? tsConfig?.marketplaceCursor
-            : tsConfig?.marketplaceCodex;
-      const defaultPer = fromTs ?? tsConfig?.marketplaceAll ?? false;
+      const enabled = tsConfig?.marketplacesEnabled;
+      const defaultPer =
+        enabled === 'all'
+          ? true
+          : enabled && typeof enabled === 'object'
+            ? (enabled[agent] ?? false)
+            : false;
       const allEnabled = parseBool(allEnv, true);
       const perEnabled = parseBool(agentEnv, defaultPer);
       return allEnabled && perEnabled;
     },
   },
+
   /** Env var loading and constant names. */
   env: {
-    /** Env var names for marketplace enable/disable. */
+    /** Env var names for marketplace enable/disable and logging. */
     VARS: {
       /** Master switch: MMAAPPSS_MARKETPLACE_ALL */
       ENV_ALL: 'MMAAPPSS_MARKETPLACE_ALL',
@@ -76,6 +125,10 @@ export const configHelpers = {
       ENV_CURSOR: 'MMAAPPSS_MARKETPLACE_CURSOR',
       /** Codex marketplace: MMAAPPSS_MARKETPLACE_CODEX */
       ENV_CODEX: 'MMAAPPSS_MARKETPLACE_CODEX',
+      /** File logging: MMAAPPSS_LOGGING_ENABLED */
+      ENV_LOGGING: 'MMAAPPSS_LOGGING_ENABLED',
+      /** Post-merge sync (git hook): MMAAPPSS_POST_MERGE_SYNC_ENABLED */
+      ENV_POST_MERGE_SYNC: 'MMAAPPSS_POST_MERGE_SYNC_ENABLED',
     } as const,
     /**
      * Load env from repo root (.env then .envrc.local).
@@ -88,6 +141,7 @@ export const configHelpers = {
       loadDotenv({ path: path.join(root, '.envrc.local'), override: true });
     },
   },
+
   /** TypeScript config file loading. */
   ts: {
     /**
@@ -100,9 +154,17 @@ export const configHelpers = {
       configHelpers.env.loadEnv(root);
       const configPath = path.join(root, 'mmaappss.config.ts');
       try {
-        const mod = await import(configPath);
+        // Cache-bust so overwritten config (e.g. in integration tests) is reloaded
+        const fileUrl = `${pathToFileURL(configPath).href}?t=${Date.now()}`;
+        const mod = await import(fileUrl);
         return (mod.default ?? mod) as MmaappssConfig;
-      } catch {
+      } catch (err) {
+        if (fs.existsSync(configPath)) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(
+            `[mmaappss] Could not load mmaappss.config.ts from ${configPath}: ${msg}. Using env/defaults only.`
+          );
+        }
         return null;
       }
     },

@@ -12,12 +12,13 @@
 
 ## purpose
 
+- to be obsolete as soon as the industry adopts some common-sense standards 😆
+- ...but in the meantime try to align to and leverage available APIs
+  - and as of the moment I'm typing this, that's marketplaces and plugins!
 - unify the fragmented state of sharing rules, commands, skills, agents, etc
 - define once, empower developers on teams to use with their preferred coding agent(s)
 - prioritze minimal configurations to get start, but powerful options for when you need them
 - keep it simple dumb-ass (kisda) & don't reinvent the wheel
-- provide a way to group releated rules, commands, skills, agents, etc. together
-- leverage available APIs and -- as of the moment I'm typing this -- that's marketplaces and plugins!
 
 ## repo structure
 
@@ -30,7 +31,7 @@
 Two distinct concepts:
 
 - **Core (source of truth):** The sync system, markdown, and plugin definitions live in **`packages/mmaappss`** (including `.agents/plugins` and the mmaappss driver plugin).
-- **Usage at repo root:** The monorepo root is where the system is *used*: local marketplaces are registered at root (e.g. `.claude-plugin/`, `.cursor-plugin/`). To avoid defining plugins in two places, we keep a single definition under `packages/mmaappss/.agents/plugins/` and **symlink** `packages/mmaappss/.agents/plugins` → root `.agents/plugins`. The symlink is created by **postInstall**; only **`.agents/plugins/mmaappss`** at the root is gitignored. Other plugins under `.agents/plugins/` (e.g. future team plugins) are committed.
+- **Usage at repo root:** The monorepo root is where the system is *used*: local marketplaces are registered at root (e.g. `.claude-plugin/`, `.cursor-plugin/`). Plugin definitions live in a **single place**: `packages/mmaappss/.agents/plugins/`. Sync runs from repo root and discovery finds both root `.agents/plugins/` (if present) and nested `packages/mmaappss/.agents/plugins/`, so no symlink is needed.
 - [Read the mmaappss package docs](packages/mmaappss/README.md) for plugins, configuration, and sync details.
 
 ## development
