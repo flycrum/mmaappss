@@ -34,7 +34,7 @@ const PATHS = {
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
 export interface IntegrationTestStep {
-  /** After sync with configOverride, assert this repo-relative path does not exist (e.g. excludeFiles). */
+  /** After sync with configOverride, assert this repo-relative path does not exist (e.g. excluded). */
   assertExcludedFile?: string;
   /** After sync with configOverride, assert this plugin's synced content is removed (e.g. .cursor/commands/<plugin>). */
   assertExcludedPlugin?: string;
@@ -44,7 +44,7 @@ export interface IntegrationTestStep {
   label: string;
   /** Whether sync is enabled or disabled for this step. */
   mode: IntegrationTestMode;
-  /** When true, only assert runSync succeeded (skip strict filesystem asserts; used for excludeDirectories etc). */
+  /** When true, only assert runSync succeeded (skip strict filesystem asserts; used for excluded etc). */
   relaxAssertions?: boolean;
 }
 
@@ -59,32 +59,32 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
   { mode: 'enabled', label: 'final create' },
   {
     mode: 'enabled',
-    label: 'enabled with excludeDirectories: [packages]',
-    configOverride: { excludeDirectories: ['packages'] },
+    label: 'enabled with excluded: [packages]',
+    configOverride: { excluded: ['packages'] },
     relaxAssertions: true,
   },
   {
     mode: 'enabled',
     label: 'exclude plugin (path): sync then assert plugin content removed',
-    configOverride: { excludeDirectories: ['.agents/plugins/git'] },
+    configOverride: { excluded: ['.agents/plugins/git'] },
     assertExcludedPlugin: 'git',
   },
   {
     mode: 'enabled',
     label: 'exclude plugin (segment): sync with [git] then assert removed',
-    configOverride: { excludeDirectories: ['git'] },
+    configOverride: { excluded: ['git'] },
     assertExcludedPlugin: 'git',
   },
   {
     mode: 'enabled',
-    label: 'exclude single file (excludeFiles): sync then assert file absent',
-    configOverride: { excludeFiles: ['.cursor/commands/git/git-pr-fillout-template.md'] },
+    label: 'exclude single file (excluded): sync then assert file absent',
+    configOverride: { excluded: ['.cursor/commands/git/git-pr-fillout-template.md'] },
     assertExcludedFile: '.cursor/commands/git/git-pr-fillout-template.md',
   },
   {
     mode: 'enabled',
-    label: 'restore full set (no excludeDirectories/excludeFiles)',
-    configOverride: { excludeDirectories: [], excludeFiles: [] },
+    label: 'restore full set (no excluded)',
+    configOverride: { excluded: [] },
   },
 ];
 
@@ -119,12 +119,12 @@ export abstract class IntegrationTestAdapterBase {
   abstract assertEnabled(root: string): string[];
   abstract assertDisabled(root: string): string[];
 
-  /** Override to assert that a repo-relative path does not exist (e.g. after excludeFiles). Default: no-op. */
+  /** Override to assert that a repo-relative path does not exist (e.g. after excluded). Default: no-op. */
   assertExcludedFileRemoved(_root: string, _relPath: string): string[] {
     return [];
   }
 
-  /** Override to assert that a plugin's synced content was removed (e.g. after excludeDirectories). Default: no-op. */
+  /** Override to assert that a plugin's synced content was removed (e.g. after excluded). Default: no-op. */
   assertExcludedPluginRemoved(_root: string, _pluginName: string): string[] {
     return [];
   }
@@ -332,7 +332,7 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
   assertExcludedFileRemoved(root: string, relPath: string): string[] {
     const full = path.join(root, relPath);
     if (fs.existsSync(full)) {
-      return [`${relPath} should not exist when excluded via excludeFiles`];
+      return [`${relPath} should not exist when excluded via excluded`];
     }
     return [];
   }
@@ -344,7 +344,7 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
       const pluginSubPath = path.join(cursorDir, sub, pluginName);
       if (fs.existsSync(pluginSubPath)) {
         errors.push(
-          `.cursor/${sub}/${pluginName} should not exist when plugin is excluded (excludeDirectories)`
+          `.cursor/${sub}/${pluginName} should not exist when plugin is excluded (excluded)`
         );
       }
     }

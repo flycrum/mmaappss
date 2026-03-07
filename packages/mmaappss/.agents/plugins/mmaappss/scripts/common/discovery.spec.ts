@@ -12,13 +12,13 @@ describe('discoverMarketplaces', () => {
     expect(withMmaappss).toBeDefined();
   });
 
-  it('respects excludeDirectories (walk: segment names)', () => {
+  it('respects excluded (walk: segment names)', () => {
     const repoRoot = pathHelpers.repoRoot;
     const baseline = discoverMarketplaces(repoRoot, null);
     expect(baseline.length).toBeGreaterThan(0);
 
     const result = discoverMarketplaces(repoRoot, {
-      excludeDirectories: ['packages'],
+      excluded: ['packages'],
     });
     const hasNested = result.some((m) => m.relativePath.includes('packages/'));
     expect(hasNested).toBe(false);
@@ -33,13 +33,13 @@ describe('discoverMarketplaces', () => {
     if (!hasGit) return;
 
     const byPath = discoverMarketplaces(repoRoot, {
-      excludeDirectories: ['.agents/plugins/git'],
+      excluded: ['.agents/plugins/git'],
     });
     const rootByPath = byPath.find((m) => m.relativePath === '.agents/plugins');
     expect(rootByPath?.plugins.some((p) => p.name === 'git')).toBe(false);
 
     const bySegment = discoverMarketplaces(repoRoot, {
-      excludeDirectories: ['git'],
+      excluded: ['git'],
     });
     const rootBySegment = bySegment.find((m) => m.relativePath === '.agents/plugins');
     expect(rootBySegment?.plugins.some((p) => p.name === 'git')).toBe(false);

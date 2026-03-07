@@ -6,13 +6,14 @@
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { isExcluded as isExcludedByPatterns } from './excluded-patterns.js';
 import { getLogger } from './logger.js';
 import { syncFs } from './sync-fs.js';
 
 const AGENTS_MD = 'AGENTS.md';
 const CLAUDE_MD = 'CLAUDE.md';
 
-/** Default directories to exclude from scanning (match discovery.ts). */
+/** Default segments to exclude from walk (match discovery.ts). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
 
 const CLAUDE_MD_SYNC_MANIFEST = '.claude/.mmaappss-claude-md-sync.json';
@@ -22,8 +23,8 @@ export interface ClaudeMdSyncManifest {
 }
 
 function isExcluded(dirName: string, config: MmaappssConfig | null): boolean {
-  const exclude = [...DEFAULT_EXCLUDE, ...(config?.excludeDirectories ?? [])];
-  return exclude.some((e) => dirName === e);
+  const patterns = [...DEFAULT_EXCLUDE, ...(config?.excluded ?? [])];
+  return isExcludedByPatterns(dirName, patterns);
 }
 
 /**

@@ -14,17 +14,10 @@ import { parseBool } from './parse-bool.js';
  */
 export interface MmaappssConfig {
   /**
-   * Directories or plugin paths to exclude from discovery.
-   * Segment names (e.g. 'packages', 'git') exclude that directory name during tree walk and exclude plugins with that name.
-   * Paths (e.g. '.agents/plugins/git') exclude plugins whose relative path equals or is under that path.
-   * Excluded plugins are omitted from sync; previously synced content for them is removed on next sync.
+   * Glob patterns for paths/segments to exclude. Applied in discovery (walk + plugin filter), Cursor content sync (destination paths), and Claude MD sync.
+   * Examples: 'packages', '.agents/plugins/git', '.cursor/commands/git/git-pr-fillout-template.md'. Paths normalized to forward slashes.
    */
-  excludeDirectories?: string[];
-  /**
-   * Repo-relative destination paths to not create during Cursor content sync (e.g. '.cursor/commands/git/git-pr-fillout-template.md').
-   * Exact match or path under an entry (with trailing slash) is skipped.
-   */
-  excludeFiles?: string[];
+  excluded?: string[];
   /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
   loggingEnabled?: boolean;
   /**
@@ -143,7 +136,8 @@ export const configHelpers = {
       configHelpers.env.loadEnv(root);
       const configPath = path.join(root, 'mmaappss.config.ts');
       try {
-        const fileUrl = pathToFileURL(configPath).href;
+        // Cache-bust so overwritten config (e.g. in integration tests) is reloaded
+        const fileUrl = `${pathToFileURL(configPath).href}?t=${Date.now()}`;
         const mod = await import(fileUrl);
         return (mod.default ?? mod) as MmaappssConfig;
       } catch (err) {

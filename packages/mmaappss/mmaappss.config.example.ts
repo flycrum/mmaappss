@@ -14,10 +14,10 @@ export const mmaappssConfigExample = {
   //   cursor: true,
   //   codex: false,
   // },
-
-  // excludeDirectories: ['node_modules', 'dist', '.turbo'],
-  // excludeDirectories: ['.agents/plugins/git'],
-  // excludeFiles: ['.cursor/commands/git/git-pr-fillout-template.md'],
+  // excluded: ['node_modules', 'dist', '.turbo'],
+  // excluded: ['.agents/plugins/git'],
+  // excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
+  // excluded: ['**/git/**'],
   // loggingEnabled: true,
   // postMergeSyncEnabled: true,
 } satisfies MmaappssConfig;

@@ -151,7 +151,7 @@ Committed defaults: `.env`. Overrides: `.envrc.local` (gitignored). Process env 
 
 ## Root and nested context
 
-For "root context" (e.g. `AGENTS.md` at repo root) and "nested context" (e.g. `packages/pkg/AGENTS.md`): Cursor and Codex use `AGENTS.md` natively. Claude uses `CLAUDE.md`. When the Claude marketplace is enabled, mmaappss sync creates a `CLAUDE.md` symlink pointing to `AGENTS.md` in every directory that has `AGENTS.md` (respecting `excludeDirectories`). Sync also ensures `CLAUDE.md` is listed in root `.gitignore` so symlinked files are not committed; only `AGENTS.md` is committed.
+For "root context" (e.g. `AGENTS.md` at repo root) and "nested context" (e.g. `packages/pkg/AGENTS.md`): Cursor and Codex use `AGENTS.md` natively. Claude uses `CLAUDE.md`. When the Claude marketplace is enabled, mmaappss sync creates a `CLAUDE.md` symlink pointing to `AGENTS.md` in every directory that has `AGENTS.md` (respecting `excluded`). Sync also ensures `CLAUDE.md` is listed in root `.gitignore` so symlinked files are not committed; only `AGENTS.md` is committed.
 
 ---
 

@@ -5,8 +5,10 @@
  */
 
 import { err, ok, Result } from 'neverthrow';
+import fs from 'node:fs';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { isExcluded } from './excluded-patterns.js';
 import { syncFs } from './sync-fs.js';
 import type { DiscoveredMarketplace } from './types.js';
 
@@ -43,20 +45,6 @@ function normalizeCursorContentSyncManifest(parsed: unknown): CursorContentSyncM
   };
 }
 
-/** True if repo-relative destPath should be skipped (exact or under an excludeFiles entry). */
-function isDestPathExcluded(destPathRel: string, excludeFiles: string[] | undefined): boolean {
-  if (!excludeFiles?.length) return false;
-  const normalized = destPathRel.replace(/\\/g, '/');
-  for (const e of excludeFiles) {
-    const entry = e.replace(/\\/g, '/');
-    if (normalized === entry) return true;
-    if (entry.endsWith('/') && normalized.startsWith(entry)) return true;
-    if (!entry.endsWith('/') && (normalized === entry || normalized.startsWith(entry + '/')))
-      return true;
-  }
-  return false;
-}
-
 /**
  * Strip optional YAML frontmatter from markdown content and return body only.
  * If no frontmatter (no leading ---), returns content as-is.
@@ -75,18 +63,37 @@ function stripFrontmatter(content: string): string {
  * Sync all Cursor plugin content (rules as .mdc with frontmatter, commands/skills/agents as symlinks)
  * into .cursor/rules, .cursor/commands, .cursor/skills, .cursor/agents.
  * Writes manifest at manifestPath for teardown.
- * Respects config.excludeFiles (repo-relative destination paths to skip).
+ * Respects config.excluded (glob patterns for destination paths to skip).
  */
 export function syncCursorContent(
   repoRoot: string,
   marketplaces: DiscoveredMarketplace[],
   manifestPath: string,
-  config?: Pick<MmaappssConfig, 'excludeFiles'> | null
+  config?: Pick<MmaappssConfig, 'excluded'> | null
 ): Result<CursorContentSyncManifest, Error> {
   const clearResult = clearCursorContent(repoRoot, manifestPath);
   if (clearResult.isErr()) return err(clearResult.error);
 
-  const excludeFiles = config?.excludeFiles;
+  const allowedPluginNames = new Set(
+    marketplaces.flatMap((m) => m.plugins.filter((p) => p.hasCursorManifest).map((p) => p.name))
+  );
+  const cursorDir = path.join(repoRoot, '.cursor');
+  for (const sub of CURSOR_CONTENT_DIRS) {
+    const parent = path.join(cursorDir, sub);
+    if (!syncFs.pathExists(parent)) continue;
+    const entries = fs.readdirSync(parent, { withFileTypes: true });
+    for (const ent of entries) {
+      if (ent.isDirectory() && !allowedPluginNames.has(ent.name)) {
+        try {
+          fs.rmSync(path.join(parent, ent.name), { recursive: true });
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  const excluded = config?.excluded;
   const created: CursorContentSyncManifest = {
     rules: [],
     commands: [],
@@ -95,7 +102,6 @@ export function syncCursorContent(
   };
 
   try {
-    const cursorDir = path.join(repoRoot, '.cursor');
     const rulesTarget = path.join(cursorDir, 'rules');
     const commandsTarget = path.join(cursorDir, 'commands');
     const skillsTarget = path.join(cursorDir, 'skills');
@@ -115,7 +121,7 @@ export function syncCursorContent(
             const base = path.basename(file, path.extname(file));
             const destPath = path.join(rulesTarget, plugin.name, `${base}.mdc`);
             const rel = path.relative(repoRoot, destPath);
-            if (isDestPathExcluded(rel, excludeFiles)) continue;
+            if (isExcluded(rel, excluded)) continue;
             const body = stripFrontmatter(syncFs.readFileUtf8(srcPath));
             syncFs.writeFileUtf8(destPath, CURSOR_RULES_FRONTMATTER + body);
             created.rules.push(rel);
@@ -132,7 +138,7 @@ export function syncCursorContent(
             const srcPath = path.join(commandsDir, file);
             const linkPath = path.join(pluginCommandsDir, file);
             const rel = path.relative(repoRoot, linkPath);
-            if (isDestPathExcluded(rel, excludeFiles)) continue;
+            if (isExcluded(rel, excluded)) continue;
             syncFs.symlinkRelative(srcPath, linkPath);
             created.commands.push(rel);
           }
@@ -150,7 +156,7 @@ export function syncCursorContent(
             const skillDirPath = path.join(skillsDir, name);
             const linkPath = path.join(pluginSkillsDir, name);
             const rel = path.relative(repoRoot, linkPath);
-            if (isDestPathExcluded(rel, excludeFiles)) continue;
+            if (isExcluded(rel, excluded)) continue;
             syncFs.symlinkRelative(skillDirPath, linkPath);
             created.skills.push(rel);
           }
@@ -166,7 +172,7 @@ export function syncCursorContent(
             const srcPath = path.join(agentsDir, file);
             const linkPath = path.join(pluginAgentsDir, file);
             const rel = path.relative(repoRoot, linkPath);
-            if (isDestPathExcluded(rel, excludeFiles)) continue;
+            if (isExcluded(rel, excluded)) continue;
             syncFs.symlinkRelative(srcPath, linkPath);
             created.agents.push(rel);
           }

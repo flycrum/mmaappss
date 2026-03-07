@@ -32,20 +32,16 @@ describe('claude-md-sync', () => {
       expect(claudeMdSync.findAgentsMdDirs(repoRoot, null).sort()).toEqual(['', 'packages/foo']);
     });
 
-    it('respects excludeDirectories', () => {
+    it('respects excluded', () => {
       fs.writeFileSync(path.join(repoRoot, 'AGENTS.md'), '# Root');
       const inNodeModules = path.join(repoRoot, 'node_modules', 'pkg');
       fs.mkdirSync(inNodeModules, { recursive: true });
       fs.writeFileSync(path.join(inNodeModules, 'AGENTS.md'), '# Pkg');
       expect(claudeMdSync.findAgentsMdDirs(repoRoot, null)).toEqual(['']);
-      expect(claudeMdSync.findAgentsMdDirs(repoRoot, { excludeDirectories: ['packages'] })).toEqual(
-        ['']
-      );
+      expect(claudeMdSync.findAgentsMdDirs(repoRoot, { excluded: ['packages'] })).toEqual(['']);
       fs.mkdirSync(path.join(repoRoot, 'packages', 'bar'), { recursive: true });
       fs.writeFileSync(path.join(repoRoot, 'packages', 'bar', 'AGENTS.md'), '# Bar');
-      expect(claudeMdSync.findAgentsMdDirs(repoRoot, { excludeDirectories: ['packages'] })).toEqual(
-        ['']
-      );
+      expect(claudeMdSync.findAgentsMdDirs(repoRoot, { excluded: ['packages'] })).toEqual(['']);
     });
   });
 

@@ -1,11 +1,12 @@
 /**
  * Recursive discovery of .agents/plugins/ across root and nested directories.
- * Respects excludeDirectories from config.
+ * Respects config.excluded (glob patterns).
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { isExcluded } from './excluded-patterns.js';
 import { getLogger } from './logger.js';
 import type { DiscoveredMarketplace, DiscoveredPlugin } from './types.js';
 
@@ -14,34 +15,8 @@ const CLAUDE_MANIFEST = '.claude-plugin/plugin.json';
 const CURSOR_MANIFEST = '.cursor-plugin/plugin.json';
 const CODEX_MANIFEST = '.codex-plugin/plugin.json';
 
-/** Default directories to exclude from scanning (always applied). */
+/** Default segments to exclude from walk (always applied). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
-
-/** Returns true if dirName is in the exclusion set (O(1)). */
-function isExcludedSet(dirName: string, excludeSet: Set<string>): boolean {
-  return excludeSet.has(dirName);
-}
-
-/**
- * Returns true if this plugin should be excluded by config.
- * Supports segment names (e.g. 'git', 'packages') and paths (e.g. '.agents/plugins/git').
- * Paths are normalized to forward slashes for comparison.
- */
-function isPluginExcluded(
-  pluginRelativePath: string,
-  pluginName: string,
-  excludeDirectories: string[] | undefined
-): boolean {
-  if (!excludeDirectories?.length) return false;
-  const normalizedPath = pluginRelativePath.replace(/\\/g, '/');
-  for (const e of excludeDirectories) {
-    const normalized = e.replace(/\\/g, '/');
-    if (pluginName === normalized) return true;
-    if (normalizedPath === normalized) return true;
-    if (normalizedPath.startsWith(normalized + '/')) return true;
-  }
-  return false;
-}
 
 function loadManifest(
   manifestPath: string
@@ -109,14 +84,14 @@ function discoverPluginsInDir(
 }
 
 function findPluginsDirs(repoRoot: string, config: MmaappssConfig | null): string[] {
-  const excludeSet = new Set([...DEFAULT_EXCLUDE, ...(config?.excludeDirectories ?? [])]);
+  const walkPatterns = [...DEFAULT_EXCLUDE, ...(config?.excluded ?? [])];
   const found: string[] = [];
 
   function walk(dir: string): void {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const ent of entries) {
       if (!ent.isDirectory()) continue;
-      if (isExcludedSet(ent.name, excludeSet)) continue;
+      if (isExcluded(ent.name, walkPatterns)) continue;
 
       const fullPath = path.join(dir, ent.name);
       const pluginsPath = path.join(fullPath, '.agents', 'plugins');
@@ -155,15 +130,17 @@ export function discoverMarketplaces(
     'discovery: scanning plugins dirs'
   );
 
-  const excludeDirs = config?.excludeDirectories ?? [];
+  const excluded = config?.excluded ?? [];
 
   for (const pluginsDir of pluginsDirs) {
     const relativePath = path.relative(repoRoot, pluginsDir).replace(/\\/g, '/');
     const label =
       relativePath === PLUGINS_SUBDIR ? 'Root marketplace' : `${relativePath} marketplace`;
     const allPlugins = discoverPluginsInDir(pluginsDir, repoRoot, relativePath);
-    const plugins = excludeDirs.length
-      ? allPlugins.filter((p) => !isPluginExcluded(p.relativePath, p.name, excludeDirs))
+    const plugins = excluded.length
+      ? allPlugins.filter(
+          (p) => !isExcluded(p.relativePath, excluded) && !isExcluded(p.name, excluded)
+        )
       : allPlugins;
     marketplaces.push({ pluginsDir, relativePath, label, plugins });
   }

@@ -34,6 +34,7 @@
   "dependencies": {
     "fs-extra": "^11.2.0",
     "lodash-es": "^4.17.21",
+    "minimatch": "^10.0.0",
     "neverthrow": "^7.2.0",
     "pino": "^9.6.0"
   },
