@@ -5,6 +5,7 @@
 
 import { err, ok, Result } from 'neverthrow';
 import { configHelpers } from '../common/config-helpers.js';
+import { getLogger, setLoggerContext } from '../common/logger.js';
 import { pathHelpers } from '../common/path-helpers.js';
 import type { Agent, SyncOutcome } from '../common/types.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
@@ -31,6 +32,13 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
   configHelpers.env.loadEnv(repoRoot);
 
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+  setLoggerContext(repoRoot, tsConfig);
+  const log = getLogger();
+  log.info(
+    { configSource: tsConfig ? 'mmaappss.config.ts' : 'env/defaults', agents },
+    'sync started'
+  );
+
   const outcomes: SyncOutcome[] = [];
 
   for (const agent of agents) {
@@ -42,11 +50,15 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
 
     const result = adapter.run(repoRoot, tsConfig);
     if (result.isErr()) {
+      log.error({ err: result.error, agent }, 'sync agent failed');
+      await new Promise<void>((resolve) => getLogger().flush(resolve));
       return err(result.error);
     }
     outcomes.push(result.value);
   }
 
+  log.info({ outcomes }, 'sync completed');
+  await new Promise<void>((resolve) => getLogger().flush(resolve));
   return ok(outcomes);
 }
 
@@ -56,6 +68,11 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
 export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], Error>> {
   const repoRoot = pathHelpers.repoRoot;
   configHelpers.env.loadEnv(repoRoot);
+
+  const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+  setLoggerContext(repoRoot, tsConfig);
+  const log = getLogger();
+  log.info({ agents }, 'clear started');
 
   const outcomes: SyncOutcome[] = [];
 
@@ -68,10 +85,14 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
 
     const result = adapter.clear(repoRoot);
     if (result.isErr()) {
+      log.error({ err: result.error, agent }, 'clear agent failed');
+      await new Promise<void>((resolve) => getLogger().flush(resolve));
       return err(result.error);
     }
     outcomes.push(result.value);
   }
 
+  log.info({ outcomes }, 'clear completed');
+  await new Promise<void>((resolve) => getLogger().flush(resolve));
   return ok(outcomes);
 }

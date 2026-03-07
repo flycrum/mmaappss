@@ -13,6 +13,7 @@ import type { MmaappssConfig } from '../common/config-helpers.js';
 import { configHelpers } from '../common/config-helpers.js';
 import { discoverMarketplaces } from '../common/discovery.js';
 import { jsonPatch } from '../common/json-patch.js';
+import { getLogger } from '../common/logger.js';
 import { markdownSection } from '../common/markdown-section.js';
 import { rulesSync } from '../common/rules-sync.js';
 import type {
@@ -115,6 +116,7 @@ export abstract class AgentAdapterBase {
       tsConfig,
       this.config.agent
     );
+    getLogger().info({ agent: this.config.agent, enabled }, 'adapter run');
     const marketplaces = discoverMarketplaces(repoRoot, tsConfig);
 
     if (enabled) {
@@ -283,6 +285,7 @@ export abstract class AgentAdapterBase {
         const nodeErr = err as NodeJS.ErrnoException;
         if (nodeErr?.code !== 'ENOENT') {
           console.error(`Failed to unlink ${filePath}:`, err);
+          getLogger().error({ err, filePath }, 'failed to unlink marketplace file');
           return err(err instanceof Error ? err : new Error(String(err)));
         }
       }

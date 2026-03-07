@@ -20,8 +20,7 @@
     "mmaappss:marketplaces:cursor:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync",
     "mmaappss:marketplaces:cursor:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync:test",
     "test": "turbo run test",
-    "type-check": "turbo run type-check",
-    "postinstall": "tsx scripts/ensure-agents-symlink.ts"
+    "type-check": "turbo run type-check"
   },
   "devDependencies": {
     "@mmaappss/eslint-config": "workspace:*",

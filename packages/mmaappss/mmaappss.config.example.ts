@@ -12,4 +12,6 @@ export const mmaappssConfigExample = {
     codex: false,
   },
   excludeDirectories: ['node_modules', 'dist', '.turbo'],
+  /** Set true to write structured logs to .mmaappss/logs/mmaappss.log (env MMAAPPSS_LOGGING_ENABLED overrides). */
+  loggingEnabled: false,
 } satisfies MmaappssConfig;

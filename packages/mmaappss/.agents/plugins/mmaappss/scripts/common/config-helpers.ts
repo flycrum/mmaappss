@@ -23,14 +23,24 @@ export interface MmaappssConfig {
       };
   /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
   excludeDirectories?: string[];
+  /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
+  loggingEnabled?: boolean;
 }
 
 /**
  * Namespaced config utilities for env loading, TS config, and marketplace enable flags.
  */
 export const configHelpers = {
-  /** General config resolution (enable flags, etc.). */
+  /** General config resolution (enable flags, logging, etc.). */
   general: {
+    /**
+     * Resolve whether file logging is enabled. Env MMAAPPSS_LOGGING_ENABLED overrides TS config.
+     */
+    getLoggingEnabled(root: string, tsConfig: MmaappssConfig | null): boolean {
+      const envVal = process.env[configHelpers.env.VARS.ENV_LOGGING];
+      const defaultVal = tsConfig?.loggingEnabled ?? false;
+      return parseBool(envVal, defaultVal);
+    },
     /**
      * Resolve marketplace enable flags for a given agent.
      * Env overrides TS config; MMAAPPSS_MARKETPLACE_ALL acts as master switch.
@@ -68,7 +78,7 @@ export const configHelpers = {
   },
   /** Env var loading and constant names. */
   env: {
-    /** Env var names for marketplace enable/disable. */
+    /** Env var names for marketplace enable/disable and logging. */
     VARS: {
       /** Master switch: MMAAPPSS_MARKETPLACE_ALL */
       ENV_ALL: 'MMAAPPSS_MARKETPLACE_ALL',
@@ -78,6 +88,8 @@ export const configHelpers = {
       ENV_CURSOR: 'MMAAPPSS_MARKETPLACE_CURSOR',
       /** Codex marketplace: MMAAPPSS_MARKETPLACE_CODEX */
       ENV_CODEX: 'MMAAPPSS_MARKETPLACE_CODEX',
+      /** File logging: MMAAPPSS_LOGGING_ENABLED */
+      ENV_LOGGING: 'MMAAPPSS_LOGGING_ENABLED',
     } as const,
     /**
      * Load env from repo root (.env then .envrc.local).

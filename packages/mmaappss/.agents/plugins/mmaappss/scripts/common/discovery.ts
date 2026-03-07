@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { getLogger } from './logger.js';
 import type { DiscoveredMarketplace, DiscoveredPlugin } from './types.js';
 
 const PLUGINS_SUBDIR = '.agents/plugins';
@@ -114,6 +115,14 @@ export function discoverMarketplaces(
   const pluginsDirs = findPluginsDirs(repoRoot, config);
   const marketplaces: DiscoveredMarketplace[] = [];
 
+  getLogger().debug(
+    {
+      pluginsDirsCount: pluginsDirs.length,
+      pluginsDirs: pluginsDirs.map((d) => path.relative(repoRoot, d)),
+    },
+    'discovery: scanning plugins dirs'
+  );
+
   for (const pluginsDir of pluginsDirs) {
     const relativePath = path.relative(repoRoot, pluginsDir).replace(/\\/g, '/');
     const label =
@@ -124,5 +133,10 @@ export function discoverMarketplaces(
     marketplaces.push({ pluginsDir, relativePath, label, plugins });
   }
 
+  const totalPlugins = marketplaces.reduce((n, m) => n + m.plugins.length, 0);
+  getLogger().debug(
+    { marketplacesCount: marketplaces.length, totalPlugins },
+    'discovery: complete'
+  );
   return marketplaces;
 }

@@ -139,6 +139,10 @@ Committed defaults: `.env`. Overrides: `.envrc.local` (gitignored). Process env 
 - **Supported:** Exclude entire root or nested **directories** from `.agents/plugins/` discovery (e.g. `node_modules/`, `dist/`).
 - **Future:** Exclude specific plugins or files; config shape allows adding without breaking changes.
 
+### Logging
+
+- **`loggingEnabled`** (TS config) / **`MMAAPPSS_LOGGING_ENABLED`** (env) — When true, structured logs (Pino) are written to `.mmaappss/logs/mmaappss.log` at repo root. Off by default. See the **mmaappss-pino** plugin (`.agents/plugins/mmaappss-pino/`) for strategy, how to enable, and how to use logs for debugging.
+
 ---
 
 ## Root and nested context
