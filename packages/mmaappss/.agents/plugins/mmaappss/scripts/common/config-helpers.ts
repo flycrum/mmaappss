@@ -13,6 +13,10 @@ import { parseBool } from './parse-bool.js';
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
  */
 export interface MmaappssConfig {
+  /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
+  excludeDirectories?: string[];
+  /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
+  loggingEnabled?: boolean;
   /** Enable all marketplaces ('all') or per-agent flags. Env (MMAAPPSS_MARKETPLACE_*) overrides. */
   marketplacesEnabled?:
     | 'all'
@@ -21,10 +25,8 @@ export interface MmaappssConfig {
         cursor: boolean;
         codex: boolean;
       };
-  /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
-  excludeDirectories?: string[];
-  /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
-  loggingEnabled?: boolean;
+  /** When true, post-merge git hook (if installed) runs marketplace sync after pull/merge. Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides. */
+  postMergeSyncEnabled?: boolean;
 }
 
 /**
@@ -41,6 +43,16 @@ export const configHelpers = {
       const defaultVal = tsConfig?.loggingEnabled ?? false;
       return parseBool(envVal, defaultVal);
     },
+
+    /**
+     * Resolve whether post-merge sync is enabled (for git hook). Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides TS config.
+     */
+    getPostMergeSyncEnabled(root: string, tsConfig: MmaappssConfig | null): boolean {
+      const envVal = process.env[configHelpers.env.VARS.ENV_POST_MERGE_SYNC];
+      const defaultVal = tsConfig?.postMergeSyncEnabled ?? false;
+      return parseBool(envVal, defaultVal);
+    },
+
     /**
      * Resolve marketplace enable flags for a given agent.
      * Env overrides TS config; MMAAPPSS_MARKETPLACE_ALL acts as master switch.
@@ -76,6 +88,7 @@ export const configHelpers = {
       return allEnabled && perEnabled;
     },
   },
+
   /** Env var loading and constant names. */
   env: {
     /** Env var names for marketplace enable/disable and logging. */
@@ -90,6 +103,8 @@ export const configHelpers = {
       ENV_CODEX: 'MMAAPPSS_MARKETPLACE_CODEX',
       /** File logging: MMAAPPSS_LOGGING_ENABLED */
       ENV_LOGGING: 'MMAAPPSS_LOGGING_ENABLED',
+      /** Post-merge sync (git hook): MMAAPPSS_POST_MERGE_SYNC_ENABLED */
+      ENV_POST_MERGE_SYNC: 'MMAAPPSS_POST_MERGE_SYNC_ENABLED',
     } as const,
     /**
      * Load env from repo root (.env then .envrc.local).
@@ -102,6 +117,7 @@ export const configHelpers = {
       loadDotenv({ path: path.join(root, '.envrc.local'), override: true });
     },
   },
+
   /** TypeScript config file loading. */
   ts: {
     /**

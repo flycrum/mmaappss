@@ -12,12 +12,13 @@
 
 ## purpose
 
+- to be obselete as soon as the industry adopts some common-sense standards 😆
+- ...but in the meantime try to align to and leverage available APIs
+  - and as of the moment I'm typing this, that's marketplaces and plugins!
 - unify the fragmented state of sharing rules, commands, skills, agents, etc
 - define once, empower developers on teams to use with their preferred coding agent(s)
 - prioritze minimal configurations to get start, but powerful options for when you need them
 - keep it simple dumb-ass (kisda) & don't reinvent the wheel
-- provide a way to group releated rules, commands, skills, agents, etc. together
-- leverage available APIs and -- as of the moment I'm typing this -- that's marketplaces and plugins!
 
 ## repo structure
 

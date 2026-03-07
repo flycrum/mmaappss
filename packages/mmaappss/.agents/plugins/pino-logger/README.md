@@ -4,6 +4,12 @@ Documentation and agent guidance for **Pino-based file logging** in mmaappss. Th
 
 ---
 
+## Package goal: script entrypoints for consumers
+
+As an npm package, **mmaappss** aims to give consuming projects a clear way to **point to and run** its scripts (e.g. marketplace sync, clear, post-merge) from **their own automation**—git hooks, CI, or other tooling. Consumers keep full control: they choose which hooks to install and when to call our scripts. The package exposes named npm scripts (e.g. `mmaappss:marketplaces:all:sync`, `mmaappss:post-merge`) and, when installed, the script paths under the package so that projects can wire `post-merge`, `post-checkout`, or custom hooks to run these commands with no lock-in.
+
+---
+
 ## Purpose
 
 - **Strategy** — When and what we log, and how to keep volume useful without noise.

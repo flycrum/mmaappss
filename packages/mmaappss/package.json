@@ -27,6 +27,7 @@
     "mmaappss:marketplaces:cursor:clear:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-clear-integration-test.ts cursor",
     "mmaappss:marketplaces:cursor:sync": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-cursor-sync.ts",
     "mmaappss:marketplaces:cursor:sync:test": "tsx .agents/plugins/mmaappss/scripts/mmaappss-marketplaces-sync-integration-test.ts cursor",
+    "mmaappss:post-merge": "tsx .agents/plugins/mmaappss/scripts/mmaappss-post-merge.ts",
     "test": "vitest run",
     "type-check": "tsc --noEmit"
   },

@@ -143,6 +143,10 @@ Committed defaults: `.env`. Overrides: `.envrc.local` (gitignored). Process env 
 
 - **`loggingEnabled`** (TS config) / **`MMAAPPSS_LOGGING_ENABLED`** (env) — When true, structured logs (Pino) are written to `.mmaappss/logs/mmaappss.log` at repo root. Off by default. See the **pino-logger** plugin (`.agents/plugins/pino-logger/`) for strategy, how to enable, and how to use logs for debugging.
 
+### Post-merge sync (git hook)
+
+- **`postMergeSyncEnabled`** (TS config) / **`MMAAPPSS_POST_MERGE_SYNC_ENABLED`** (env) — When true, the **post-merge** script runs marketplace sync (all agents) when invoked, e.g. from `.githooks/post-merge` after `git pull` or merge. Off by default. Use a git hook that calls the script (e.g. `pnpm --filter @mmaappss/mmaappss run mmaappss:post-merge` from monorepo root, or from a consumer repo run the package’s `mmaappss:post-merge` script). Enable hooks with `git config core.hooksPath .githooks` (repo-local) or symlink `.githooks/post-merge` into `.git/hooks/post-merge`.
+
 ---
 
 ## Root and nested context
