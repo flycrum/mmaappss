@@ -165,7 +165,8 @@ export abstract class AgentAdapterBase {
   /** Hook: sync plugin content into agent-specific dirs (e.g. .cursor/*). Override for Cursor. */
   protected syncContent(
     _repoRoot: string,
-    _marketplaces: DiscoveredMarketplace[]
+    _marketplaces: DiscoveredMarketplace[],
+    _tsConfig?: MmaappssConfig | null
   ): Result<void, Error> {
     return ok(undefined);
   }
@@ -286,7 +287,9 @@ export abstract class AgentAdapterBase {
           : ok(undefined)
       )
       .andThen(() =>
-        this.config.usesContentSync ? this.syncContent(repoRoot, marketplaces) : ok(undefined)
+        this.config.usesContentSync
+          ? this.syncContent(repoRoot, marketplaces, tsConfig)
+          : ok(undefined)
       )
       .andThen(() => this.afterSync(repoRoot, marketplaces))
       .map(() => ({ agent: this.config.agent, success: true }));

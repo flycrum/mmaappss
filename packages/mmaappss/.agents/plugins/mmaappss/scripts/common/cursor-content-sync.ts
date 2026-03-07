@@ -6,6 +6,7 @@
 
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
+import type { MmaappssConfig } from './config-helpers.js';
 import { syncFs } from './sync-fs.js';
 import type { DiscoveredMarketplace } from './types.js';
 
@@ -42,6 +43,20 @@ function normalizeCursorContentSyncManifest(parsed: unknown): CursorContentSyncM
   };
 }
 
+/** True if repo-relative destPath should be skipped (exact or under an excludeFiles entry). */
+function isDestPathExcluded(destPathRel: string, excludeFiles: string[] | undefined): boolean {
+  if (!excludeFiles?.length) return false;
+  const normalized = destPathRel.replace(/\\/g, '/');
+  for (const e of excludeFiles) {
+    const entry = e.replace(/\\/g, '/');
+    if (normalized === entry) return true;
+    if (entry.endsWith('/') && normalized.startsWith(entry)) return true;
+    if (!entry.endsWith('/') && (normalized === entry || normalized.startsWith(entry + '/')))
+      return true;
+  }
+  return false;
+}
+
 /**
  * Strip optional YAML frontmatter from markdown content and return body only.
  * If no frontmatter (no leading ---), returns content as-is.
@@ -60,15 +75,18 @@ function stripFrontmatter(content: string): string {
  * Sync all Cursor plugin content (rules as .mdc with frontmatter, commands/skills/agents as symlinks)
  * into .cursor/rules, .cursor/commands, .cursor/skills, .cursor/agents.
  * Writes manifest at manifestPath for teardown.
+ * Respects config.excludeFiles (repo-relative destination paths to skip).
  */
 export function syncCursorContent(
   repoRoot: string,
   marketplaces: DiscoveredMarketplace[],
-  manifestPath: string
+  manifestPath: string,
+  config?: Pick<MmaappssConfig, 'excludeFiles'> | null
 ): Result<CursorContentSyncManifest, Error> {
   const clearResult = clearCursorContent(repoRoot, manifestPath);
   if (clearResult.isErr()) return err(clearResult.error);
 
+  const excludeFiles = config?.excludeFiles;
   const created: CursorContentSyncManifest = {
     rules: [],
     commands: [],
@@ -91,15 +109,16 @@ export function syncCursorContent(
         const rulesDir = path.join(plugin.path, RULES_SUBDIR);
         const ruleFiles = syncFs.listFiles(rulesDir, RULE_EXT);
         if (ruleFiles.length > 0) {
-          const pluginRulesDir = path.join(rulesTarget, plugin.name);
-          syncFs.ensureDir(pluginRulesDir);
+          syncFs.ensureDir(path.join(rulesTarget, plugin.name));
           for (const file of ruleFiles) {
             const srcPath = path.join(rulesDir, file);
             const base = path.basename(file, path.extname(file));
-            const destPath = path.join(pluginRulesDir, `${base}.mdc`);
+            const destPath = path.join(rulesTarget, plugin.name, `${base}.mdc`);
+            const rel = path.relative(repoRoot, destPath);
+            if (isDestPathExcluded(rel, excludeFiles)) continue;
             const body = stripFrontmatter(syncFs.readFileUtf8(srcPath));
             syncFs.writeFileUtf8(destPath, CURSOR_RULES_FRONTMATTER + body);
-            created.rules.push(path.relative(repoRoot, destPath));
+            created.rules.push(rel);
           }
         }
 
@@ -112,8 +131,10 @@ export function syncCursorContent(
           for (const file of commandFiles) {
             const srcPath = path.join(commandsDir, file);
             const linkPath = path.join(pluginCommandsDir, file);
+            const rel = path.relative(repoRoot, linkPath);
+            if (isDestPathExcluded(rel, excludeFiles)) continue;
             syncFs.symlinkRelative(srcPath, linkPath);
-            created.commands.push(path.relative(repoRoot, linkPath));
+            created.commands.push(rel);
           }
         }
 
@@ -128,8 +149,10 @@ export function syncCursorContent(
           for (const name of skillDirs) {
             const skillDirPath = path.join(skillsDir, name);
             const linkPath = path.join(pluginSkillsDir, name);
+            const rel = path.relative(repoRoot, linkPath);
+            if (isDestPathExcluded(rel, excludeFiles)) continue;
             syncFs.symlinkRelative(skillDirPath, linkPath);
-            created.skills.push(path.relative(repoRoot, linkPath));
+            created.skills.push(rel);
           }
         }
 
@@ -142,8 +165,10 @@ export function syncCursorContent(
           for (const file of agentFiles) {
             const srcPath = path.join(agentsDir, file);
             const linkPath = path.join(pluginAgentsDir, file);
+            const rel = path.relative(repoRoot, linkPath);
+            if (isDestPathExcluded(rel, excludeFiles)) continue;
             syncFs.symlinkRelative(srcPath, linkPath);
-            created.agents.push(path.relative(repoRoot, linkPath));
+            created.agents.push(rel);
           }
         }
       }

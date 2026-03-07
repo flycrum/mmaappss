@@ -20,6 +20,11 @@ export interface MmaappssConfig {
    * Excluded plugins are omitted from sync; previously synced content for them is removed on next sync.
    */
   excludeDirectories?: string[];
+  /**
+   * Repo-relative destination paths to not create during Cursor content sync (e.g. '.cursor/commands/git/git-pr-fillout-template.md').
+   * Exact match or path under an entry (with trailing slash) is skipped.
+   */
+  excludeFiles?: string[];
   /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
   loggingEnabled?: boolean;
   /**

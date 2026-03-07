@@ -34,6 +34,8 @@ const PATHS = {
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
 export interface IntegrationTestStep {
+  /** After sync with configOverride, assert this repo-relative path does not exist (e.g. excludeFiles). */
+  assertExcludedFile?: string;
   /** After sync with configOverride, assert this plugin's synced content is removed (e.g. .cursor/commands/<plugin>). */
   assertExcludedPlugin?: string;
   /** Optional config override (backup mmaappss.config.ts, write override, run, restore). */
@@ -73,7 +75,17 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
     configOverride: { excludeDirectories: ['git'] },
     assertExcludedPlugin: 'git',
   },
-  { mode: 'enabled', label: 'restore full set (no excludeDirectories)' },
+  {
+    mode: 'enabled',
+    label: 'exclude single file (excludeFiles): sync then assert file absent',
+    configOverride: { excludeFiles: ['.cursor/commands/git/git-pr-fillout-template.md'] },
+    assertExcludedFile: '.cursor/commands/git/git-pr-fillout-template.md',
+  },
+  {
+    mode: 'enabled',
+    label: 'restore full set (no excludeDirectories/excludeFiles)',
+    configOverride: { excludeDirectories: [], excludeFiles: [] },
+  },
 ];
 
 /**
@@ -106,6 +118,11 @@ export abstract class IntegrationTestAdapterBase {
 
   abstract assertEnabled(root: string): string[];
   abstract assertDisabled(root: string): string[];
+
+  /** Override to assert that a repo-relative path does not exist (e.g. after excludeFiles). Default: no-op. */
+  assertExcludedFileRemoved(_root: string, _relPath: string): string[] {
+    return [];
+  }
 
   /** Override to assert that a plugin's synced content was removed (e.g. after excludeDirectories). Default: no-op. */
   assertExcludedPluginRemoved(_root: string, _pluginName: string): string[] {
@@ -180,6 +197,19 @@ export abstract class IntegrationTestAdapterBase {
           const result = await runSync([this.agent]);
           passed = result.isOk();
           if (!passed) console.error('runSync failed:', result.isErr() ? result.error.message : '');
+        } else if (step.assertExcludedFile) {
+          this.setEnv(step.mode);
+          const result = await runSync([this.agent]);
+          passed = result.isOk();
+          if (passed) {
+            const errors = this.assertExcludedFileRemoved(root, step.assertExcludedFile);
+            if (errors.length > 0) {
+              console.error('assertExcludedFileRemoved failed:', errors);
+              passed = false;
+            }
+          } else {
+            console.error('runSync failed:', result.isErr() ? result.error.message : '');
+          }
         } else if (step.assertExcludedPlugin) {
           this.setEnv(step.mode);
           const result = await runSync([this.agent]);
@@ -298,6 +328,14 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
     },
     { from: withRoot(PATHS.CURSOR_DIR), to: withRoot(PATHS.CURSOR_DIR + BACKUP_SUFFIX) },
   ];
+
+  assertExcludedFileRemoved(root: string, relPath: string): string[] {
+    const full = path.join(root, relPath);
+    if (fs.existsSync(full)) {
+      return [`${relPath} should not exist when excluded via excludeFiles`];
+    }
+    return [];
+  }
 
   assertExcludedPluginRemoved(root: string, pluginName: string): string[] {
     const errors: string[] = [];

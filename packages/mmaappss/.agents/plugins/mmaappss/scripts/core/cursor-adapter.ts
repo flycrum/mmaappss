@@ -5,6 +5,7 @@
 
 import path from 'node:path';
 import { clearCursorContent, syncCursorContent } from '../common/cursor-content-sync.js';
+import type { MmaappssConfig } from '../common/config-helpers.js';
 import type { DiscoveredMarketplace } from '../common/types.js';
 import type { AdapterAgentConfig } from './agent-adapter-base.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
@@ -24,10 +25,11 @@ export const cursorAdapter = new (class CursorAdapter extends AgentAdapterBase {
 
   protected override syncContent(
     repoRoot: string,
-    marketplaces: DiscoveredMarketplace[]
+    marketplaces: DiscoveredMarketplace[],
+    tsConfig?: MmaappssConfig | null
   ): ReturnType<AgentAdapterBase['syncContent']> {
     const manifestPath = path.join(repoRoot, this.config.contentSyncManifest!);
-    return syncCursorContent(repoRoot, marketplaces, manifestPath).map(() => undefined);
+    return syncCursorContent(repoRoot, marketplaces, manifestPath, tsConfig).map(() => undefined);
   }
 
   protected override teardownContent(

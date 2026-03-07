@@ -10,7 +10,10 @@ const mmaappssConfig: MmaappssConfig = {
     cursor: true,
     codex: true,
   },
-  excludeDirectories: ['.agents/plugins/git'],
+  excludeDirectories: [],
+  excludeFiles: ['.cursor/commands/git/git-pr-fillout-template.md'],
+  // loggingEnabled: true,
+  // postMergeSyncEnabled: true,
 };
 
 export default mmaappssConfig;
