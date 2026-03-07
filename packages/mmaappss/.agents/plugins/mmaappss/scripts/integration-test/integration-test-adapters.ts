@@ -17,27 +17,31 @@ const BACKUP_SUFFIX = '-testing-123';
 
 /** Path constants for integration test backup dirs and assertions (relative to repo root). */
 const PATHS = {
-  CLAUDE_PLUGIN_DIR: '.claude-plugin',
   CLAUDE_DIR: '.claude',
-  CURSOR_PLUGIN_DIR: '.cursor-plugin',
-  CURSOR_DIR: '.cursor',
-  CODEX_AGENTS_FILE: 'AGENTS.override.md',
-  CONFIG_FILE: 'mmaappss.config.ts',
-  CONFIG_BACKUP_FILE: 'mmaappss.config.ts.testing-backup',
-  MARKETPLACE_JSON: 'marketplace.json',
-  SETTINGS_JSON: 'settings.json',
+  CLAUDE_PLUGIN_DIR: '.claude-plugin',
   CLAUDE_SYNC_MANIFEST: '.mmaappss-claude-sync.json',
+  CODEX_AGENTS_FILE: 'AGENTS.override.md',
+  CONFIG_BACKUP_FILE: 'mmaappss.config.ts.testing-backup',
+  CONFIG_FILE: 'mmaappss.config.ts',
+  CURSOR_DIR: '.cursor',
+  CURSOR_PLUGIN_DIR: '.cursor-plugin',
   CURSOR_SYNC_MANIFEST: '.cursor/.mmaappss-cursor-sync.json',
+  MARKETPLACE_JSON: 'marketplace.json',
   MMAAPPSS_PLUGINS_NAME: 'mmaappss-plugins',
+  SETTINGS_JSON: 'settings.json',
 } as const;
 
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
 export interface IntegrationTestStep {
-  mode: IntegrationTestMode;
-  label: string;
+  /** After sync with configOverride, assert this plugin's synced content is removed (e.g. .cursor/commands/<plugin>). */
+  assertExcludedPlugin?: string;
   /** Optional config override (backup mmaappss.config.ts, write override, run, restore). */
   configOverride?: Record<string, unknown>;
+  /** Human-readable step name for logs. */
+  label: string;
+  /** Whether sync is enabled or disabled for this step. */
+  mode: IntegrationTestMode;
   /** When true, only assert runSync succeeded (skip strict filesystem asserts; used for excludeDirectories etc). */
   relaxAssertions?: boolean;
 }
@@ -56,6 +60,18 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
     label: 'enabled with excludeDirectories: [packages]',
     configOverride: { excludeDirectories: ['packages'] },
     relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'exclude plugin (path): sync then assert plugin content removed',
+    configOverride: { excludeDirectories: ['.agents/plugins/git'] },
+    assertExcludedPlugin: 'git',
+  },
+  {
+    mode: 'enabled',
+    label: 'exclude plugin (segment): sync with [git] then assert removed',
+    configOverride: { excludeDirectories: ['git'] },
+    assertExcludedPlugin: 'git',
   },
   { mode: 'enabled', label: 'restore full set (no excludeDirectories)' },
 ];
@@ -90,6 +106,11 @@ export abstract class IntegrationTestAdapterBase {
 
   abstract assertEnabled(root: string): string[];
   abstract assertDisabled(root: string): string[];
+
+  /** Override to assert that a plugin's synced content was removed (e.g. after excludeDirectories). Default: no-op. */
+  assertExcludedPluginRemoved(_root: string, _pluginName: string): string[] {
+    return [];
+  }
 
   protected setEnv(mode: IntegrationTestMode): void {
     const VARS = configHelpers.env.VARS;
@@ -159,6 +180,19 @@ export abstract class IntegrationTestAdapterBase {
           const result = await runSync([this.agent]);
           passed = result.isOk();
           if (!passed) console.error('runSync failed:', result.isErr() ? result.error.message : '');
+        } else if (step.assertExcludedPlugin) {
+          this.setEnv(step.mode);
+          const result = await runSync([this.agent]);
+          passed = result.isOk();
+          if (passed) {
+            const errors = this.assertExcludedPluginRemoved(root, step.assertExcludedPlugin);
+            if (errors.length > 0) {
+              console.error('assertExcludedPluginRemoved failed:', errors);
+              passed = false;
+            }
+          } else {
+            console.error('runSync failed:', result.isErr() ? result.error.message : '');
+          }
         } else {
           passed = await this.runSingleCondition(root, step.mode);
         }
@@ -252,6 +286,8 @@ export class ClaudeIntegrationAdapter extends IntegrationTestAdapterBase {
   }
 }
 
+const CURSOR_CONTENT_SUBDIRS = ['rules', 'commands', 'skills', 'agents'] as const;
+
 export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
   readonly agent = 'cursor' as const;
   readonly envVar = configHelpers.env.VARS.ENV_CURSOR;
@@ -262,6 +298,20 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
     },
     { from: withRoot(PATHS.CURSOR_DIR), to: withRoot(PATHS.CURSOR_DIR + BACKUP_SUFFIX) },
   ];
+
+  assertExcludedPluginRemoved(root: string, pluginName: string): string[] {
+    const errors: string[] = [];
+    const cursorDir = path.join(root, PATHS.CURSOR_DIR);
+    for (const sub of CURSOR_CONTENT_SUBDIRS) {
+      const pluginSubPath = path.join(cursorDir, sub, pluginName);
+      if (fs.existsSync(pluginSubPath)) {
+        errors.push(
+          `.cursor/${sub}/${pluginName} should not exist when plugin is excluded (excludeDirectories)`
+        );
+      }
+    }
+    return errors;
+  }
 
   assertEnabled(root: string): string[] {
     const errors: string[] = [];

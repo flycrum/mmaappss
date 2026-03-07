@@ -6,11 +6,11 @@ import type { MmaappssConfig } from './packages/mmaappss/.agents/plugins/mmaapps
 
 const mmaappssConfig: MmaappssConfig = {
   marketplacesEnabled: {
-    claude: false,
+    claude: true,
     cursor: true,
-    codex: false,
+    codex: true,
   },
-  excludeDirectories: [],
+  excludeDirectories: ['.agents/plugins/git'],
 };
 
 export default mmaappssConfig;

@@ -13,7 +13,12 @@ import { parseBool } from './parse-bool.js';
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
  */
 export interface MmaappssConfig {
-  /** Paths or globs to exclude from scanning .agents/plugins (future: plugin names, file paths). */
+  /**
+   * Directories or plugin paths to exclude from discovery.
+   * Segment names (e.g. 'packages', 'git') exclude that directory name during tree walk and exclude plugins with that name.
+   * Paths (e.g. '.agents/plugins/git') exclude plugins whose relative path equals or is under that path.
+   * Excluded plugins are omitted from sync; previously synced content for them is removed on next sync.
+   */
   excludeDirectories?: string[];
   /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
   loggingEnabled?: boolean;

@@ -22,6 +22,27 @@ function isExcludedSet(dirName: string, excludeSet: Set<string>): boolean {
   return excludeSet.has(dirName);
 }
 
+/**
+ * Returns true if this plugin should be excluded by config.
+ * Supports segment names (e.g. 'git', 'packages') and paths (e.g. '.agents/plugins/git').
+ * Paths are normalized to forward slashes for comparison.
+ */
+function isPluginExcluded(
+  pluginRelativePath: string,
+  pluginName: string,
+  excludeDirectories: string[] | undefined
+): boolean {
+  if (!excludeDirectories?.length) return false;
+  const normalizedPath = pluginRelativePath.replace(/\\/g, '/');
+  for (const e of excludeDirectories) {
+    const normalized = e.replace(/\\/g, '/');
+    if (pluginName === normalized) return true;
+    if (normalizedPath === normalized) return true;
+    if (normalizedPath.startsWith(normalized + '/')) return true;
+  }
+  return false;
+}
+
 function loadManifest(
   manifestPath: string
 ): { name?: string; description?: string; version?: string } | null {
@@ -134,11 +155,16 @@ export function discoverMarketplaces(
     'discovery: scanning plugins dirs'
   );
 
+  const excludeDirs = config?.excludeDirectories ?? [];
+
   for (const pluginsDir of pluginsDirs) {
     const relativePath = path.relative(repoRoot, pluginsDir).replace(/\\/g, '/');
     const label =
       relativePath === PLUGINS_SUBDIR ? 'Root marketplace' : `${relativePath} marketplace`;
-    const plugins = discoverPluginsInDir(pluginsDir, repoRoot, relativePath);
+    const allPlugins = discoverPluginsInDir(pluginsDir, repoRoot, relativePath);
+    const plugins = excludeDirs.length
+      ? allPlugins.filter((p) => !isPluginExcluded(p.relativePath, p.name, excludeDirs))
+      : allPlugins;
     marketplaces.push({ pluginsDir, relativePath, label, plugins });
   }
 
