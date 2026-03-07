@@ -1,4 +1,4 @@
-# mmaappss-pino plugin
+# pino-logger plugin
 
 Documentation and agent guidance for **Pino-based file logging** in mmaappss. This plugin does not implement logging itself (that lives in the mmaappss driver); it describes the strategy, how to enable it, where logs go, and how to use them when debugging.
 
@@ -11,7 +11,7 @@ Documentation and agent guidance for **Pino-based file logging** in mmaappss. Th
 - **Where logs go** — Single file location, format, and how to inspect.
 - **Debugging** — How to interpret log levels and events when something goes wrong.
 
-Use this plugin’s rules and skills so agents (and humans) can consistently enable and use mmaappss file logging.
+Use this plugin's rules and skills so agents (and humans) can consistently enable and use mmaappss file logging.
 
 ---
 
@@ -118,8 +118,8 @@ For integration or local debugging, enable logging only when needed to avoid clu
 
 ## Plugin layout
 
-- **rules/** — Agent-agnostic `.md` only (no `.mdc`). Pino logging guidance for mmaappss scripts; see [mmaappss rules purpose](../mmaappss/rules/rules-purpose-and-guidelines.md).
-- **skills/** — Skill(s) for “debug mmaappss with file logging”: when to use, how to enable, how to read logs.
-- **commands/** — Optional command docs (e.g. “Tail mmaappss log”) for discoverability.
+- **rules/** — Agent-agnostic `.md` only; prefix with plugin name. `pino-logger-logging.md` for mmaappss scripts; see [mmaappss rules purpose](../mmaappss/rules/mmaappss-rules-purpose-and-guidelines.md).
+- **skills/** — Skill(s) for "debug mmaappss with file logging": when to use, how to enable, how to read logs.
+- **commands/** — Optional command docs (e.g. "Tail mmaappss log") for discoverability.
 
 This plugin follows the same agent-agnostic layout as the mmaappss driver plugin (see [mmaappss plugin README](../mmaappss/README.md)).

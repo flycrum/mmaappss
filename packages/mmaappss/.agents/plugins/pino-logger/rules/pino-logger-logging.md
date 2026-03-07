@@ -7,4 +7,4 @@ When editing or adding code under `packages/mmaappss/.agents/plugins/mmaappss/sc
 - No PII or secrets — do not log tokens, passwords, or full absolute user paths when a relative path or label is enough. Prefer `path.relative(repoRoot, filePath)` or a label when logging paths.
 - Context once — `setLoggerContext(repoRoot, tsConfig)` must be called once at process start (e.g. in sync-runner) before any `getLogger()` use. Entry scripts already do this; new entry points should too.
 
-See [mmaappss-pino plugin README](../README.md) for logging strategy and how to enable.
+See [pino-logger plugin README](../README.md) for logging strategy and how to enable.

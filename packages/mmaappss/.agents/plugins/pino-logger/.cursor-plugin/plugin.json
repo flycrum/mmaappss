@@ -1,6 +1,7 @@
 {
-  "name": "mmaappss-pino",
+  "name": "pino-logger",
   "version": "0.1.0",
   "description": "Pino logging strategy, rules, and skills for debugging mmaappss sync and tooling.",
-  "author": { "name": "mmaappss" }
+  "author": { "name": "mmaappss" },
+  "keywords": ["mmaappss", "pino", "logging", "debugging"]
 }

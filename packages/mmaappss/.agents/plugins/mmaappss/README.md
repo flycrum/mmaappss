@@ -61,7 +61,7 @@ Canonical structure for an agent-agnostic plugin under `.agents/plugins/<plugin-
 ├── commands/                # Shared: .md files (both platforms discover)
 ├── hooks/
 │   └── hooks.json           # Shared (event names may differ per platform)
-├── rules/                   # .md only (agent-agnostic); symlinked to .claude/rules, .cursor/rules. See rules/rules-purpose-and-guidelines.md
+├── rules/                   # .md only (agent-agnostic); symlinked to .claude/rules, .cursor/rules. See rules/mmaappss-rules-purpose-and-guidelines.md
 ├── .mcp.json                # Shared
 ├── .lsp.json                # Claude-only (Cursor ignores)
 ├── settings.json            # Claude-only (e.g. default agent)
@@ -141,7 +141,7 @@ Committed defaults: `.env`. Overrides: `.envrc.local` (gitignored). Process env 
 
 ### Logging
 
-- **`loggingEnabled`** (TS config) / **`MMAAPPSS_LOGGING_ENABLED`** (env) — When true, structured logs (Pino) are written to `.mmaappss/logs/mmaappss.log` at repo root. Off by default. See the **mmaappss-pino** plugin (`.agents/plugins/mmaappss-pino/`) for strategy, how to enable, and how to use logs for debugging.
+- **`loggingEnabled`** (TS config) / **`MMAAPPSS_LOGGING_ENABLED`** (env) — When true, structured logs (Pino) are written to `.mmaappss/logs/mmaappss.log` at repo root. Off by default. See the **pino-logger** plugin (`.agents/plugins/pino-logger/`) for strategy, how to enable, and how to use logs for debugging.
 
 ---
 

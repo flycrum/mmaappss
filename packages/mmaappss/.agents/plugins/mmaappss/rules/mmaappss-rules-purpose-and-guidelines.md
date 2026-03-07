@@ -6,6 +6,7 @@
 
 **Guidelines (for AI agents):**
 - Keep text condensed, succinct, no trailing punctuation; sacrifice grammar for concision
+- Keep things DRY — one canonical source per concern; link from README/AGENTS.md/other rules instead of restating
 - One concern per file; split large rules
 - Reference code or docs; do not paste long snippets
 - Bullet fragments over prose; no trailing punctuation on bullets
@@ -13,4 +14,4 @@
 - Commands = step lists; put context in rules
 - Skills = purpose + when to use; no essays
 
-Base new plugins on the mmaappss plugin layout and this convention. See [mmaappss plugin README](../README.md).
+Base new plugins on the mmaappss plugin layout and this convention. See [mmaappss plugin README](../README.md). See also [mmaappss-file-naming.md](./mmaappss-file-naming.md).

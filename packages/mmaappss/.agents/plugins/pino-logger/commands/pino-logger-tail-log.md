@@ -6,7 +6,7 @@
 
 **Steps:**
 
-1. Ensure logging is enabled (see [mmaappss-pino README](../README.md) or the skill "Debug mmaappss with file logging").
+1. Ensure logging is enabled (see [pino-logger README](../README.md) or the skill "Debug mmaappss with file logging").
 2. From repo root:
    - **Live tail:** `tail -f .mmaappss/logs/mmaappss.log`
    - **Last N lines:** `tail -n 50 .mmaappss/logs/mmaappss.log`
