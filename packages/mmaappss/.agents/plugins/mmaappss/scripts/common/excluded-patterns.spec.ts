@@ -27,6 +27,9 @@ describe('isExcluded', () => {
     expect(isExcluded('.cursor\\commands\\git\\file.md', ['.cursor/commands/git/file.md'])).toBe(
       true
     );
+    expect(isExcluded('.cursor/commands/git/file.md', ['.cursor\\commands\\git\\file.md'])).toBe(
+      true
+    );
   });
 
   it('matches glob patterns', () => {

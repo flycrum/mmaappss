@@ -14,13 +14,13 @@
  */
 
 import { pathHelpers } from './common/path-helpers.js';
-import { Agent } from './common/types.js';
+import type { Agent } from './common/types.js';
 import {
   INTEGRATION_ADAPTERS,
   type IntegrationTestMode,
 } from './integration-test/integration-test-adapters.js';
 
-const AGENTS: Agent[] = ['claude', 'cursor', 'codex'];
+const AGENTS = Object.keys(INTEGRATION_ADAPTERS) as Agent[];
 const MODES: IntegrationTestMode[] = ['enabled', 'disabled'];
 
 async function main(): Promise<void> {
@@ -52,12 +52,6 @@ async function main(): Promise<void> {
   }
 
   const adapter = INTEGRATION_ADAPTERS[agentArg as Agent];
-  if (!adapter) {
-    console.error(
-      `No integration adapter for agent "${agentArg}"; INTEGRATION_ADAPTERS has no entry for this agent (missing or misconfigured).`
-    );
-    process.exit(1);
-  }
 
   if (modeArg) {
     if (!MODES.includes(modeArg as IntegrationTestMode)) {
@@ -73,6 +67,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  console.error(err instanceof Error ? err.message : err);
+  console.error(err instanceof Error ? (err.stack ?? err) : err);
   process.exit(1);
 });

@@ -20,7 +20,12 @@ const AGENT_ADAPTERS_ALL: Record<Agent, AgentAdapterBase> = {
 };
 
 function flushLogger(): Promise<void> {
-  return new Promise<void>((resolve) => getLogger().flush(() => resolve()));
+  return new Promise<void>((resolve, reject) => {
+    getLogger().flush((err?: Error) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
 }
 
 /**

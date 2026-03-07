@@ -30,7 +30,7 @@
      - `checkout: moving from X to CURRENT_BRANCH`
    - Normalize names:
      - Remove `refs/heads/`
-     - Convert `origin/flycrum/X` -> `flycrum/X`
+     - Convert `origin/team/X` -> `team/X` (e.g. strip remote prefix)
    - Validate each candidate:
      - Exists: `git branch -a | grep "CANDIDATE"`
      - Reachability: `git merge-base HEAD CANDIDATE` succeeds
@@ -65,7 +65,7 @@
 4. **Analyze for PR narrative**
    - Identify primary problem solved and approach used
    - Group changes by theme/component
-   - Note config/flags/toggles/trebuchets if present
+   - Note config/flags/toggles/feature flags if present (e.g. trebuchets as internal jargon)
    - Extract testing actions from changed areas
    - Detect deploy-impacting changes (env, migrations, infra, breaking behavior)
 

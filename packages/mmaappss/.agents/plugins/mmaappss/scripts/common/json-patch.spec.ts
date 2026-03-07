@@ -41,6 +41,38 @@ describe('json-patch', () => {
 
       expect(result.isErr()).toBe(true);
     });
+
+    it('returns ok when validator passes', () => {
+      const filePath = path.join(tmpDir, 'data.json');
+      fs.writeFileSync(filePath, '{"name":"x","count":2}');
+      const validator = (data: unknown): data is { name: string; count: number } =>
+        typeof data === 'object' &&
+        data !== null &&
+        'name' in data &&
+        typeof (data as { name: unknown }).name === 'string' &&
+        'count' in data &&
+        typeof (data as { count: unknown }).count === 'number';
+
+      const result = jsonPatch.readJson<{ name: string; count: number }>(filePath, validator);
+
+      expect(result.isOk()).toBe(true);
+      expect(result._unsafeUnwrap()).toEqual({ name: 'x', count: 2 });
+    });
+
+    it('returns err when validator fails', () => {
+      const filePath = path.join(tmpDir, 'data.json');
+      fs.writeFileSync(filePath, '{"name":"x"}');
+      const validator = (data: unknown): data is { name: string; count: number } =>
+        typeof data === 'object' &&
+        data !== null &&
+        'count' in data &&
+        typeof (data as { count: unknown }).count === 'number';
+
+      const result = jsonPatch.readJson<{ name: string; count: number }>(filePath, validator);
+
+      expect(result.isErr()).toBe(true);
+      expect(result._unsafeUnwrapErr().message).toContain('validation failed');
+    });
   });
 
   describe('writeJson', () => {

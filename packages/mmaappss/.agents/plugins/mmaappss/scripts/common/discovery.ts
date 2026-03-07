@@ -29,9 +29,9 @@ function loadManifest(
     if ('description' in parsed && typeof parsed.description !== 'string') return null;
     if ('version' in parsed && typeof parsed.version !== 'string') return null;
     return {
-      name: typeof parsed.name === 'string' ? parsed.name : undefined,
-      description: typeof parsed.description === 'string' ? parsed.description : undefined,
-      version: typeof parsed.version === 'string' ? parsed.version : undefined,
+      name: 'name' in parsed ? parsed.name : undefined,
+      description: 'description' in parsed ? parsed.description : undefined,
+      version: 'version' in parsed ? parsed.version : undefined,
     };
   } catch {
     return null;
@@ -91,9 +91,9 @@ function findPluginsDirs(repoRoot: string, config: MmaappssConfig | null): strin
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const ent of entries) {
       if (!ent.isDirectory()) continue;
-      if (isExcluded(ent.name, walkPatterns)) continue;
-
       const fullPath = path.join(dir, ent.name);
+      const relativePath = path.relative(repoRoot, fullPath).replace(/\\/g, '/');
+      if (isExcluded(relativePath, walkPatterns) || isExcluded(ent.name, walkPatterns)) continue;
       const pluginsPath = path.join(fullPath, '.agents', 'plugins');
       if (fs.existsSync(pluginsPath) && fs.statSync(pluginsPath).isDirectory()) {
         found.push(pluginsPath);

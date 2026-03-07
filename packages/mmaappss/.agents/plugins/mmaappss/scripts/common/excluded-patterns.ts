@@ -18,7 +18,7 @@ export function isExcluded(value: string, patterns: string[] | undefined): boole
   if (!patterns?.length) return false;
   const normalized = normalize(value);
   for (const p of patterns) {
-    if (minimatch(normalized, normalize(p))) return true;
+    if (minimatch(normalized, normalize(p), { dot: true })) return true;
   }
   return false;
 }

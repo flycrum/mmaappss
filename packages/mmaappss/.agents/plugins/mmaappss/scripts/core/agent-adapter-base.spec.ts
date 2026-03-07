@@ -161,11 +161,9 @@ describe('AgentAdapterBase', () => {
 
   describe('Codex buildMarkdownSectionContent', () => {
     it('produces markdown list per marketplace (production codex adapter)', () => {
-      const buildContent = (
-        codexAdapter as unknown as {
-          buildMarkdownSectionContent(m: DiscoveredMarketplace[]): string;
-        }
-      ).buildMarkdownSectionContent;
+      const adapter = codexAdapter as unknown as {
+        buildMarkdownSectionContent(m: DiscoveredMarketplace[]): string;
+      };
       const p1 = mockPlugin({
         name: 'foo',
         manifestName: 'foo',
@@ -178,7 +176,7 @@ describe('AgentAdapterBase', () => {
       });
       const m1 = mockMarketplace([p1], '.agents/plugins');
       const m2 = mockMarketplace([p2], 'pkg/.agents/plugins');
-      const content = buildContent([m1, m2]);
+      const content = adapter.buildMarkdownSectionContent([m1, m2]);
       expect(content).toContain('### `.agents/plugins` marketplace');
       expect(content).toContain('- [foo](./.agents/plugins/foo)');
       expect(content).toContain('### `pkg/.agents/plugins` marketplace');

@@ -25,7 +25,7 @@ const PATHS = {
   CONFIG_FILE: 'mmaappss.config.ts',
   CURSOR_DIR: '.cursor',
   CURSOR_PLUGIN_DIR: '.cursor-plugin',
-  CURSOR_SYNC_MANIFEST: '.cursor/.mmaappss-cursor-sync.json',
+  CURSOR_SYNC_MANIFEST: '.mmaappss-cursor-sync.json',
   MARKETPLACE_JSON: 'marketplace.json',
   MMAAPPSS_PLUGINS_NAME: 'mmaappss-plugins',
   SETTINGS_JSON: 'settings.json',
@@ -129,6 +129,11 @@ export abstract class IntegrationTestAdapterBase {
   abstract readonly backupPaths: Array<{ from: string; to: string }>;
   readonly steps: IntegrationTestStep[] = DEFAULT_STEPS;
 
+  private _savedEnv: {
+    envAll: string | undefined;
+    envVar: string | undefined;
+  } | null = null;
+
   abstract assertEnabled(root: string): string[];
   abstract assertDisabled(root: string): string[];
 
@@ -144,23 +149,44 @@ export abstract class IntegrationTestAdapterBase {
 
   protected setEnv(mode: IntegrationTestMode): void {
     const VARS = configHelpers.env.VARS;
+    if (this._savedEnv === null) {
+      this._savedEnv = {
+        envAll: process.env[VARS.ENV_ALL],
+        envVar: process.env[this.envVar],
+      };
+    }
     process.env[VARS.ENV_ALL] = 'true';
     process.env[this.envVar] = mode === 'enabled' ? 'true' : 'false';
   }
 
+  /** Restore process.env[VARS.ENV_ALL] and process.env[this.envVar] to values before setEnv. Call after tests to avoid leaking state. */
+  restoreEnv(): void {
+    if (this._savedEnv === null) return;
+    const VARS = configHelpers.env.VARS;
+    if (this._savedEnv.envAll === undefined) delete process.env[VARS.ENV_ALL];
+    else process.env[VARS.ENV_ALL] = this._savedEnv.envAll;
+    if (this._savedEnv.envVar === undefined) delete process.env[this.envVar];
+    else process.env[this.envVar] = this._savedEnv.envVar;
+    this._savedEnv = null;
+  }
+
   async runSingleCondition(root: string, mode: IntegrationTestMode): Promise<boolean> {
-    this.setEnv(mode);
-    const result = await runSync([this.agent]);
-    if (!result.isOk()) {
-      console.error('runSync failed:', result.error.message);
-      return false;
+    try {
+      this.setEnv(mode);
+      const result = await runSync([this.agent]);
+      if (!result.isOk()) {
+        console.error('runSync failed:', result.error.message);
+        return false;
+      }
+      const errors = mode === 'enabled' ? this.assertEnabled(root) : this.assertDisabled(root);
+      if (errors.length > 0) {
+        console.error(`Assertions failed (${mode}):`, errors);
+        return false;
+      }
+      return true;
+    } finally {
+      this.restoreEnv();
     }
-    const errors = mode === 'enabled' ? this.assertEnabled(root) : this.assertDisabled(root);
-    if (errors.length > 0) {
-      console.error(`Assertions failed (${mode}):`, errors);
-      return false;
-    }
-    return true;
   }
 
   async runAllConditions(root: string): Promise<number> {
@@ -259,10 +285,10 @@ export abstract class IntegrationTestAdapterBase {
         if (!passed) allPassed = false;
       }
     } finally {
+      this.restoreEnv();
       for (const { from, to } of this.backupPaths) {
         removeIfExists(from);
         renameIfExists(to, from);
-        removeIfExists(to);
       }
     }
 
@@ -386,9 +412,11 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
 
   assertEnabled(root: string): string[] {
     const errors: string[] = [];
-    const manifestPath = path.join(root, PATHS.CURSOR_SYNC_MANIFEST);
+    const manifestPath = path.join(root, PATHS.CURSOR_DIR, PATHS.CURSOR_SYNC_MANIFEST);
     if (!fs.existsSync(manifestPath))
-      errors.push(`${PATHS.CURSOR_SYNC_MANIFEST} missing (content sync manifest)`);
+      errors.push(
+        `${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} missing (content sync manifest)`
+      );
     if (fs.existsSync(manifestPath)) {
       const raw = fs.readFileSync(manifestPath, 'utf8');
       type CursorSyncManifest = {
@@ -401,7 +429,7 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
       try {
         manifest = JSON.parse(raw) as CursorSyncManifest;
       } catch {
-        errors.push(`${PATHS.CURSOR_SYNC_MANIFEST} invalid JSON`);
+        errors.push(`${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} invalid JSON`);
       }
       if (manifest && typeof manifest === 'object') {
         const hasArrays =
@@ -411,7 +439,7 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
           Array.isArray(manifest.agents);
         if (!hasArrays)
           errors.push(
-            `${PATHS.CURSOR_SYNC_MANIFEST} should have rules, commands, skills, or agents arrays`
+            `${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} should have rules, commands, skills, or agents arrays`
           );
       }
     }
@@ -420,9 +448,11 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
 
   assertDisabled(root: string): string[] {
     const errors: string[] = [];
-    const manifestPath = path.join(root, PATHS.CURSOR_SYNC_MANIFEST);
+    const manifestPath = path.join(root, PATHS.CURSOR_DIR, PATHS.CURSOR_SYNC_MANIFEST);
     if (fs.existsSync(manifestPath))
-      errors.push(`${PATHS.CURSOR_SYNC_MANIFEST} should not exist when disabled`);
+      errors.push(
+        `${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} should not exist when disabled`
+      );
     return errors;
   }
 }
@@ -439,16 +469,17 @@ export class CodexIntegrationAdapter extends IntegrationTestAdapterBase {
 
   private readonly sectionHeading = markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, '');
 
+  private getSectionHeadingRegex(): RegExp {
+    const escaped = this.sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^#+\\s+${escaped}\\s*$`, 'im');
+  }
+
   assertEnabled(root: string): string[] {
     const errors: string[] = [];
     const agentsFile = path.join(root, PATHS.CODEX_AGENTS_FILE);
     if (!fs.existsSync(agentsFile)) return [`${PATHS.CODEX_AGENTS_FILE} missing`];
     const content = fs.readFileSync(agentsFile, 'utf8');
-    const re = new RegExp(
-      `^#+\\s+${this.sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
-      'im'
-    );
-    if (!re.test(content))
+    if (!this.getSectionHeadingRegex().test(content))
       errors.push(`${PATHS.CODEX_AGENTS_FILE} missing ## ${this.sectionHeading} section`);
     return errors;
   }
@@ -458,11 +489,7 @@ export class CodexIntegrationAdapter extends IntegrationTestAdapterBase {
     const agentsFile = path.join(root, PATHS.CODEX_AGENTS_FILE);
     if (!fs.existsSync(agentsFile)) return [];
     const content = fs.readFileSync(agentsFile, 'utf8');
-    const re = new RegExp(
-      `^#+\\s+${this.sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
-      'im'
-    );
-    if (re.test(content))
+    if (this.getSectionHeadingRegex().test(content))
       errors.push(
         `${PATHS.CODEX_AGENTS_FILE} should not contain ## ${this.sectionHeading} section when disabled`
       );

@@ -39,32 +39,31 @@ const noopLogger: MmaappssLogger = pino({ level: 'silent' });
  */
 export function setLoggerContext(repoRoot: string, tsConfig: MmaappssConfig | null): void {
   const enabled = configHelpers.general.getLoggingEnabled(repoRoot, tsConfig);
+  const hasExistingResources =
+    instance !== noopLogger && (previousDestination != null || previousLogFd != null);
+
   if (!enabled) {
-    if (instance !== noopLogger && (previousDestination != null || previousLogFd != null)) {
-      closePreviousLogger();
-    }
+    if (hasExistingResources) closePreviousLogger();
     instance = noopLogger;
     return;
   }
-  if (instance !== noopLogger && (previousDestination != null || previousLogFd != null)) {
-    closePreviousLogger();
+
+  let fd: number | null = null;
+  try {
+    const logDir = path.join(repoRoot, LOG_DIR);
+    fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(logDir, LOG_FILE);
+    fd = fs.openSync(logPath, 'a');
+    const dest = pino.destination(fd);
+    const newInstance = pino({ name: 'mmaappss', level: 'debug', base: undefined }, dest);
+    if (hasExistingResources) closePreviousLogger();
+    previousDestination = dest as unknown as { flush?: () => void; end?: () => void };
+    previousLogFd = fd;
+    instance = newInstance;
+    fd = null;
+  } finally {
+    if (fd != null) fs.closeSync(fd);
   }
-  const logDir = path.join(repoRoot, LOG_DIR);
-  fs.mkdirSync(logDir, { recursive: true });
-  const logPath = path.join(logDir, LOG_FILE);
-  // Open fd synchronously so SonicBoom is "ready" before any flush (e.g. on process exit).
-  const fd = fs.openSync(logPath, 'a');
-  const dest = pino.destination(fd);
-  previousDestination = dest as unknown as { flush?: () => void; end?: () => void };
-  previousLogFd = fd;
-  instance = pino(
-    {
-      name: 'mmaappss',
-      level: 'debug',
-      base: undefined,
-    },
-    dest
-  );
 }
 
 /**

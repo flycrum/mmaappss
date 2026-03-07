@@ -5,10 +5,10 @@
  */
 
 import { err, ok, Result } from 'neverthrow';
-import fs from 'node:fs';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
 import { isExcluded } from './excluded-patterns.js';
+import { getLogger } from './logger.js';
 import { syncFs } from './sync-fs.js';
 import type { DiscoveredMarketplace } from './types.js';
 
@@ -81,13 +81,16 @@ export function syncCursorContent(
   for (const sub of CURSOR_CONTENT_DIRS) {
     const parent = path.join(cursorDir, sub);
     if (!syncFs.pathExists(parent)) continue;
-    const entries = fs.readdirSync(parent, { withFileTypes: true });
+    const entries = syncFs.readdirWithTypes(parent);
     for (const ent of entries) {
-      if (ent.isDirectory() && !allowedPluginNames.has(ent.name)) {
+      if (ent.isDirectory && !allowedPluginNames.has(ent.name)) {
         try {
-          fs.rmSync(path.join(parent, ent.name), { recursive: true });
-        } catch {
-          // ignore
+          syncFs.rmSync(path.join(parent, ent.name), { recursive: true });
+        } catch (e) {
+          getLogger().warn(
+            { dir: ent.name, err: e instanceof Error ? e.message : String(e) },
+            'cursor-content-sync: cleanup of stale plugin dir failed'
+          );
         }
       }
     }

@@ -12,6 +12,12 @@ describe('parseBool', () => {
     expect(parseBool('1', false)).toBe(true);
   });
 
+  it('returns true for "yes" (case-insensitive)', () => {
+    expect(parseBool('yes', false)).toBe(true);
+    expect(parseBool('Yes', false)).toBe(true);
+    expect(parseBool('YES', false)).toBe(true);
+  });
+
   it('returns false for "false" and other non-truthy strings', () => {
     expect(parseBool('false', true)).toBe(false);
     expect(parseBool('0', true)).toBe(false);
@@ -41,6 +47,7 @@ describe('parseBool', () => {
   });
 
   it('throws when value is null at runtime (e.g. from JSON)', () => {
-    expect(() => parseBool(null as unknown as string | undefined, true)).toThrow();
+    expect(() => parseBool(null as unknown as string | undefined, true)).toThrow(TypeError);
+    expect(() => parseBool(null as unknown as string | undefined, true)).toThrow(/toLowerCase/);
   });
 });

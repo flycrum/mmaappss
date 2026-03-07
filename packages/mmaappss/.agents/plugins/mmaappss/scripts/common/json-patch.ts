@@ -29,11 +29,23 @@ function applyOps(doc: unknown, ops: Operation[]): Result<unknown, Error> {
 export const jsonPatch = {
   /**
    * Read JSON file. Returns err on missing file or parse failure.
+   * Without a validator, the parsed value is cast to T; callers must ensure the file content matches T.
+   * If validator is provided, it is run after parse and err is returned when validation fails.
+   *
+   * @param filePath - Path to the JSON file
+   * @param validator - Optional type guard; when provided, parsed data must pass or readJson returns err
    */
-  readJson<T>(filePath: string): Result<T, Error> {
+  readJson<T>(filePath: string, validator?: (data: unknown) => data is T): Result<T, Error> {
     try {
       const raw = fs.readFileSync(filePath, 'utf8');
-      return ok(JSON.parse(raw) as T);
+      const parsed: unknown = JSON.parse(raw);
+      if (validator !== undefined) {
+        if (!validator(parsed)) {
+          return err(new Error(`${filePath}: validation failed`));
+        }
+        return ok(parsed);
+      }
+      return ok(parsed as T);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       return err(new Error(`${filePath}: ${errMsg}`));

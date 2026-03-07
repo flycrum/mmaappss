@@ -4,8 +4,8 @@
  */
 
 import path from 'node:path';
-import { clearCursorContent, syncCursorContent } from '../common/cursor-content-sync.js';
 import type { MmaappssConfig } from '../common/config-helpers.js';
+import { clearCursorContent, syncCursorContent } from '../common/cursor-content-sync.js';
 import type { DiscoveredMarketplace } from '../common/types.js';
 import type { AdapterAgentConfig } from './agent-adapter-base.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
@@ -18,7 +18,7 @@ const CONFIG = {
   usesContentSync: true,
 } satisfies AdapterAgentConfig;
 
-export const cursorAdapter = new (class CursorAdapter extends AgentAdapterBase {
+export class CursorAdapter extends AgentAdapterBase {
   constructor() {
     super(CONFIG);
   }
@@ -38,4 +38,6 @@ export const cursorAdapter = new (class CursorAdapter extends AgentAdapterBase {
     const manifestPath = path.join(repoRoot, this.config.contentSyncManifest!);
     return clearCursorContent(repoRoot, manifestPath);
   }
-})();
+}
+
+export const cursorAdapter = new CursorAdapter();

@@ -47,10 +47,11 @@ async function runClearTestForAgent(agent: Agent): Promise<boolean> {
   }
 
   let passed = false;
+  const originalEnvAll = process.env[VARS.ENV_ALL];
+  const originalAdapterEnv = process.env[adapter.envVar];
+  process.env[VARS.ENV_ALL] = 'true';
+  process.env[adapter.envVar] = 'true';
   try {
-    process.env[VARS.ENV_ALL] = 'true';
-    process.env[adapter.envVar] = 'true';
-
     const syncResult = await runSync([agent]);
     if (syncResult.isErr()) {
       console.error('runSync (enable) failed:', syncResult.error.message);
@@ -74,6 +75,10 @@ async function runClearTestForAgent(agent: Agent): Promise<boolean> {
     }
     passed = true;
   } finally {
+    if (originalEnvAll === undefined) delete process.env[VARS.ENV_ALL];
+    else process.env[VARS.ENV_ALL] = originalEnvAll;
+    if (originalAdapterEnv === undefined) delete process.env[adapter.envVar];
+    else process.env[adapter.envVar] = originalAdapterEnv;
     try {
       for (const { from, to } of adapter.backupPaths) {
         removeIfExists(from);

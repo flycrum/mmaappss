@@ -16,6 +16,6 @@ describe('pathHelpers', () => {
   // Assumes pathHelpers.packageRoot is exactly two dirs below pathHelpers.repoRoot (e.g. repo/packages/mmaappss); update if monorepo depth changes.
   it('repoRoot is absolute and is parent of packageRoot', () => {
     expect(path.isAbsolute(pathHelpers.repoRoot)).toBe(true);
-    expect(pathHelpers.repoRoot).toBe(path.dirname(path.dirname(pathHelpers.packageRoot)));
+    expect(pathHelpers.repoRoot).toBe(path.resolve(pathHelpers.packageRoot, '../..'));
   });
 });

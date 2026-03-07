@@ -8,6 +8,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseBool } from './parse-bool.js';
+import type { Agent } from './types.js';
+
+const DEFAULT_POST_MERGE_MARKETPLACES: Agent[] = ['claude', 'cursor', 'codex'];
+const VALID_AGENTS: readonly Agent[] = ['claude', 'cursor', 'codex'];
 
 /**
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
@@ -33,6 +37,8 @@ export interface MmaappssConfig {
       };
   /** When true, post-merge git hook (if installed) runs marketplace sync after pull/merge. Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides. */
   postMergeSyncEnabled?: boolean;
+  /** Agents to sync in post-merge (e.g. ['claude', 'cursor', 'codex']). Defaults to all three if missing or invalid. */
+  postMergeSyncMarketplaces?: (Agent | string)[];
 }
 
 /**
@@ -57,6 +63,18 @@ export const configHelpers = {
       const envVal = process.env[configHelpers.env.VARS.ENV_POST_MERGE_SYNC];
       const defaultVal = tsConfig?.postMergeSyncEnabled ?? false;
       return parseBool(envVal, defaultVal);
+    },
+
+    /**
+     * Resolve list of agents to sync in post-merge. Uses postMergeSyncMarketplaces from config; defaults to ['claude','cursor','codex'] if missing or invalid.
+     */
+    getPostMergeSyncMarketplaces(_root: string, tsConfig: MmaappssConfig | null): Agent[] {
+      const raw = tsConfig?.postMergeSyncMarketplaces;
+      if (!Array.isArray(raw) || raw.length === 0) return [...DEFAULT_POST_MERGE_MARKETPLACES];
+      const filtered = raw.filter(
+        (a): a is Agent => typeof a === 'string' && VALID_AGENTS.includes(a as Agent)
+      );
+      return filtered.length > 0 ? filtered : [...DEFAULT_POST_MERGE_MARKETPLACES];
     },
 
     /**

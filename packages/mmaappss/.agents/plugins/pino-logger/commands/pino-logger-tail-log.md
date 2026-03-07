@@ -14,3 +14,9 @@
 3. Run your sync or clear in another terminal; log lines will appear as JSON (one object per line).
 
 **Log path:** `.mmaappss/logs/mmaappss.log` (created only when logging is enabled). The `.mmaappss/` directory is gitignored.
+
+**Example log entry:** One JSON object per line. Typical fields include `level`, `time`, `msg`, and `name` (logger name):
+
+```json
+{"level":30,"time":1709840123456,"name":"mmaappss","msg":"sync started","configSource":"mmaappss.config.ts","agents":["claude","cursor","codex"]}
+```

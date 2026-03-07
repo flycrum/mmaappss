@@ -154,6 +154,13 @@ export const syncFs = {
   },
 
   /**
+   * Remove file or directory. Options: recursive, force. Wraps fs.rmSync.
+   */
+  rmSync(filePath: string, options?: { recursive?: boolean; force?: boolean }): void {
+    fs.rmSync(filePath, options);
+  },
+
+  /**
    * Symlink sourcePath at linkPath using a relative path from linkPath to sourcePath.
    * Removes any existing file, symlink, or directory at linkPath first so symlink creation does not fail with EEXIST. Throws on error.
    */

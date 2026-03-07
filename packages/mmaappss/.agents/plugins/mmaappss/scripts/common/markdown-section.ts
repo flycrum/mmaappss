@@ -95,14 +95,18 @@ export const markdownSection = {
 
       const lines = content.split(/\r?\n/);
       const headingLineIndex = lines.findIndex((l) => headingRegex.test(l.trim()));
-
-      const sectionBlock = [`## ${heading}`, '', newContent.trim(), ''].join('\n');
+      const headingLevel =
+        headingLineIndex >= 0 ? getHeadingLevel(lines[headingLineIndex]!.trim()) : 2;
+      const sectionBlock = [
+        `${'#'.repeat(headingLevel)} ${heading}`,
+        '',
+        newContent.trim(),
+        '',
+      ].join('\n');
 
       let newLines: string[];
 
       if (headingLineIndex >= 0) {
-        const headingLineTrimmed = lines[headingLineIndex]!.trim();
-        const headingLevel = getHeadingLevel(headingLineTrimmed);
         let endIndex = headingLineIndex + 1;
         while (endIndex < lines.length) {
           const lineTrimmed = lines[endIndex]!.trim();

@@ -123,9 +123,8 @@ export abstract class AgentAdapterBase {
       this.config.agent
     );
     getLogger().info({ agent: this.config.agent, enabled }, 'adapter run');
-    const marketplaces = discoverMarketplaces(repoRoot, tsConfig);
-
     if (enabled) {
+      const marketplaces = discoverMarketplaces(repoRoot, tsConfig);
       return this.runEnable(repoRoot, marketplaces, tsConfig);
     }
     return this.runDisable(repoRoot);
