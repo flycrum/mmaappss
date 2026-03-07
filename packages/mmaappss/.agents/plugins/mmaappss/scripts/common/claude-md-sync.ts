@@ -4,9 +4,9 @@
  */
 
 import { err, ok, Result } from 'neverthrow';
-import fs from 'node:fs';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { syncFs } from './sync-fs.js';
 
 const AGENTS_MD = 'AGENTS.md';
 const CLAUDE_MD = 'CLAUDE.md';
@@ -32,21 +32,20 @@ function isExcluded(dirName: string, config: MmaappssConfig | null): boolean {
 function ensureGitignoreClaudeMd(repoRoot: string): Result<void, Error> {
   const gitignorePath = path.join(repoRoot, '.gitignore');
   try {
-    if (!fs.existsSync(gitignorePath)) {
-      fs.writeFileSync(
+    if (!syncFs.pathExists(gitignorePath)) {
+      syncFs.writeFileUtf8(
         gitignorePath,
-        '\n# mmaappss: symlinked from AGENTS.md for Claude\nCLAUDE.md\n',
-        'utf8'
+        '\n# mmaappss: symlinked from AGENTS.md for Claude\nCLAUDE.md\n'
       );
       return ok(undefined);
     }
-    const content = fs.readFileSync(gitignorePath, 'utf8');
+    const content = syncFs.readFileUtf8(gitignorePath);
     if (/^CLAUDE\.md$/m.test(content) || /^\s*CLAUDE\.md\s*$/m.test(content)) {
       return ok(undefined);
     }
     const appended =
       content.trimEnd() + '\n\n# mmaappss: symlinked from AGENTS.md for Claude\nCLAUDE.md\n';
-    fs.writeFileSync(gitignorePath, appended, 'utf8');
+    syncFs.writeFileUtf8(gitignorePath, appended);
     return ok(undefined);
   } catch (e) {
     return err(e instanceof Error ? e : new Error(String(e)));
@@ -64,30 +63,25 @@ export const claudeMdSync = {
   clearClaudeMd(repoRoot: string): Result<void, Error> {
     const manifestPath = path.join(repoRoot, CLAUDE_MD_SYNC_MANIFEST);
     try {
-      if (!fs.existsSync(manifestPath)) return ok(undefined);
-
-      const raw = fs.readFileSync(manifestPath, 'utf8');
-      let manifest: ClaudeMdSyncManifest;
-      try {
-        manifest = JSON.parse(raw) as ClaudeMdSyncManifest;
-      } catch (e) {
-        return err(new Error(`${manifestPath}: ${e instanceof Error ? e.message : String(e)}`));
+      const manifestResult = syncFs.readJsonManifest<ClaudeMdSyncManifest>(manifestPath);
+      if (manifestResult.isErr()) {
+        if (manifestResult.error.message.includes('file not found')) return ok(undefined);
+        return err(manifestResult.error);
       }
-      const paths = manifest.claudeMdPaths ?? [];
+      const paths = manifestResult.value.claudeMdPaths ?? [];
 
       for (const rel of paths) {
         const full = path.join(repoRoot, rel);
         try {
-          if (fs.existsSync(full)) {
-            const stat = fs.lstatSync(full);
-            if (stat.isSymbolicLink()) fs.unlinkSync(full);
+          if (syncFs.pathExists(full) && syncFs.isSymlink(full)) {
+            syncFs.unlinkIfExists(full);
           }
         } catch {
           // ignore
         }
       }
 
-      fs.unlinkSync(manifestPath);
+      syncFs.unlinkIfExists(manifestPath);
       return ok(undefined);
     } catch (e) {
       return err(e instanceof Error ? e : new Error(String(e)));
@@ -102,13 +96,13 @@ export const claudeMdSync = {
     const found: string[] = [];
 
     const walk = (dir: string): void => {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      const hasAgentsMd = entries.some((e) => !e.isDirectory() && e.name === AGENTS_MD);
+      const entries = syncFs.readdirWithTypes(dir);
+      const hasAgentsMd = entries.some((e) => !e.isDirectory && e.name === AGENTS_MD);
       if (hasAgentsMd) {
         found.push(path.relative(repoRoot, dir));
       }
       for (const ent of entries) {
-        if (!ent.isDirectory()) continue;
+        if (!ent.isDirectory) continue;
         if (isExcluded(ent.name, config)) continue;
         walk(path.join(dir, ent.name));
       }
@@ -136,12 +130,11 @@ export const claudeMdSync = {
         const claudePath = path.join(dir, CLAUDE_MD);
         const relClaude = path.join(relDir, CLAUDE_MD).replace(/\\/g, '/');
 
-        if (!fs.existsSync(agentsPath)) continue;
+        if (!syncFs.pathExists(agentsPath)) continue;
 
-        if (fs.existsSync(claudePath)) {
-          const stat = fs.lstatSync(claudePath);
-          if (!stat.isSymbolicLink()) continue; // leave user-created CLAUDE.md alone
-          const target = fs.readlinkSync(claudePath);
+        if (syncFs.pathExists(claudePath)) {
+          if (!syncFs.isSymlink(claudePath)) continue; // leave user-created CLAUDE.md alone
+          const target = syncFs.readlink(claudePath);
           const expected = path.relative(path.dirname(claudePath), agentsPath);
           if (
             target === expected ||
@@ -150,24 +143,21 @@ export const claudeMdSync = {
             created.push(relClaude);
             continue;
           }
-          fs.unlinkSync(claudePath);
+          syncFs.unlinkIfExists(claudePath);
         }
 
-        const relativeTarget = path.relative(path.dirname(claudePath), agentsPath);
-        fs.symlinkSync(relativeTarget, claudePath);
+        syncFs.symlinkRelative(agentsPath, claudePath);
         created.push(relClaude);
       }
 
       const manifestPath = path.join(repoRoot, CLAUDE_MD_SYNC_MANIFEST);
       if (created.length > 0) {
-        const manifestDir = path.dirname(manifestPath);
-        if (!fs.existsSync(manifestDir)) fs.mkdirSync(manifestDir, { recursive: true });
-        fs.writeFileSync(
-          manifestPath,
-          JSON.stringify({ claudeMdPaths: created } satisfies ClaudeMdSyncManifest, null, 2)
-        );
-      } else if (fs.existsSync(manifestPath)) {
-        fs.unlinkSync(manifestPath);
+        syncFs.ensureDir(path.dirname(manifestPath));
+        syncFs.writeJsonManifest(manifestPath, {
+          claudeMdPaths: created,
+        } satisfies ClaudeMdSyncManifest);
+      } else {
+        syncFs.unlinkIfExists(manifestPath);
       }
 
       return ok(created);

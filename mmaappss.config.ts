@@ -10,7 +10,7 @@ const mmaappssConfig: MmaappssConfig = {
     cursor: true,
     codex: false,
   },
-  excludeDirectories: ['./packages/mmaappss'],
+  excludeDirectories: [],
 };
 
 export default mmaappssConfig;

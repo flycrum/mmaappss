@@ -216,6 +216,17 @@ Overlap: **same idea** (one repo, many plugins); **difference** in manifest loca
 
 ---
 
+### Cursor: local marketplaces not supported (as of this writing)
+
+Cursor does **not** support "local" marketplaces (i.e. a repo on disk whose `.cursor-plugin/marketplace.json` is discovered by the IDE). Only these are supported:
+
+- **Public marketplace** — Install plugins from [cursor.com/marketplace](https://cursor.com/marketplace).
+- **Team marketplace** — Add a GitHub repo URL in the Cursor dashboard; Cursor fetches and parses that repo (including `marketplace.json`).
+
+For local plugin content (e.g. under `.agents/plugins/`), mmaappss therefore **syncs content** into `.cursor/` instead of relying on `marketplace.json`: rules are copied as `.mdc` files with `alwaysApply: true` frontmatter, and commands, skills, and agents are symlinked into `.cursor/commands/`, `.cursor/skills/`, and `.cursor/agents/`. At the time of this writing, Cursor project rules under `.cursor/rules/` require `.mdc` and frontmatter for reliable behavior; mmaappss generates these from plugin `.md` sources.
+
+---
+
 ## 13. Unique vs Shared Summary
 
 ### Shared / overlapping

@@ -13,7 +13,10 @@ import { configHelpers } from './common/config-helpers.js';
 import { pathHelpers } from './common/path-helpers.js';
 import type { Agent } from './common/types.js';
 import { runClear, runSync } from './core/sync-runner.js';
-import { INTEGRATION_ADAPTERS } from './integration-test/integration-test-adapters.js';
+import {
+  INTEGRATION_ADAPTERS,
+  removeIfExists,
+} from './integration-test/integration-test-adapters.js';
 
 const AGENTS: Agent[] = ['claude', 'cursor', 'codex'];
 
@@ -29,9 +32,12 @@ async function runClearTestForAgent(agent: Agent): Promise<boolean> {
     }
   };
 
+  // Start clean: remove any leftover backup dirs from a previous run
+  for (const { to } of adapter.backupPaths) removeIfExists(to);
+
   try {
     for (const { from, to } of adapter.backupPaths) {
-      if (fs.existsSync(to)) fs.rmSync(to, { recursive: true });
+      removeIfExists(to);
       renameIfExists(from, to);
     }
   } catch (e) {
@@ -70,8 +76,9 @@ async function runClearTestForAgent(agent: Agent): Promise<boolean> {
   } finally {
     try {
       for (const { from, to } of adapter.backupPaths) {
-        if (fs.existsSync(from)) fs.rmSync(from, { recursive: true });
+        removeIfExists(from);
         renameIfExists(to, from);
+        removeIfExists(to);
       }
     } catch (e) {
       console.error('Restore failed:', (e as Error).message);

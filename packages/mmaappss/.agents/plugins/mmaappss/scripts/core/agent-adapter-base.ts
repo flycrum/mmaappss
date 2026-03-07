@@ -52,6 +52,8 @@ export interface AdapterAgentConfig {
   agent: Agent;
   /** Codex-only: file to edit (e.g. AGENTS.override.md) */
   agentsFile?: string;
+  /** Cursor-only: path to manifest for content sync teardown (e.g. .cursor/.mmaappss-cursor-sync.json) */
+  contentSyncManifest?: string;
   /** Which manifest to filter by when building plugin entries */
   manifestFilter?: 'claude' | 'cursor';
   /** Uses JSON marketplace file (.claude-plugin or .cursor-plugin) */
@@ -70,6 +72,8 @@ export interface AdapterAgentConfig {
   syncManifest?: string;
   /** Claude-only: symlink CLAUDE.md from AGENTS.md (root and nested) */
   usesClaudeMdSymlink?: boolean;
+  /** Cursor-only: sync plugin content into .cursor/* (rules, commands, skills, agents) instead of marketplace.json */
+  usesContentSync?: boolean;
   /** Codex-only: surgical edit of AGENTS.override.md section */
   usesMarkdownSection?: boolean;
   /** Uses JSON marketplace file */
@@ -94,6 +98,7 @@ export abstract class AgentAdapterBase {
       | 'usesSettingsMerge'
       | 'usesMarkdownSection'
       | 'usesClaudeMdSymlink'
+      | 'usesContentSync'
     >
   > &
     AdapterAgentConfig;
@@ -105,6 +110,7 @@ export abstract class AgentAdapterBase {
       usesSettingsMerge: false,
       usesMarkdownSection: false,
       usesClaudeMdSymlink: false,
+      usesContentSync: false,
       ...config,
     };
   }
@@ -156,6 +162,19 @@ export abstract class AgentAdapterBase {
     return ok(undefined);
   }
 
+  /** Hook: sync plugin content into agent-specific dirs (e.g. .cursor/*). Override for Cursor. */
+  protected syncContent(
+    _repoRoot: string,
+    _marketplaces: DiscoveredMarketplace[]
+  ): Result<void, Error> {
+    return ok(undefined);
+  }
+
+  /** Hook: teardown content synced by syncContent. Override for Cursor. */
+  protected teardownContent(_repoRoot: string): Result<void, Error> {
+    return ok(undefined);
+  }
+
   /** Build marketplace plugin entries. Shared by Claude + Cursor. */
   protected buildMarketplacePluginEntries(
     marketplaces: DiscoveredMarketplace[]
@@ -198,6 +217,7 @@ export abstract class AgentAdapterBase {
 
   private runDisable(repoRoot: string): Result<SyncOutcome, Error> {
     return Result.combine([this.beforeTeardown(repoRoot)])
+      .andThen(() => (this.config.usesContentSync ? this.teardownContent(repoRoot) : ok(undefined)))
       .andThen(() =>
         this.config.usesClaudeMdSymlink ? claudeMdSync.clearClaudeMd(repoRoot) : ok(undefined)
       )
@@ -264,6 +284,9 @@ export abstract class AgentAdapterBase {
         this.config.usesMarkdownSection && this.config.agentsFile && this.config.sectionHeading
           ? this.syncMarkdownSectionImpl(repoRoot, marketplaces)
           : ok(undefined)
+      )
+      .andThen(() =>
+        this.config.usesContentSync ? this.syncContent(repoRoot, marketplaces) : ok(undefined)
       )
       .andThen(() => this.afterSync(repoRoot, marketplaces))
       .map(() => ({ agent: this.config.agent, success: true }));
