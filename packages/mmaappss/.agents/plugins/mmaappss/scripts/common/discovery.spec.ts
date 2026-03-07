@@ -14,10 +14,12 @@ describe('discoverMarketplaces', () => {
 
   it('respects excludeDirectories', () => {
     const repoRoot = pathHelpers.repoRoot;
+    const baseline = discoverMarketplaces(repoRoot, null);
+    expect(baseline.length).toBeGreaterThan(0);
+
     const result = discoverMarketplaces(repoRoot, {
       excludeDirectories: ['packages'],
     });
-
     const hasNested = result.some((m) => m.relativePath.includes('packages/'));
     expect(hasNested).toBe(false);
   });

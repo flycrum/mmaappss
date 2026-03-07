@@ -52,7 +52,12 @@ async function main(): Promise<void> {
   }
 
   const adapter = INTEGRATION_ADAPTERS[agentArg as Agent];
-  if (!adapter) process.exit(1);
+  if (!adapter) {
+    console.error(
+      `No integration adapter for agent "${agentArg}"; INTEGRATION_ADAPTERS has no entry for this agent (missing or misconfigured).`
+    );
+    process.exit(1);
+  }
 
   if (modeArg) {
     if (!MODES.includes(modeArg as IntegrationTestMode)) {

@@ -65,7 +65,8 @@ export const claudeMdSync = {
     try {
       const manifestResult = syncFs.readJsonManifest<ClaudeMdSyncManifest>(manifestPath);
       if (manifestResult.isErr()) {
-        if (manifestResult.error.message.includes('file not found')) return ok(undefined);
+        const e = manifestResult.error as Error & { code?: string };
+        if (e.code === 'ENOENT') return ok(undefined);
         return err(manifestResult.error);
       }
       const paths = manifestResult.value.claudeMdPaths ?? [];

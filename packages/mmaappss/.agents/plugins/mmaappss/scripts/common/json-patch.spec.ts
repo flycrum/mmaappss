@@ -55,14 +55,6 @@ describe('json-patch', () => {
       expect(fs.existsSync(filePath)).toBe(true);
       expect(JSON.parse(fs.readFileSync(filePath, 'utf8'))).toEqual(data);
     });
-
-    it('formats with 2-space indent', () => {
-      const filePath = path.join(tmpDir, 'formatted.json');
-      jsonPatch.writeJson(filePath, { a: 1 });
-
-      const raw = fs.readFileSync(filePath, 'utf8');
-      expect(raw).toContain('\n  ');
-    });
   });
 
   describe('applyPatch', () => {

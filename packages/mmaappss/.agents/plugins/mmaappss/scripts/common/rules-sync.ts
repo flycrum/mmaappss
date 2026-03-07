@@ -26,7 +26,8 @@ export const rulesSync = {
     try {
       const manifestResult = syncFs.readJsonManifest<RulesSyncManifest>(manifestPath);
       if (manifestResult.isErr()) {
-        if (manifestResult.error.message.includes('file not found')) return ok(undefined);
+        const e = manifestResult.error as Error & { code?: string };
+        if (e.code === 'ENOENT') return ok(undefined);
         return err(manifestResult.error);
       }
       const rulePaths = manifestResult.value.rules ?? [];

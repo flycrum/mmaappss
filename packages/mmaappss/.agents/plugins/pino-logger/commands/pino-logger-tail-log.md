@@ -10,7 +10,7 @@
 2. From repo root:
    - **Live tail:** `tail -f .mmaappss/logs/mmaappss.log`
    - **Last N lines:** `tail -n 50 .mmaappss/logs/mmaappss.log`
-   - **Pretty-print with jq:** `tail -n 20 .mmaappss/logs/mmaappss.log | jq -c .`
+   - **Pretty-print with jq:** `tail -n 20 .mmaappss/logs/mmaappss.log | jq .`
 3. Run your sync or clear in another terminal; log lines will appear as JSON (one object per line).
 
 **Log path:** `.mmaappss/logs/mmaappss.log` (created only when logging is enabled). The `.mmaappss/` directory is gitignored.

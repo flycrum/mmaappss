@@ -56,9 +56,14 @@ function discoverPluginsInDir(
     const hasCursor = fs.existsSync(cursorManifestPath);
     const hasCodex = fs.existsSync(codexManifestPath);
 
-    if (!hasClaude && !hasCursor) continue;
+    if (!hasClaude && !hasCursor && !hasCodex) continue;
 
-    const manifest = loadManifest(hasClaude ? claudeManifestPath : cursorManifestPath);
+    const manifestPath = hasClaude
+      ? claudeManifestPath
+      : hasCursor
+        ? cursorManifestPath
+        : codexManifestPath;
+    const manifest = loadManifest(manifestPath);
     const relativePath = path.join(relativePluginsPath, ent.name);
 
     plugins.push({

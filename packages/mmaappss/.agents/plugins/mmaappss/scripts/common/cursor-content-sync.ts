@@ -39,10 +39,8 @@ function stripFrontmatter(content: string): string {
   const afterFirst = trimmed.slice(3);
   const endIdx = afterFirst.indexOf('\n---');
   if (endIdx === -1) return content;
-  return (
-    afterFirst.slice(endIdx + 4).replace(/^\n+/, '') ||
-    afterFirst.slice(0, endIdx).replace(/\n+$/, '')
-  );
+  const body = afterFirst.slice(endIdx + 4).replace(/^\n+/, '');
+  return body || '';
 }
 
 /**
@@ -91,9 +89,7 @@ export function syncCursorContent(
 
         // --- Commands: symlink each file ---
         const commandsDir = path.join(plugin.path, COMMANDS_SUBDIR);
-        const commandFiles = syncFs
-          .listFiles(commandsDir, COMMAND_EXT)
-          .filter((f) => syncFs.isFile(path.join(commandsDir, f)));
+        const commandFiles = syncFs.listFiles(commandsDir, COMMAND_EXT);
         if (commandFiles.length > 0) {
           const pluginCommandsDir = path.join(commandsTarget, plugin.name);
           syncFs.ensureDir(pluginCommandsDir);
@@ -123,9 +119,7 @@ export function syncCursorContent(
 
         // --- Agents: symlink each agent .md ---
         const agentsDir = path.join(plugin.path, AGENTS_SUBDIR);
-        const agentFiles = syncFs
-          .listFiles(agentsDir, AGENT_EXT)
-          .filter((f) => syncFs.isFile(path.join(agentsDir, f)));
+        const agentFiles = syncFs.listFiles(agentsDir, AGENT_EXT);
         if (agentFiles.length > 0) {
           const pluginAgentsDir = path.join(agentsTarget, plugin.name);
           syncFs.ensureDir(pluginAgentsDir);
@@ -164,7 +158,8 @@ export function clearCursorContent(repoRoot: string, manifestPath: string): Resu
   try {
     const manifestResult = syncFs.readJsonManifest<CursorContentSyncManifest>(manifestPath);
     if (manifestResult.isErr()) {
-      if (manifestResult.error.message.includes('file not found')) return ok(undefined);
+      const e = manifestResult.error as Error & { code?: string };
+      if (e.code === 'ENOENT') return ok(undefined);
       return err(manifestResult.error);
     }
     const manifest = manifestResult.value;

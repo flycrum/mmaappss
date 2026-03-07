@@ -19,4 +19,4 @@
 
 ## Notes for reviewers
 
-<!-- Optional: areas to focus on, follow-up work, breaking changes 💥y -->
+<!-- Optional: areas to focus on, follow-up work, breaking changes 💥 -->

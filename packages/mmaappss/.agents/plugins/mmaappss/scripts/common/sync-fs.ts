@@ -42,13 +42,20 @@ export const syncFs = {
   },
 
   /**
-   * List file names in dir matching pattern (if given). Returns [] if dir does not exist.
+   * List names of regular files in dir (symlinks to files count as files). Optional pattern filters by name.
+   * Returns [] if dir does not exist.
    */
   listFiles(dir: string, pattern?: RegExp): string[] {
     if (!fs.existsSync(dir)) return [];
     const names = fs.readdirSync(dir);
-    if (!pattern) return names;
-    return names.filter((f) => pattern.test(f));
+    const candidates = pattern ? names.filter((f) => pattern.test(f)) : names;
+    return candidates.filter((f) => {
+      try {
+        return fs.statSync(path.join(dir, f)).isFile();
+      } catch {
+        return false;
+      }
+    });
   },
 
   /**
@@ -126,7 +133,9 @@ export const syncFs = {
    */
   readJsonManifest<T>(manifestPath: string): Result<T, Error> {
     if (!fs.existsSync(manifestPath)) {
-      return err(new Error(`${manifestPath}: file not found`));
+      const e = new Error(`${manifestPath}: file not found`) as Error & { code: string };
+      e.code = 'ENOENT';
+      return err(e);
     }
     try {
       const raw = fs.readFileSync(manifestPath, 'utf8');
@@ -146,10 +155,16 @@ export const syncFs = {
 
   /**
    * Symlink sourcePath at linkPath using a relative path from linkPath to sourcePath.
-   * Unlinks linkPath first if it already exists. Throws on error.
+   * Unlinks linkPath first if it already exists (including broken symlinks). Throws on error.
    */
   symlinkRelative(sourcePath: string, linkPath: string): void {
-    if (fs.existsSync(linkPath)) fs.unlinkSync(linkPath);
+    try {
+      const st = fs.lstatSync(linkPath);
+      if (st.isSymbolicLink()) fs.unlinkSync(linkPath);
+    } catch (e) {
+      const code = (e as Error & { code?: string }).code;
+      if (code !== 'ENOENT') throw e;
+    }
     const relativeTarget = path.relative(path.dirname(linkPath), sourcePath);
     fs.symlinkSync(relativeTarget, linkPath);
   },

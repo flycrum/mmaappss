@@ -64,7 +64,7 @@ Focus here is **local marketplaces** (repo-as-marketplace), not public Cursor Ma
       </td>
       <!-- CURSOR -->
       <td>
-        <div>~~✅ official support~~ <strong>No local marketplace.</strong> As of this writing, Cursor does <em>not</em> support local marketplaces. Only <strong>public marketplace</strong> (cursor.com/marketplace) and <strong>team marketplace</strong> (GitHub repo URL in dashboard; Cursor fetches and parses the repo, including <code>marketplace.json</code>) are supported. We sync plugin content into <code>.cursor/</code> (rules, commands, skills, agents) instead.</div>
+        <div><s>✅ official support</s> <strong>No local marketplace.</strong> As of this writing, Cursor does <em>not</em> support local marketplaces. Only <strong>public marketplace</strong> (cursor.com/marketplace) and <strong>team marketplace</strong> (GitHub repo URL in dashboard; Cursor fetches and parses the repo, including <code>marketplace.json</code>) are supported. We sync plugin content into <code>.cursor/</code> (rules, commands, skills, agents) instead.</div>
         <ul>
           <li><code>.cursor/</code> content sync (rules as .mdc, commands/skills/agents symlinked)</li>
           <li>script to sync</li>

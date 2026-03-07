@@ -50,7 +50,7 @@ Env overrides config when set.
    - `adapter run` — per-agent enabled/disabled.
    - `discovery: complete` — how many marketplaces and plugins.
 
-Use `jq` to pretty-print or filter: e.g. `tail -50 .mmaappss/logs/mmaappss.log | jq -c .`
+Use `jq` to pretty-print or filter: e.g. `tail -50 .mmaappss/logs/mmaappss.log | jq .`
 
 ## Turning logging off
 
