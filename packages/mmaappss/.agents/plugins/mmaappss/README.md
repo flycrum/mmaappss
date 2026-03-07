@@ -6,10 +6,10 @@ Driver plugin for the mmaappss sync system: discovers root and nested `.agents/p
 
 ## Purpose
 
-This README serves two roles:
+This plugin has two roles:
 
-1. **Documentation for this plugin** — what mmaappss does, how to run it, how to configure it.
-2. **Reference for other plugin authors** — how to architect, organize, and build agent-agnostic plugins that work across Claude, Cursor, and Codex. Use this as a template and guidance when creating plugins under `.agents/plugins/<your-plugin>/`.
+1. **Driver** — Sync system for mmaappss: discovers `.agents/plugins/`, writes marketplace manifests (Claude, Cursor, Codex), symlinks plugin rules and CLAUDE.md.
+2. **Reference example** — The canonical template for all future local `.agents/plugins`. When creating or updating any plugin under `.agents/plugins/<name>/`, base layout, conventions, and rules on this plugin. One source of truth for agent-agnostic plugin structure.
 
 ---
 
@@ -61,7 +61,7 @@ Canonical structure for an agent-agnostic plugin under `.agents/plugins/<plugin-
 ├── commands/                # Shared: .md files (both platforms discover)
 ├── hooks/
 │   └── hooks.json           # Shared (event names may differ per platform)
-├── rules/                   # mmaappss schema; symlinked by sync to .claude/rules, .cursor/rules
+├── rules/                   # .md only (agent-agnostic); symlinked to .claude/rules, .cursor/rules. See rules/rules-purpose-and-guidelines.md
 ├── .mcp.json                # Shared
 ├── .lsp.json                # Claude-only (Cursor ignores)
 ├── settings.json            # Claude-only (e.g. default agent)

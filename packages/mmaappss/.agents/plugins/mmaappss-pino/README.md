@@ -118,7 +118,7 @@ For integration or local debugging, enable logging only when needed to avoid clu
 
 ## Plugin layout
 
-- **rules/** — Lightweight rules for mmaappss codebase: use the shared logger, prefer structured logs, avoid logging PII.
+- **rules/** — Agent-agnostic `.md` only (no `.mdc`). Pino logging guidance for mmaappss scripts; see [mmaappss rules purpose](../mmaappss/rules/rules-purpose-and-guidelines.md).
 - **skills/** — Skill(s) for “debug mmaappss with file logging”: when to use, how to enable, how to read logs.
 - **commands/** — Optional command docs (e.g. “Tail mmaappss log”) for discoverability.
 
