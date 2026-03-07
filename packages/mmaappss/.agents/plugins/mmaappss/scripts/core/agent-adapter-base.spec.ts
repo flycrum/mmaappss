@@ -68,7 +68,7 @@ describe('AgentAdapterBase', () => {
       const m = mockMarketplace([p1, p2]);
       const entries = adapter.exposeBuildPluginEntries([m]);
       expect(entries).toHaveLength(1);
-      expect(entries[0].name).toBe('a');
+      expect(entries[0]!.name).toBe('a');
     });
 
     it('filters by manifestFilter cursor', () => {
@@ -82,7 +82,7 @@ describe('AgentAdapterBase', () => {
       const m = mockMarketplace([p1, p2]);
       const entries = adapter.exposeBuildPluginEntries([m]);
       expect(entries).toHaveLength(1);
-      expect(entries[0].name).toBe('a');
+      expect(entries[0]!.name).toBe('a');
     });
 
     it('uses sourceFormat prefixed for Claude', () => {
@@ -94,7 +94,7 @@ describe('AgentAdapterBase', () => {
       const p = mockPlugin({ relativePath: '.agents/plugins/foo' });
       const m = mockMarketplace([p]);
       const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries[0].source).toBe('./.agents/plugins/foo');
+      expect(entries[0]!.source).toBe('./.agents/plugins/foo');
     });
 
     it('uses sourceFormat relative for Cursor', () => {
@@ -106,7 +106,7 @@ describe('AgentAdapterBase', () => {
       const p = mockPlugin({ relativePath: 'packages/pkg/.agents/plugins/foo' });
       const m = mockMarketplace([p], 'packages/pkg/.agents/plugins');
       const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries[0].source).toBe('packages/pkg/.agents/plugins/foo');
+      expect(entries[0]!.source).toBe('packages/pkg/.agents/plugins/foo');
     });
 
     it('deduplicates by marketplace:plugin key', () => {
@@ -144,7 +144,7 @@ describe('AgentAdapterBase', () => {
       expect(json.name).toBe('my-plugins');
       expect(json.owner).toEqual({ name: 'mmaappss' });
       expect(json.plugins).toHaveLength(1);
-      expect(json.plugins[0].name).toBe('foo');
+      expect(json.plugins[0]!.name).toBe('foo');
     });
 
     it('defaults marketplaceName to mmaappss-plugins', () => {

@@ -304,12 +304,12 @@ export abstract class AgentAdapterBase {
     if (manifest.name === name && Object.keys(manifest).length <= 3) {
       try {
         fs.unlinkSync(filePath);
-      } catch (err) {
-        const nodeErr = err as NodeJS.ErrnoException;
+      } catch (e) {
+        const nodeErr = e as NodeJS.ErrnoException;
         if (nodeErr?.code !== 'ENOENT') {
-          console.error(`Failed to unlink ${filePath}:`, err);
-          getLogger().error({ err, filePath }, 'failed to unlink marketplace file');
-          return err(err instanceof Error ? err : new Error(String(err)));
+          console.error(`Failed to unlink ${filePath}:`, e);
+          getLogger().error({ err: e, filePath }, 'failed to unlink marketplace file');
+          return err(e instanceof Error ? e : new Error(String(e)));
         }
       }
       return ok(undefined);
