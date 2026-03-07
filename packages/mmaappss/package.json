@@ -31,6 +31,12 @@
     "test": "vitest run",
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "lodash-es": "^4.17.21",
+    "neverthrow": "^7.2.0",
+    "pino": "^9.6.0"
+  },
   "devDependencies": {
     "@mmaappss/eslint-config": "workspace:*",
     "@mmaappss/typescript-config": "workspace:*",
@@ -41,11 +47,7 @@
     "dotenv": "^17.3.1",
     "eslint": "^9.15.0",
     "fast-json-patch": "^3.1.1",
-    "fs-extra": "^11.2.0",
     "globals": "^15.12.0",
-    "lodash-es": "^4.17.21",
-    "neverthrow": "^7.2.0",
-    "pino": "^9.6.0",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
     "vitest": "^3.0.0"

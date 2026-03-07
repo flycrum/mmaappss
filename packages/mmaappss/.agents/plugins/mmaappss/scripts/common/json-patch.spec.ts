@@ -16,12 +16,11 @@ describe('json-patch', () => {
   });
 
   describe('readJson', () => {
-    it('returns null when file does not exist', () => {
+    it('returns err when file does not exist', () => {
       const filePath = path.join(tmpDir, 'missing.json');
       const result = jsonPatch.readJson<{ foo: string }>(filePath);
 
-      expect(result.isOk()).toBe(true);
-      expect(result._unsafeUnwrap()).toBe(null);
+      expect(result.isErr()).toBe(true);
     });
 
     it('parses valid JSON and returns typed value', () => {

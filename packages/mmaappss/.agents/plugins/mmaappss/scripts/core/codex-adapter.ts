@@ -29,7 +29,7 @@ export const codexAdapter = new (class CodexAdapter extends AgentAdapterBase {
     repoRoot: string,
     _marketplaces: DiscoveredMarketplace[]
   ): import('neverthrow').Result<void, Error> {
-    const filePath = path.join(repoRoot, CONFIG.agentsFile!);
+    const filePath = path.join(repoRoot, CONFIG.agentsFile ?? CODEX_AGENTS_FILE);
     return markdownSection
       .removeSection(filePath, markdownSection.CODEX_LEGACY_HEADING)
       .andThen(() => markdownSection.removeLegacyOrphanCodexBlocks(filePath));

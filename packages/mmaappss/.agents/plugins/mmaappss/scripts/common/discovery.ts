@@ -17,13 +17,9 @@ const CODEX_MANIFEST = '.codex-plugin/plugin.json';
 /** Default directories to exclude from scanning (always applied). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
 
-/**
- * Returns true if the directory should be excluded from scanning.
- * @param dirName - Simple directory entry name (e.g. "node_modules"), not a full path.
- */
-function isExcluded(dirName: string, config: MmaappssConfig | null): boolean {
-  const exclude = [...DEFAULT_EXCLUDE, ...(config?.excludeDirectories ?? [])];
-  return exclude.some((e) => dirName === e);
+/** Returns true if dirName is in the exclusion set (O(1)). */
+function isExcludedSet(dirName: string, excludeSet: Set<string>): boolean {
+  return excludeSet.has(dirName);
 }
 
 function loadManifest(
@@ -31,7 +27,16 @@ function loadManifest(
 ): { name?: string; description?: string; version?: string } | null {
   try {
     const raw = fs.readFileSync(manifestPath, 'utf8');
-    return JSON.parse(raw) as { name?: string; description?: string; version?: string };
+    const parsed = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    if ('name' in parsed && typeof parsed.name !== 'string') return null;
+    if ('description' in parsed && typeof parsed.description !== 'string') return null;
+    if ('version' in parsed && typeof parsed.version !== 'string') return null;
+    return {
+      name: typeof parsed.name === 'string' ? parsed.name : undefined,
+      description: typeof parsed.description === 'string' ? parsed.description : undefined,
+      version: typeof parsed.version === 'string' ? parsed.version : undefined,
+    };
   } catch {
     return null;
   }
@@ -83,13 +88,14 @@ function discoverPluginsInDir(
 }
 
 function findPluginsDirs(repoRoot: string, config: MmaappssConfig | null): string[] {
+  const excludeSet = new Set([...DEFAULT_EXCLUDE, ...(config?.excludeDirectories ?? [])]);
   const found: string[] = [];
 
   function walk(dir: string): void {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const ent of entries) {
       if (!ent.isDirectory()) continue;
-      if (isExcluded(ent.name, config)) continue;
+      if (isExcludedSet(ent.name, excludeSet)) continue;
 
       const fullPath = path.join(dir, ent.name);
       const pluginsPath = path.join(fullPath, '.agents', 'plugins');
@@ -131,9 +137,7 @@ export function discoverMarketplaces(
   for (const pluginsDir of pluginsDirs) {
     const relativePath = path.relative(repoRoot, pluginsDir).replace(/\\/g, '/');
     const label =
-      relativePath === PLUGINS_SUBDIR || relativePath === '.agents/plugins'
-        ? 'Root marketplace'
-        : `${relativePath} marketplace`;
+      relativePath === PLUGINS_SUBDIR ? 'Root marketplace' : `${relativePath} marketplace`;
     const plugins = discoverPluginsInDir(pluginsDir, repoRoot, relativePath);
     marketplaces.push({ pluginsDir, relativePath, label, plugins });
   }

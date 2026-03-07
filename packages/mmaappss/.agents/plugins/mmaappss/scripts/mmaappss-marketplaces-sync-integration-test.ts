@@ -27,7 +27,7 @@ async function main(): Promise<void> {
   const agentArg = process.argv[2];
   const modeArg = process.argv[3];
 
-  if (!agentArg || !['claude', 'cursor', 'codex', 'all'].includes(agentArg)) {
+  if (!agentArg || (agentArg !== 'all' && !AGENTS.includes(agentArg as Agent))) {
     console.error(
       `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <claude|cursor|codex|all> [enabled|disabled]`
     );

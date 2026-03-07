@@ -113,10 +113,14 @@ export const markdownSection = {
         newLines = [...lines.slice(0, headingLineIndex), sectionBlock, ...lines.slice(endIndex)];
       } else {
         const trimmed = content.trim();
-        newLines = trimmed ? [content, '', sectionBlock] : [sectionBlock];
+        newLines = trimmed ? [trimmed, '', sectionBlock] : [sectionBlock];
       }
 
-      fs.writeFileSync(filePath, newLines.join('\n'));
+      const result = newLines
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      fs.writeFileSync(filePath, result ? result + '\n' : '');
       return ok(undefined);
     } catch (e) {
       return err(e instanceof Error ? e : new Error(String(e)));

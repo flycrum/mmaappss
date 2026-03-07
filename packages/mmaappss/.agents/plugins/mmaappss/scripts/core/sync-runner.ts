@@ -19,8 +19,8 @@ const AGENT_ADAPTERS_ALL: Record<Agent, AgentAdapterBase> = {
   codex: codexAdapter,
 };
 
-export interface SyncRunnerOptions {
-  agents: Agent[];
+function flushLogger(): Promise<void> {
+  return new Promise<void>((resolve) => getLogger().flush(() => resolve()));
 }
 
 /**
@@ -51,14 +51,14 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
     const result = adapter.run(repoRoot, tsConfig);
     if (result.isErr()) {
       log.error({ err: result.error, agent }, 'sync agent failed');
-      await new Promise<void>((resolve) => getLogger().flush((_err) => resolve()));
+      await flushLogger();
       return err(result.error);
     }
     outcomes.push(result.value);
   }
 
   log.info({ outcomes }, 'sync completed');
-  await new Promise<void>((resolve) => getLogger().flush((_err) => resolve()));
+  await flushLogger();
   return ok(outcomes);
 }
 
@@ -86,13 +86,13 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
     const result = adapter.clear(repoRoot);
     if (result.isErr()) {
       log.error({ err: result.error, agent }, 'clear agent failed');
-      await new Promise<void>((resolve) => getLogger().flush((_err) => resolve()));
+      await flushLogger();
       return err(result.error);
     }
     outcomes.push(result.value);
   }
 
   log.info({ outcomes }, 'clear completed');
-  await new Promise<void>((resolve) => getLogger().flush((_err) => resolve()));
+  await flushLogger();
   return ok(outcomes);
 }

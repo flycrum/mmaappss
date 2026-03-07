@@ -6,8 +6,8 @@
 
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
-import type { DiscoveredMarketplace } from './types.js';
 import { syncFs } from './sync-fs.js';
+import type { DiscoveredMarketplace } from './types.js';
 
 const RULES_SUBDIR = 'rules';
 const COMMANDS_SUBDIR = 'commands';
@@ -27,6 +27,19 @@ export interface CursorContentSyncManifest {
   commands: string[];
   skills: string[];
   agents: string[];
+}
+
+/** Ensure manifest has arrays for rules, commands, skills, agents (coerce invalid/missing to []). */
+function normalizeCursorContentSyncManifest(parsed: unknown): CursorContentSyncManifest {
+  const obj = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+  const arr = (x: unknown): string[] =>
+    Array.isArray(x) ? x.filter((e): e is string => typeof e === 'string') : [];
+  return {
+    rules: arr(obj.rules),
+    commands: arr(obj.commands),
+    skills: arr(obj.skills),
+    agents: arr(obj.agents),
+  };
 }
 
 /**
@@ -53,6 +66,9 @@ export function syncCursorContent(
   marketplaces: DiscoveredMarketplace[],
   manifestPath: string
 ): Result<CursorContentSyncManifest, Error> {
+  const clearResult = clearCursorContent(repoRoot, manifestPath);
+  if (clearResult.isErr()) return err(clearResult.error);
+
   const created: CursorContentSyncManifest = {
     rules: [],
     commands: [],
@@ -162,13 +178,13 @@ export function clearCursorContent(repoRoot: string, manifestPath: string): Resu
       if (e.code === 'ENOENT') return ok(undefined);
       return err(manifestResult.error);
     }
-    const manifest = manifestResult.value;
+    const manifest = normalizeCursorContentSyncManifest(manifestResult.value);
 
     const allPaths = [
-      ...(manifest.rules ?? []),
-      ...(manifest.commands ?? []),
-      ...(manifest.skills ?? []),
-      ...(manifest.agents ?? []),
+      ...manifest.rules,
+      ...manifest.commands,
+      ...manifest.skills,
+      ...manifest.agents,
     ];
 
     syncFs.unlinkPaths(repoRoot, allPaths);

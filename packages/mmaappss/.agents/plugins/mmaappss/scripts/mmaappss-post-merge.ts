@@ -8,10 +8,16 @@ import { pathHelpers } from './common/path-helpers.js';
 import { runSync } from './core/sync-runner.js';
 
 async function main(): Promise<void> {
-  const repoRoot = pathHelpers.repoRoot;
-  configHelpers.env.loadEnv(repoRoot);
-  const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
-  const enabled = configHelpers.general.getPostMergeSyncEnabled(repoRoot, tsConfig);
+  let enabled = false;
+  try {
+    const repoRoot = pathHelpers.repoRoot;
+    configHelpers.env.loadEnv(repoRoot);
+    const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+    enabled = configHelpers.general.getPostMergeSyncEnabled(repoRoot, tsConfig);
+  } catch (err) {
+    console.error('Post-merge config error:', err);
+    process.exit(1);
+  }
   if (!enabled) {
     process.exit(0);
   }
@@ -23,4 +29,7 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
-main();
+main().catch((err) => {
+  console.error('Unexpected error in mmaappss-post-merge', err);
+  process.exit(1);
+});

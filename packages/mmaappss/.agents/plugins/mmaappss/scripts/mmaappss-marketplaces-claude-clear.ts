@@ -13,4 +13,7 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
-main();
+main().catch((err) => {
+  console.error('Unexpected error in mmaappss-marketplaces-claude-clear', err);
+  process.exit(1);
+});

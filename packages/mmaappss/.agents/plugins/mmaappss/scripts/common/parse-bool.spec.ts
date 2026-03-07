@@ -27,4 +27,20 @@ describe('parseBool', () => {
     expect(parseBool('', true)).toBe(true);
     expect(parseBool('', false)).toBe(false);
   });
+
+  it('does not trim: strings with surrounding whitespace do not match and return false', () => {
+    expect(parseBool(' true ', false)).toBe(false);
+    expect(parseBool(' true ', true)).toBe(false);
+    expect(parseBool(' 1 ', false)).toBe(false);
+    expect(parseBool(' 1 ', true)).toBe(false);
+  });
+
+  it('returns false for arbitrary non-boolean strings (not defaultValue)', () => {
+    expect(parseBool('foo', true)).toBe(false);
+    expect(parseBool('foo', false)).toBe(false);
+  });
+
+  it('throws when value is null at runtime (e.g. from JSON)', () => {
+    expect(() => parseBool(null as unknown as string | undefined, true)).toThrow();
+  });
 });

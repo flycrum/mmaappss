@@ -295,11 +295,12 @@ export abstract class AgentAdapterBase {
   private teardownMarketplaceJson(repoRoot: string): Result<void, Error> {
     const filePath = path.join(repoRoot, this.config.marketplaceFile!);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
-    if (res.isErr()) return err(res.error);
+    if (res.isErr()) {
+      if (res.error.message.includes('ENOENT')) return ok(undefined);
+      return err(res.error);
+    }
     const manifest = res.value;
     const name = this.config.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
-
-    if (!manifest) return ok(undefined);
 
     if (manifest.name === name && Object.keys(manifest).length <= 3) {
       try {
@@ -307,7 +308,6 @@ export abstract class AgentAdapterBase {
       } catch (e) {
         const nodeErr = e as NodeJS.ErrnoException;
         if (nodeErr?.code !== 'ENOENT') {
-          console.error(`Failed to unlink ${filePath}:`, e);
           getLogger().error({ err: e, filePath }, 'failed to unlink marketplace file');
           return err(e instanceof Error ? e : new Error(String(e)));
         }
@@ -334,12 +334,13 @@ export abstract class AgentAdapterBase {
     const canonical = this.buildMarketplaceJson(marketplaces);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
 
-    if (res.isErr()) return err(res.error);
-
-    if (!res.value) {
-      const dir = path.dirname(filePath);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      return jsonPatch.writeJson(filePath, canonical);
+    if (res.isErr()) {
+      if (res.error.message.includes('ENOENT')) {
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        return jsonPatch.writeJson(filePath, canonical);
+      }
+      return err(res.error);
     }
 
     const ops: Operation[] = [
@@ -353,14 +354,13 @@ export abstract class AgentAdapterBase {
   }
 
   /** Override for Claude: teardown settings.json keys. */
-  protected teardownSettings(_repoRoot: string): Result<void, Error> {
-    const filePath = path.join(_repoRoot, this.config.settingsFile!);
+  protected teardownSettings(repoRoot: string): Result<void, Error> {
+    const filePath = path.join(repoRoot, this.config.settingsFile!);
     if (!fs.existsSync(filePath)) return ok(undefined);
 
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     if (res.isErr()) return err(res.error);
     const s = res.value;
-    if (!s) return ok(undefined);
 
     const name = this.config.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
     const ek = s.extraKnownMarketplaces as Record<string, unknown> | undefined;
@@ -398,8 +398,13 @@ export abstract class AgentAdapterBase {
 
     const filePath = path.join(_repoRoot, this.config.settingsFile!);
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
-    if (res.isErr()) return err(res.error);
-    const existing = res.value ?? {};
+    let existing: Record<string, unknown>;
+    if (res.isErr()) {
+      if (res.error.message.includes('ENOENT')) existing = {};
+      else return err(res.error);
+    } else {
+      existing = res.value ?? {};
+    }
 
     const merged = {
       ...existing,

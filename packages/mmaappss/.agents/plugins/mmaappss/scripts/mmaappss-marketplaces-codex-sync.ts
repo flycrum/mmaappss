@@ -14,12 +14,23 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  const msg =
-    err != null && typeof err === 'object' && 'error' in err
-      ? String((err as { error?: unknown }).error ?? err)
-      : err instanceof Error
-        ? err.message
-        : String(err);
-  console.error(msg);
+  let msg: string;
+  if (err instanceof Error) {
+    msg = err.message;
+  } else if (
+    err != null &&
+    typeof err === 'object' &&
+    'error' in err &&
+    (err as { error?: unknown }).error !== undefined
+  ) {
+    msg = String((err as { error: unknown }).error);
+  } else {
+    try {
+      msg = JSON.stringify(err);
+    } catch {
+      msg = String(err);
+    }
+  }
+  console.error('Unexpected error in mmaappss-marketplaces-codex-sync', msg);
   process.exit(1);
 });

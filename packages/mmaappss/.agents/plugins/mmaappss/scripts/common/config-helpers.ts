@@ -17,7 +17,10 @@ export interface MmaappssConfig {
   excludeDirectories?: string[];
   /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
   loggingEnabled?: boolean;
-  /** Enable all marketplaces ('all') or per-agent flags. Env (MMAAPPSS_MARKETPLACE_*) overrides. */
+  /**
+   * Enable all marketplaces ('all') or per-agent flags. Env (MMAAPPSS_MARKETPLACE_*) overrides.
+   * Object variant: `{ claude, cursor, codex }` booleans. Example: `{ claude: true, cursor: false, codex: true }`.
+   */
   marketplacesEnabled?:
     | 'all'
     | {
@@ -38,7 +41,7 @@ export const configHelpers = {
     /**
      * Resolve whether file logging is enabled. Env MMAAPPSS_LOGGING_ENABLED overrides TS config.
      */
-    getLoggingEnabled(root: string, tsConfig: MmaappssConfig | null): boolean {
+    getLoggingEnabled(_root: string, tsConfig: MmaappssConfig | null): boolean {
       const envVal = process.env[configHelpers.env.VARS.ENV_LOGGING];
       const defaultVal = tsConfig?.loggingEnabled ?? false;
       return parseBool(envVal, defaultVal);
@@ -47,7 +50,7 @@ export const configHelpers = {
     /**
      * Resolve whether post-merge sync is enabled (for git hook). Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides TS config.
      */
-    getPostMergeSyncEnabled(root: string, tsConfig: MmaappssConfig | null): boolean {
+    getPostMergeSyncEnabled(_root: string, tsConfig: MmaappssConfig | null): boolean {
       const envVal = process.env[configHelpers.env.VARS.ENV_POST_MERGE_SYNC];
       const defaultVal = tsConfig?.postMergeSyncEnabled ?? false;
       return parseBool(envVal, defaultVal);

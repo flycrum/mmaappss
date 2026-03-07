@@ -6,6 +6,7 @@
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { getLogger } from './logger.js';
 import { syncFs } from './sync-fs.js';
 
 const AGENTS_MD = 'AGENTS.md';
@@ -40,7 +41,7 @@ function ensureGitignoreClaudeMd(repoRoot: string): Result<void, Error> {
       return ok(undefined);
     }
     const content = syncFs.readFileUtf8(gitignorePath);
-    if (/^CLAUDE\.md$/m.test(content) || /^\s*CLAUDE\.md\s*$/m.test(content)) {
+    if (/^\s*CLAUDE\.md\s*$/m.test(content)) {
       return ok(undefined);
     }
     const appended =
@@ -77,8 +78,8 @@ export const claudeMdSync = {
           if (syncFs.pathExists(full) && syncFs.isSymlink(full)) {
             syncFs.unlinkIfExists(full);
           }
-        } catch {
-          // ignore
+        } catch (e) {
+          getLogger().debug({ err: e, path: full }, 'clearClaudeMd: unlink failed');
         }
       }
 

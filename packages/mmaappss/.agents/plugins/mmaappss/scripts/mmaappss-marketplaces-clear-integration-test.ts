@@ -109,4 +109,7 @@ async function main(): Promise<void> {
   process.exit(allPassed ? 0 : 1);
 }
 
-main();
+main().catch((err) => {
+  console.error('Unexpected error in mmaappss-marketplaces-clear-integration-test', err);
+  process.exit(1);
+});

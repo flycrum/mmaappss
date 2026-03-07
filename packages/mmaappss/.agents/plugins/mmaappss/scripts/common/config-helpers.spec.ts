@@ -124,10 +124,8 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
 });
 
 describe('configHelpers.general.getLoggingEnabled', () => {
-  const ENV_LOGGING = configHelpers.env.VARS.ENV_LOGGING;
-
   beforeEach(() => {
-    vi.stubEnv(ENV_LOGGING, '');
+    vi.stubEnv(VARS.ENV_LOGGING, '');
   });
 
   afterEach(() => {
@@ -147,12 +145,12 @@ describe('configHelpers.general.getLoggingEnabled', () => {
   });
 
   it('env overrides tsConfig: ENV_LOGGING=true wins over loggingEnabled: false', () => {
-    vi.stubEnv(ENV_LOGGING, 'true');
+    vi.stubEnv(VARS.ENV_LOGGING, 'true');
     expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: false })).toBe(true);
   });
 
   it('env overrides tsConfig: ENV_LOGGING=false wins over loggingEnabled: true', () => {
-    vi.stubEnv(ENV_LOGGING, 'false');
+    vi.stubEnv(VARS.ENV_LOGGING, 'false');
     expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: true })).toBe(false);
   });
 });

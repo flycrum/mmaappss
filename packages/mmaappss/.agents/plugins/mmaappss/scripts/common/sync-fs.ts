@@ -170,13 +170,14 @@ export const syncFs = {
   },
 
   /**
-   * Unlink a single file if it exists. No-op if path is missing. Idempotent.
+   * Unlink a single file or symlink if it exists. Uses lstatSync so broken symlinks are removed. No-op if path is missing. Idempotent.
    */
   unlinkIfExists(filePath: string): void {
     try {
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      fs.lstatSync(filePath);
+      fs.unlinkSync(filePath);
     } catch {
-      // ignore
+      // ignore (e.g. ENOENT)
     }
   },
 
@@ -195,10 +196,10 @@ export const syncFs = {
   },
 
   /**
-   * Write file as UTF-8. Throws on error.
+   * Write file as UTF-8. Creates parent directories if needed. Throws on error.
    */
   writeFileUtf8(filePath: string, content: string): void {
-    fs.writeFileSync(filePath, content, 'utf8');
+    fse.outputFileSync(filePath, content, 'utf8');
   },
 
   /**

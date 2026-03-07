@@ -1,8 +1,13 @@
 # rules/ purpose and guidelines
 
-**Purpose:** Plugin `rules/` holds agent-agnostic guidance symlinked by mmaappss into `.claude/rules/<plugin-name>/` and `.cursor/rules/<plugin-name>/`. One source; all agents. Use for patterns, constraints, and references that apply whenever the plugin is active.
+**Purpose:**
+- Plugin `rules/` = agent-agnostic guidance symlinked by mmaappss into each agent’s rules dir (e.g. `.claude/rules/<plugin-name>/`, `.cursor/rules/<plugin-name>/`)
+- Intent: patterns, constraints, references used whenever the plugin is active
+- One source; symlinks give all agents the same content
+- Keep short critical info in AGENTS.md; use [plugin README](../README.md) (or docs) for expanded guidance
 
-**Format:** Use **`.md`** only. Do not use `.mdc` or platform-specific frontmatter (e.g. `globs`, `alwaysApply`) — those are not agent-agnostic. Plain markdown works for every agent after sync.
+**Format:** Use **`.md`** only; do not use `.mdc` or platform-specific frontmatter.
+- Avoid `.mdc`, `globs`, `alwaysApply` — not agent-agnostic; plain markdown works for every agent after sync.
 
 **Guidelines (for AI agents):**
 - Keep text condensed, succinct, no trailing punctuation; sacrifice grammar for concision

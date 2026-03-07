@@ -1,6 +1,8 @@
 /**
  * Symlink plugin rules/ into .claude/rules/ and .cursor/rules/.
  * Tracks created paths in a manifest for idempotent teardown.
+ *
+ * Call sequence: callers should invoke clearRules before syncRules (remove stale symlinks, then recreate). syncRules assumes clearRules has been run so the run is idempotent.
  */
 
 import { err, ok, Result } from 'neverthrow';

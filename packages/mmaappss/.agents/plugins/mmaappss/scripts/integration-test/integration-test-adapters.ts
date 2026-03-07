@@ -113,11 +113,6 @@ export abstract class IntegrationTestAdapterBase {
   }
 
   async runAllConditions(root: string): Promise<number> {
-    // Start clean: remove any leftover backup dirs from a previous run
-    for (const { to } of this.backupPaths) {
-      removeIfExists(to);
-    }
-
     try {
       for (const { from, to } of this.backupPaths) {
         removeIfExists(to);
@@ -157,21 +152,24 @@ export abstract class IntegrationTestAdapterBase {
           return false;
         }
       }
-      let passed: boolean;
-      if (step.relaxAssertions) {
-        this.setEnv(step.mode);
-        const result = await runSync([this.agent]);
-        passed = result.isOk();
-        if (!passed) console.error('runSync failed:', result.isErr() ? result.error.message : '');
-      } else {
-        passed = await this.runSingleCondition(root, step.mode);
-      }
-      if (step.configOverride) {
-        try {
-          removeIfExists(configPath);
-          if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
-        } catch (e) {
-          console.error('Config restore failed:', (e as Error).message);
+      let passed = false;
+      try {
+        if (step.relaxAssertions) {
+          this.setEnv(step.mode);
+          const result = await runSync([this.agent]);
+          passed = result.isOk();
+          if (!passed) console.error('runSync failed:', result.isErr() ? result.error.message : '');
+        } else {
+          passed = await this.runSingleCondition(root, step.mode);
+        }
+      } finally {
+        if (step.configOverride) {
+          try {
+            removeIfExists(configPath);
+            if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
+          } catch (e) {
+            console.error('Config restore failed:', (e as Error).message);
+          }
         }
       }
       return passed;

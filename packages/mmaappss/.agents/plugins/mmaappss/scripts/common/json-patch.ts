@@ -11,13 +11,13 @@ import path from 'node:path';
 
 const patchApi = patch.default ?? patch;
 
-function applyOps<T>(doc: T, ops: Operation[]): Result<T, Error> {
+function applyOps(doc: unknown, ops: Operation[]): Result<unknown, Error> {
   if (ops.length === 0) return ok(doc);
   try {
     const validateErr = patchApi.validate(ops);
     if (validateErr) throw validateErr;
     const result = patchApi.applyPatch(doc, ops, true, false);
-    return ok((result.newDocument ?? doc) as T);
+    return ok(result.newDocument ?? doc);
   } catch (e) {
     return err(e instanceof Error ? e : new Error(String(e)));
   }
@@ -28,11 +28,10 @@ function applyOps<T>(doc: T, ops: Operation[]): Result<T, Error> {
  */
 export const jsonPatch = {
   /**
-   * Read JSON file or return null if missing.
+   * Read JSON file. Returns err on missing file or parse failure.
    */
-  readJson<T>(filePath: string): Result<T | null, Error> {
+  readJson<T>(filePath: string): Result<T, Error> {
     try {
-      if (!fs.existsSync(filePath)) return ok(null);
       const raw = fs.readFileSync(filePath, 'utf8');
       return ok(JSON.parse(raw) as T);
     } catch (e) {
@@ -46,8 +45,8 @@ export const jsonPatch = {
   writeJson(filePath: string, data: unknown): Result<void, Error> {
     try {
       const dir = path.dirname(filePath);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
       return ok(undefined);
     } catch (e) {
       return err(e instanceof Error ? e : new Error(String(e)));
@@ -55,8 +54,9 @@ export const jsonPatch = {
   },
   /**
    * Apply RFC 6902 patch operations to a document.
+   * Returns the patched document as unknown; callers should narrow or validate if a specific type is required.
    */
-  applyPatch<T>(doc: T, ops: Operation[]): Result<T, Error> {
+  applyPatch<T>(doc: T, ops: Operation[]): Result<unknown, Error> {
     return applyOps(doc, ops);
   },
 };

@@ -12,6 +12,7 @@ import {
   type MarketplaceJson,
   type MarketplacePluginEntry,
 } from './agent-adapter-base.js';
+import { codexAdapter } from './codex-adapter.js';
 
 /** Test subclass that exposes protected methods for unit testing. */
 class TestAdapter extends AgentAdapterBase {
@@ -109,7 +110,7 @@ describe('AgentAdapterBase', () => {
       expect(entries[0]!.source).toBe('packages/pkg/.agents/plugins/foo');
     });
 
-    it('deduplicates by marketplace:plugin key', () => {
+    it('preserves same-named plugins across different marketplaces (marketplace:plugin composite key)', () => {
       const adapter = new TestAdapter({
         agent: 'claude',
         manifestFilter: 'claude',
@@ -159,37 +160,12 @@ describe('AgentAdapterBase', () => {
   });
 
   describe('Codex buildMarkdownSectionContent', () => {
-    it('produces markdown list per marketplace', () => {
-      class TestCodex extends AgentAdapterBase {
-        constructor() {
-          super({
-            agent: 'codex',
-            usesMarkdownSection: true,
-            agentsFile: 'AGENTS.override.md',
-            sectionHeading: 'Codex Marketplace',
-          });
+    it('produces markdown list per marketplace (production codex adapter)', () => {
+      const buildContent = (
+        codexAdapter as unknown as {
+          buildMarkdownSectionContent(m: DiscoveredMarketplace[]): string;
         }
-
-        public exposeBuildMarkdownSectionContent(m: DiscoveredMarketplace[]): string {
-          return this.buildMarkdownSectionContent(m);
-        }
-
-        protected override buildMarkdownSectionContent(
-          marketplaces: DiscoveredMarketplace[]
-        ): string {
-          const lines: string[] = [];
-          for (const m of marketplaces) {
-            if (m.plugins.length === 0) continue;
-            lines.push(`### ${m.label}`, '');
-            for (const p of m.plugins) {
-              lines.push(`- [${p.manifestName ?? p.name}](./${p.relativePath})`);
-            }
-            lines.push('');
-          }
-          return lines.join('\n').trim();
-        }
-      }
-      const adapter = new TestCodex();
+      ).buildMarkdownSectionContent;
       const p1 = mockPlugin({
         name: 'foo',
         manifestName: 'foo',
@@ -202,10 +178,10 @@ describe('AgentAdapterBase', () => {
       });
       const m1 = mockMarketplace([p1], '.agents/plugins');
       const m2 = mockMarketplace([p2], 'pkg/.agents/plugins');
-      const content = adapter.exposeBuildMarkdownSectionContent([m1, m2]);
-      expect(content).toContain('### Root marketplace');
+      const content = buildContent([m1, m2]);
+      expect(content).toContain('### `.agents/plugins` marketplace');
       expect(content).toContain('- [foo](./.agents/plugins/foo)');
-      expect(content).toContain('### pkg/.agents/plugins marketplace');
+      expect(content).toContain('### `pkg/.agents/plugins` marketplace');
       expect(content).toContain('- [bar](./pkg/.agents/plugins/bar)');
     });
   });
@@ -241,6 +217,9 @@ describe('AgentAdapterBase', () => {
       expect(result.isOk()).toBe(true);
       expect(calls).toContain(`beforeTeardown:${repoRoot}`);
       expect(calls).toContain(`afterTeardown:${repoRoot}`);
+      expect(calls.indexOf(`beforeTeardown:${repoRoot}`)).toBeLessThan(
+        calls.indexOf(`afterTeardown:${repoRoot}`)
+      );
     });
   });
 });

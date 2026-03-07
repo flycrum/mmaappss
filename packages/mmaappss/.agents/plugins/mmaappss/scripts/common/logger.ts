@@ -31,21 +31,7 @@ function closePreviousLogger(): void {
   }
 }
 
-const noop = () => {};
-const noopLogger: MmaappssLogger = {
-  child: () => noopLogger,
-  level: 'silent',
-  levels: { labels: {}, values: {} },
-  bindings: () => ({}),
-  flush: noop,
-  info: noop,
-  warn: noop,
-  error: noop,
-  fatal: noop,
-  debug: noop,
-  trace: noop,
-  silent: noop,
-} as unknown as MmaappssLogger;
+const noopLogger: MmaappssLogger = pino({ level: 'silent' });
 
 /**
  * Set logging context from repo root and config. Call once at process start (e.g. in sync-runner).

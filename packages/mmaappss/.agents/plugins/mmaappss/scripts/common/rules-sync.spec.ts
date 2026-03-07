@@ -61,8 +61,11 @@ describe('rulesSync', () => {
       expect(created.length).toBe(2); // foo.md + bar.mdc
 
       const linkPath = path.join(rulesTargetDir, 'myplugin', 'foo.md');
+      const expectedSourcePath = path.join(plugin.path, 'rules', 'foo.md');
       expect(fs.existsSync(linkPath)).toBe(true);
-      expect(fs.readlinkSync(linkPath)).toBeDefined();
+      expect(fs.readlinkSync(linkPath)).toBe(
+        path.relative(path.dirname(linkPath), expectedSourcePath)
+      );
 
       expect(fs.existsSync(manifestPath)).toBe(true);
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -85,6 +88,118 @@ describe('rulesSync', () => {
       expect(result.isOk()).toBe(true);
       expect(result._unsafeUnwrap()).toEqual([]);
       expect(fs.existsSync(manifestPath)).toBe(false);
+    });
+
+    it('single marketplace with multiple plugins: creates symlinks for both and manifest lists all', () => {
+      const plugin1 = createPlugin(repoRoot, 'plugin-a');
+      const plugin2 = createPlugin(repoRoot, 'plugin-b');
+      const marketplaces: DiscoveredMarketplace[] = [
+        {
+          pluginsDir: path.join(repoRoot, '.agents', 'plugins'),
+          relativePath: '.agents/plugins',
+          label: 'Root',
+          plugins: [plugin1, plugin2],
+        },
+      ];
+
+      const result = rulesSync.syncRules(repoRoot, marketplaces, rulesTargetDir, manifestPath);
+
+      expect(result.isOk()).toBe(true);
+      const created = result._unsafeUnwrap();
+      expect(created.length).toBe(4); // 2 files × 2 plugins
+
+      const linkA = path.join(rulesTargetDir, 'plugin-a', 'foo.md');
+      const linkB = path.join(rulesTargetDir, 'plugin-b', 'foo.md');
+      expect(fs.existsSync(linkA)).toBe(true);
+      expect(fs.existsSync(linkB)).toBe(true);
+      expect(fs.readlinkSync(linkA)).toBe(
+        path.relative(path.dirname(linkA), path.join(plugin1.path, 'rules', 'foo.md'))
+      );
+      expect(fs.readlinkSync(linkB)).toBe(
+        path.relative(path.dirname(linkB), path.join(plugin2.path, 'rules', 'foo.md'))
+      );
+
+      expect(fs.existsSync(manifestPath)).toBe(true);
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      expect(manifest.rules).toEqual(created);
+    });
+
+    it('multiple marketplaces: creates symlinks from all and manifest includes all', () => {
+      const pluginsDirRoot = path.join(repoRoot, '.agents', 'plugins');
+      const plugin1 = createPlugin(repoRoot, 'p1');
+      const plugin2 = createPlugin(repoRoot, 'p2');
+      const nestedPluginsDir = path.join(repoRoot, 'packages', 'pkg', '.agents', 'plugins');
+      fs.mkdirSync(nestedPluginsDir, { recursive: true });
+      const rulesDirNested = path.join(nestedPluginsDir, 'nested', 'rules');
+      fs.mkdirSync(rulesDirNested, { recursive: true });
+      fs.writeFileSync(path.join(rulesDirNested, 'baz.md'), '# Baz');
+      const pluginNested: DiscoveredPlugin = {
+        hasClaudeManifest: false,
+        hasCodexManifest: false,
+        hasCursorManifest: false,
+        name: 'nested',
+        path: path.join(nestedPluginsDir, 'nested'),
+        relativePath: 'packages/pkg/.agents/plugins/nested',
+      };
+      const marketplaces: DiscoveredMarketplace[] = [
+        {
+          pluginsDir: pluginsDirRoot,
+          relativePath: '.agents/plugins',
+          label: 'Root',
+          plugins: [plugin1, plugin2],
+        },
+        {
+          pluginsDir: nestedPluginsDir,
+          relativePath: 'packages/pkg/.agents/plugins',
+          label: 'Nested',
+          plugins: [pluginNested],
+        },
+      ];
+
+      const result = rulesSync.syncRules(repoRoot, marketplaces, rulesTargetDir, manifestPath);
+
+      expect(result.isOk()).toBe(true);
+      const created = result._unsafeUnwrap();
+      expect(created.length).toBe(5); // 2×2 from p1,p2 + 1 from nested
+
+      expect(fs.existsSync(path.join(rulesTargetDir, 'p1', 'foo.md'))).toBe(true);
+      expect(fs.existsSync(path.join(rulesTargetDir, 'p2', 'foo.md'))).toBe(true);
+      expect(fs.existsSync(path.join(rulesTargetDir, 'nested', 'baz.md'))).toBe(true);
+
+      expect(fs.existsSync(manifestPath)).toBe(true);
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      expect(manifest.rules).toEqual(created);
+    });
+
+    it('handles pre-existing rulesTargetDir and manifest: overwrites symlinks and manifest', () => {
+      fs.mkdirSync(path.join(rulesTargetDir, 'myplugin'), { recursive: true });
+      fs.writeFileSync(manifestPath, JSON.stringify({ rules: ['.claude/rules/old/link.md'] }));
+
+      const plugin = createPlugin(repoRoot, 'myplugin');
+      const marketplaces: DiscoveredMarketplace[] = [
+        {
+          pluginsDir: path.join(repoRoot, '.agents', 'plugins'),
+          relativePath: '.agents/plugins',
+          label: 'Root',
+          plugins: [plugin],
+        },
+      ];
+
+      const result = rulesSync.syncRules(repoRoot, marketplaces, rulesTargetDir, manifestPath);
+
+      expect(result.isOk()).toBe(true);
+      const created = result._unsafeUnwrap();
+      expect(created.length).toBe(2);
+
+      const linkPath = path.join(rulesTargetDir, 'myplugin', 'foo.md');
+      const expectedSourcePath = path.join(plugin.path, 'rules', 'foo.md');
+      expect(fs.existsSync(linkPath)).toBe(true);
+      expect(fs.readlinkSync(linkPath)).toBe(
+        path.relative(path.dirname(linkPath), expectedSourcePath)
+      );
+
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      expect(manifest.rules).toEqual(created);
     });
   });
 

@@ -72,7 +72,7 @@
 5. **Fill template sections**
    - Use repo template section names as source of truth
    - Add prominent parent-branch banner right under summary/description:
-     - `** 🎯 PARENT BRANCH DETECTED: <branch> 🎯 **`
+     - `**🎯 PARENT BRANCH DETECTED: <branch> 🎯**`
    - Section guidance:
      - `Summary`: 2-3 concise sentences on problem + approach
      - `Screenshots`: `N/A` unless visual/UI behavior changed
