@@ -154,3 +154,56 @@ describe('configHelpers.general.getLoggingEnabled', () => {
     expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: true })).toBe(false);
   });
 });
+
+describe('configHelpers.general.getPostMergeSyncMarketplaces', () => {
+  it('returns default when postMergeSyncMarketplaces missing or empty', () => {
+    expect(configHelpers.general.getPostMergeSyncMarketplaces(ROOT, null)).toEqual([
+      'claude',
+      'cursor',
+      'codex',
+    ]);
+    expect(
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, { postMergeSyncMarketplaces: [] })
+    ).toEqual(['claude', 'cursor', 'codex']);
+    expect(
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, { postMergeSyncMarketplaces: undefined })
+    ).toEqual(['claude', 'cursor', 'codex']);
+  });
+
+  it('returns only preset names that are known (preset or enabled)', () => {
+    expect(
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
+        postMergeSyncMarketplaces: ['claude', 'cursor', 'codex'],
+      })
+    ).toEqual(['claude', 'cursor', 'codex']);
+  });
+
+  it('filters out unknown agent names and trims', () => {
+    expect(
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
+        postMergeSyncMarketplaces: ['claude', 'curor', '  cursor  ', 'codex'],
+      })
+    ).toEqual(['claude', 'cursor', 'codex']);
+  });
+
+  it('includes custom agent names from marketplacesEnabled', () => {
+    expect(
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
+        marketplacesEnabled: {
+          custom: {
+            acme: { name: 'acme', syncModePresets: {} },
+          },
+        },
+        postMergeSyncMarketplaces: ['claude', 'acme'],
+      })
+    ).toEqual(['claude', 'acme']);
+  });
+
+  it('falls back to default when all entries are unknown', () => {
+    expect(
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
+        postMergeSyncMarketplaces: ['typo', 'unknown-agent'],
+      })
+    ).toEqual(['claude', 'cursor', 'codex']);
+  });
+});

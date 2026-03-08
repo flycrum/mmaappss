@@ -148,7 +148,7 @@ class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncMo
             entryName: entry.name,
             extension: path.extname(entry.name),
             isDirectory: entry.isDirectory,
-            isFile: !entry.isDirectory,
+            isFile: entry.isFile,
             pluginName: plugin.name,
             relativePluginPath: plugin.relativePath,
             targetPath: defaultTarget,
