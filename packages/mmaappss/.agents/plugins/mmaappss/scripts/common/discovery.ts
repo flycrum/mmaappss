@@ -48,6 +48,7 @@ function discoverPluginsInDir(pluginsDir: string, relativePluginsPath: string): 
     if (!ent.isDirectory()) continue;
 
     const pluginPath = path.join(pluginsDir, ent.name);
+    // Priority: claude → codex → cursor, per MANIFEST_PATHS insertion order. The guard below is retained for defensive type narrowing to avoid surprising TS errors.
     const manifestEntries = Object.entries(MANIFEST_PATHS) as Array<[PluginManifestKey, string]>;
     const manifests = Object.fromEntries(
       manifestEntries.map(([manifestKey, manifestRelativePath]) => [

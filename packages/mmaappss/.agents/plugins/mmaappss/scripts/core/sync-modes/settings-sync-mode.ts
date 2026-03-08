@@ -20,6 +20,10 @@ const SOURCE_TYPE = 'directory';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
 export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
+  constructor(options?: SettingsSyncModeOptions) {
+    super(options);
+  }
+
   /** Builds plugin IDs that should be represented in the target settings file. */
   private buildPluginIds(
     marketplaces: DiscoveredMarketplace[],

@@ -9,8 +9,21 @@ import { getLogger, setLoggerContext } from '../common/logger.js';
 import { pathHelpers } from '../common/path-helpers.js';
 import type { Agent, SyncOutcome } from '../common/types.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
-import { marketplacesConfig } from './marketplaces-config.js';
-import { agentPresetsAll } from './presets/agent-presets.js';
+import { marketplacesConfig, type DefinedAgent } from './marketplaces-config.js';
+import { agentPresets } from './presets/agent-presets.js';
+
+/** Resolves agent config from enabled-agents lookup or preset fallback; returns undefined for unknown agents. */
+function getAgentConfig(
+  agent: Agent,
+  enabledAgents: Record<string, DefinedAgent>
+): DefinedAgent | undefined {
+  return (
+    enabledAgents[agent] ??
+    (agent in agentPresets
+      ? marketplacesConfig.defineAgent(agentPresets[agent as keyof typeof agentPresets])
+      : undefined)
+  );
+}
 
 /** Flushes pending logger writes before process exit or early return. */
 function flushLogger(): Promise<void> {
@@ -42,15 +55,7 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
   const outcomes: SyncOutcome[] = [];
 
   for (const agent of agents) {
-    const agentConfig =
-      enabledAgents[agent] ??
-      (agent in agentPresetsAll
-        ? marketplacesConfig.defineAgent(
-            agentPresetsAll[agent as keyof typeof agentPresetsAll] as Parameters<
-              typeof marketplacesConfig.defineAgent
-            >[0]
-          )
-        : undefined);
+    const agentConfig = getAgentConfig(agent, enabledAgents);
     if (!agentConfig) {
       outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
       continue;
@@ -87,15 +92,7 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
   const outcomes: SyncOutcome[] = [];
 
   for (const agent of agents) {
-    const agentConfig =
-      enabledAgents[agent] ??
-      (agent in agentPresetsAll
-        ? marketplacesConfig.defineAgent(
-            agentPresetsAll[agent as keyof typeof agentPresetsAll] as Parameters<
-              typeof marketplacesConfig.defineAgent
-            >[0]
-          )
-        : undefined);
+    const agentConfig = getAgentConfig(agent, enabledAgents);
     if (!agentConfig) {
       outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
       continue;

@@ -106,6 +106,10 @@ function isIncludedFolder(
 }
 
 export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncModeOptions> {
+  constructor(options?: LocalPluginsContentSyncModeOptions) {
+    super(options);
+  }
+
   /** Clears generic strategy outputs from manifest and removes manifest file. */
   private clearGeneric(context: SyncModeContext): Result<void, Error> {
     const options = this.options;

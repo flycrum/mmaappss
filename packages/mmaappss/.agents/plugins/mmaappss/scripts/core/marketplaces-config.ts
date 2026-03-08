@@ -2,7 +2,7 @@ import type { Exact } from 'type-fest';
 import type { PresetAgentName } from '../common/preset-agents.js';
 import { presetAgents } from '../common/preset-agents.js';
 import type { PluginManifestKey } from '../common/types.js';
-import { agentPresetsAll } from './presets/agent-presets.js';
+import { agentPresets } from './presets/agent-presets.js';
 import { syncModePresets } from './presets/sync-mode-presets.js';
 import type { SyncModeClassRef, SyncModeDefinition } from './sync-modes/sync-mode-base.js';
 
@@ -88,9 +88,7 @@ export interface DefineAgentInput<TName extends string = string> {
 /** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
 export interface DefineAgentHelpers {
   /** Built-in agent presets available for composition and override. */
-  agentPresetsAll: typeof agentPresetsAll;
-  /** Back-compat alias for existing config factories. */
-  agentPresets: typeof agentPresetsAll;
+  agentPresets: typeof agentPresets;
   /** Factory for producing a strongly typed and normalized agent definition. */
   defineAgent: <const TName extends string>(
     input: DefineAgentInput<TName> | ((helpers: DefineAgentHelpers) => DefineAgentInput<TName>)
@@ -215,8 +213,7 @@ export function exactMarketplacesConfig<T extends MarketplacesConfig>(
 /** Creates helper utilities passed into config factory callbacks. */
 function buildHelpers(): DefineAgentHelpers {
   return {
-    agentPresetsAll,
-    agentPresets: agentPresetsAll,
+    agentPresets,
     defineAgent: marketplacesConfig.defineAgent,
     syncModePresets,
   };
@@ -281,9 +278,9 @@ export const marketplacesConfig = {
   resolveAgentConfig(entryName: string, entry: AgentEntryInput): DefinedAgent | null {
     if (entry === false) return null;
     if (entry === true) {
-      const preset = agentPresetsAll[entryName as keyof typeof agentPresetsAll];
+      const preset = agentPresets[entryName as keyof typeof agentPresets];
       if (!preset) return null;
-      return marketplacesConfig.defineAgent(preset as DefineAgentInput);
+      return marketplacesConfig.defineAgent(preset);
     }
     if (isDefinedAgent(entry)) {
       return {
@@ -319,3 +316,6 @@ export const marketplacesConfig = {
     return out;
   },
 };
+
+/** First parameter type of defineAgent; use for typing preset records so they are compile-time compatible. */
+export type DefineAgentFirstParameter = Parameters<typeof marketplacesConfig.defineAgent>[0];

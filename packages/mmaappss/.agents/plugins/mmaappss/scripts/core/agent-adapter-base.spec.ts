@@ -6,8 +6,11 @@ import type { DefinedAgent } from './marketplaces-config.js';
 import { SyncModeBase, type SyncModeContext } from './sync-modes/sync-mode-base.js';
 
 class RecordingSyncMode extends SyncModeBase {
-  constructor(private readonly calls: string[]) {
-    super();
+  constructor(
+    options?: unknown,
+    private readonly calls: string[] = []
+  ) {
+    super(options);
   }
 
   override syncSetupBefore(): Result<void, Error> {
@@ -64,8 +67,8 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
   it('runs enabled sync hook chain and sync mode enabled hook', () => {
     const calls: string[] = [];
     class RecordingSyncModeClass extends RecordingSyncMode {
-      constructor() {
-        super(calls);
+      constructor(options?: unknown) {
+        super(options, calls);
       }
     }
     const adapter = new HookedAdapter(
@@ -92,8 +95,8 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
   it('runs disabled sync hook chain and sync mode disabled hook', () => {
     const calls: string[] = [];
     class RecordingSyncModeClass extends RecordingSyncMode {
-      constructor() {
-        super(calls);
+      constructor(options?: unknown) {
+        super(options, calls);
       }
     }
     const adapter = new HookedAdapter(
@@ -118,8 +121,8 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
   it('runs clear lifecycle hooks and sync mode clear hook', () => {
     const calls: string[] = [];
     class RecordingSyncModeClass extends RecordingSyncMode {
-      constructor() {
-        super(calls);
+      constructor(options?: unknown) {
+        super(options, calls);
       }
     }
     const adapter = new HookedAdapter(

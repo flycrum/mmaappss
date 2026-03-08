@@ -38,6 +38,10 @@ const MARKETPLACE_OWNER = 'mmaappss';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
 export class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOptions> {
+  constructor(options?: MarketplaceJsonSyncModeOptions) {
+    super(options);
+  }
+
   /** Builds sorted marketplace plugin entries from discovered marketplaces. */
   private buildMarketplacePluginEntries(
     marketplaces: DiscoveredMarketplace[],

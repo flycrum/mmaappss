@@ -31,7 +31,7 @@ export interface SyncModeContext {
 
 /** Constructor signature for sync mode classes instantiated by the adapter runtime. */
 export interface SyncModeClassRef<TOptions = unknown> {
-  new (...args: unknown[]): SyncModeBase<TOptions>;
+  new (options: TOptions | undefined, ...args: unknown[]): SyncModeBase<TOptions>;
 }
 
 /** Normalized sync mode definition that binds a class to optional options and enabled flag. */
@@ -135,8 +135,3 @@ export abstract class SyncModeBase<TOptions = unknown> {
     return ok(undefined);
   }
 }
-
-/** Named export wrapper for sync mode base class. */
-export const syncModeBase = {
-  SyncModeBase,
-};

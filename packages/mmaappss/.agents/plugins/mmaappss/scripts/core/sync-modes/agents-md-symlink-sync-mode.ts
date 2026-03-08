@@ -8,6 +8,10 @@ import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
 /** Sync mode that manages sourceFile→targetFile symlink lifecycle (e.g. AGENTS.md→CLAUDE.md). */
 export class AgentsMdSymlinkSyncMode extends SyncModeBase<AgentsMdSymlinkOptions> {
+  constructor(options?: AgentsMdSymlinkOptions) {
+    super(options);
+  }
+
   override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);

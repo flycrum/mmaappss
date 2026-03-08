@@ -12,6 +12,10 @@ export interface RulesSymlinkSyncModeOptions {
 }
 
 export class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptions> {
+  constructor(options?: RulesSymlinkSyncModeOptions) {
+    super(options);
+  }
+
   /** Clears all previously managed rules links for this mode. */
   private clearRules(context: SyncModeContext): Result<void, Error> {
     const options = this.options;

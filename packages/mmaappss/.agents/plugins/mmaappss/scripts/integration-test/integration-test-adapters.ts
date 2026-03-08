@@ -182,10 +182,14 @@ function renameIfExists(from: string, to: string): void {
       fs.copyFileSync(from, to);
       removeIfExists(from);
     } catch (fallbackErr) {
-      // Log and swallow so teardown continues
+      // Log and swallow so teardown continues; include both errors for debugging
+      const renameMsg = _e instanceof Error ? _e.message : String(_e);
+      const fallbackMsg =
+        fallbackErr instanceof Error ? (fallbackErr as Error).message : String(fallbackErr);
       console.error(
-        'renameIfExists failed, fallback copy+remove also failed:',
-        (fallbackErr as Error).message
+        'renameIfExists: rename failed, fallback copy+remove also failed.',
+        `Rename: ${renameMsg}. Fallback: ${fallbackMsg}`,
+        { renameError: _e, fallbackError: fallbackErr }
       );
     }
   }
