@@ -90,7 +90,8 @@ class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     let existing: Record<string, unknown>;
     if (res.isErr()) {
-      if (res.error.message.includes('ENOENT')) existing = {};
+      const errWithCode = res.error as Error & { code?: string };
+      if (errWithCode.code === 'ENOENT' || res.error.message.includes('ENOENT')) existing = {};
       else return err(res.error);
     } else {
       existing = res.value ?? {};

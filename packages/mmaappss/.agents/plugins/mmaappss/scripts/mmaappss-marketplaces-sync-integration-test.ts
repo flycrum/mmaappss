@@ -21,7 +21,7 @@ import {
   type IntegrationTestMode,
 } from './integration-test/integration-test-adapters.js';
 
-const AGENTS = Object.keys(INTEGRATION_ADAPTERS) as Agent[];
+const AGENTS: Agent[] = [...presetAgents];
 const MODES: IntegrationTestMode[] = ['enabled', 'disabled'];
 
 async function main(): Promise<void> {
@@ -30,7 +30,7 @@ async function main(): Promise<void> {
 
   if (!agentArg || (agentArg !== 'all' && !AGENTS.includes(agentArg as Agent))) {
     console.error(
-      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <${presetAgents.join('|')}|all> [enabled|disabled]`
+      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <${AGENTS.join('|')}|all> [enabled|disabled]`
     );
     console.error('  Agent only: run all conditions (backup → steps → restore)');
     console.error('  Agent + mode: run single condition');
