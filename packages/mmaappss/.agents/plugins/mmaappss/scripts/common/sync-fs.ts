@@ -1,5 +1,5 @@
 /**
- * Shared file-system helpers for sync scripts (rules-sync, cursor-content-sync, claude-md-sync, etc.).
+ * Shared file-system helpers for sync scripts (rules-sync, cursor-content-sync, agents-md-symlink-sync, etc.).
  * Uses fs-extra for ensureDir/outputFile; provides symlink, manifest, and teardown helpers.
  */
 

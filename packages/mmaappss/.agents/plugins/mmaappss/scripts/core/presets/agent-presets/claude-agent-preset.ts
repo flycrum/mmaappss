@@ -8,7 +8,15 @@ export const claudeAgentPreset: DefineAgentInput<'claude'> = {
     defaultManifestKey: 'claude',
   },
   syncModePresets: {
-    agentsMdSymlink: true,
+    agentsMdSymlink: {
+      options: {
+        sourceFile: 'AGENTS.md',
+        targetFile: 'CLAUDE.md',
+        manifestPath: '.claude/.mmaappss-claude-md-sync.json',
+        gitignoreComment: '\n# mmaappss: symlinked from AGENTS.md for Claude\n',
+        gitignoreEntry: 'CLAUDE.md',
+      },
+    },
     localMarketplaceSync: {
       options: {
         manifestKey: 'claude',
