@@ -54,8 +54,10 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
   { mode: 'disabled', label: 'remove' },
   { mode: 'enabled', label: 'recreate' },
   { mode: 'enabled', label: 'idempotent: enabled again (no changes)' },
+  { mode: 'enabled', label: 'idempotent: enabled third run' },
   { mode: 'disabled', label: 'remove again' },
   { mode: 'disabled', label: 'idempotent: disabled again (no-op)' },
+  { mode: 'disabled', label: 'idempotent: disabled third run' },
   { mode: 'enabled', label: 'final create' },
   {
     mode: 'enabled',
@@ -77,9 +79,75 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
   },
   {
     mode: 'enabled',
+    label: 'exclude plugin wildcard-like segment: [plugins/git]',
+    configOverride: { excluded: ['plugins/git'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
     label: 'exclude single file (excluded): sync then assert file absent',
     configOverride: { excluded: ['.cursor/commands/git/git-pr-fillout-template.md'] },
     assertExcludedFile: '.cursor/commands/git/git-pr-fillout-template.md',
+  },
+  {
+    mode: 'enabled',
+    label: 'exclude single file by segment only',
+    configOverride: { excluded: ['git-pr-fillout-template.md'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'empty excluded array maintains full sync',
+    configOverride: { excluded: [] },
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded non-existent path should be harmless',
+    configOverride: { excluded: ['.agents/plugins/does-not-exist'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded top-level .agents should remove all plugin sync',
+    configOverride: { excluded: ['.agents'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded node_modules should not break sync',
+    configOverride: { excluded: ['node_modules'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded dist should not break sync',
+    configOverride: { excluded: ['dist'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded .turbo should not break sync',
+    configOverride: { excluded: ['.turbo'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded .next should not break sync',
+    configOverride: { excluded: ['.next'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'strict enabled after broad exclusions reset',
+    configOverride: { excluded: [] },
+  },
+  {
+    mode: 'disabled',
+    label: 'disable after complex enabled variants',
+  },
+  {
+    mode: 'enabled',
+    label: 're-enable after complex disabled step',
   },
   {
     mode: 'enabled',
@@ -109,7 +177,7 @@ function renameIfExists(from: string, to: string): void {
   try {
     if (fs.existsSync(to)) fs.rmSync(to, { recursive: true });
     fs.renameSync(from, to);
-  } catch (e) {
+  } catch (_e) {
     try {
       fs.copyFileSync(from, to);
       removeIfExists(from);

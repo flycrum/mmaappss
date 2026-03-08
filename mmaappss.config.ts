@@ -2,9 +2,9 @@
  * Root mmaappss config. Env vars (MMAAPPSS_MARKETPLACE_*) override these when set.
  */
 
-import type { MmaappssConfig } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/common/config-helpers.js';
+import { marketplacesConfig } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/core/marketplaces-config.js';
 
-const mmaappssConfig: MmaappssConfig = {
+const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
   marketplacesEnabled: {
     claude: true,
     cursor: true,
@@ -13,6 +13,106 @@ const mmaappssConfig: MmaappssConfig = {
   excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
   // loggingEnabled: true,
   // postMergeSyncEnabled: true,
-};
+}));
+
+// // Example: Advanced preset override + custom agent using folder transforms and per-entry processing hooks.
+// const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
+//   ({ defineAgent, agentPresets }) => ({
+//     marketplacesEnabled: {
+//       claude: true,
+//       cursor: defineAgent({
+//         ...agentPresets.cursor,
+//         name: 'cursor',
+//         syncModePresets: {
+//           ...agentPresets.cursor.syncModePresets,
+//           localPluginsContentSync: {
+//             options: {
+//               manifestPath: '.cursor/.mmaappss-cursor-sync.json',
+//               requiredManifest: 'cursor',
+//               strategy: 'generic',
+//               targetRoot: '.cursor',
+//               folderSelection: {
+//                 mode: 'whitelist',
+//                 folders: ['commands', 'skills', 'rules', 'agents'],
+//               },
+//               folderTransforms: {
+//                 rules: {
+//                   transformFilenameFn(filename) {
+//                     return filename.replace(/\.(md|markdown)$/i, '.mdc');
+//                   },
+//                   transformFileMarkdownFn(contents) {
+//                     return `---\nalwaysApply: true\n---\n\n${contents.replace(/^---[\s\S]*?---\n?/, '')}`;
+//                   },
+//                 },
+//               },
+//               processPluginFolderOrFile(localContent) {
+//                 if (localContent.entryName === '.claude-plugin') return false;
+//                 if (localContent.pluginName === 'git' && localContent.entryName === 'commands') {
+//                   return {
+//                     targetPath: `${localContent.targetPath}-customized`,
+//                   };
+//                 }
+//                 return {
+//                   filename: localContent.entryName,
+//                 };
+//               },
+//             },
+//           },
+//         },
+//       }),
+//       codex: true,
+//       custom: {
+//         superagent: defineAgent(({ agentPresets: presets, syncModePresets: _syncModePresets }) => ({
+//           ...presets.codex,
+//           name: 'superagent',
+//           syncModePresets: {
+//             ...presets.codex.syncModePresets,
+//             localMarketplaceSync: {
+//               options: {
+//                 manifestFilter: 'claude',
+//                 marketplaceFile: '.superagent-plugin/marketplace.json',
+//                 marketplaceName: 'mmaappss-superagent',
+//                 sourceFormat: 'prefixed',
+//               },
+//             },
+//           },
+//           syncModeCustom: [
+//             {
+//               modeClass: localPluginsContentSyncMode.LocalPluginsContentSyncMode,
+//               options: {
+//                 manifestPath: '.superagent/.mmaappss-superagent-sync.json',
+//                 requiredManifest: 'claude',
+//                 strategy: 'generic',
+//                 targetRoot: '.superagent',
+//                 folderSelection: { mode: 'blacklist', folders: ['.claude-plugin'] },
+//                 processPluginFolderOrFile(localContent) {
+//                   if (
+//                     localContent.agentName === 'superagent' &&
+//                     localContent.entryName === 'rules'
+//                   ) {
+//                     return {
+//                       targetPath: `.superagent/rules/${localContent.pluginName}`,
+//                     };
+//                   }
+//                   return {
+//                     symlink: localContent.isDirectory,
+//                   };
+//                 },
+//               },
+//             },
+//             (helpers) => ({
+//               modeClass: helpers.syncModePresets.rulesSymlink.modeClass,
+//               options: {
+//                 rulesDir: '.superagent/rules-symlinked',
+//                 syncManifest: '.superagent/.mmaappss-superagent-rules.json',
+//               },
+//             }),
+//           ],
+//         })),
+//       },
+//     },
+//     excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
+//   })
+// );
 
 export default mmaappssConfig;

@@ -14,6 +14,7 @@
  */
 
 import { pathHelpers } from './common/path-helpers.js';
+import { presetAgents } from './common/preset-agents.js';
 import type { Agent } from './common/types.js';
 import {
   INTEGRATION_ADAPTERS,
@@ -29,7 +30,7 @@ async function main(): Promise<void> {
 
   if (!agentArg || (agentArg !== 'all' && !AGENTS.includes(agentArg as Agent))) {
     console.error(
-      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <claude|cursor|codex|all> [enabled|disabled]`
+      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <${presetAgents.join('|')}|all> [enabled|disabled]`
     );
     console.error('  Agent only: run all conditions (backup → steps → restore)');
     console.error('  Agent + mode: run single condition');
@@ -45,6 +46,10 @@ async function main(): Promise<void> {
     }
     for (const agent of AGENTS) {
       const adapter = INTEGRATION_ADAPTERS[agent];
+      if (!adapter) {
+        console.error(`Missing integration adapter: ${agent}`);
+        process.exit(1);
+      }
       const code = await adapter.runAllConditions(root);
       if (code !== 0) process.exit(code);
     }
@@ -52,6 +57,10 @@ async function main(): Promise<void> {
   }
 
   const adapter = INTEGRATION_ADAPTERS[agentArg as Agent];
+  if (!adapter) {
+    console.error(`Missing integration adapter: ${agentArg}`);
+    process.exit(1);
+  }
 
   if (modeArg) {
     if (!MODES.includes(modeArg as IntegrationTestMode)) {

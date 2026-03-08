@@ -7,39 +7,17 @@ import { config as loadDotenv } from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import type { DefinedAgent, MarketplacesConfig } from '../core/marketplaces-config.js';
+import { marketplacesConfig } from '../core/marketplaces-config.js';
 import { parseBool } from './parse-bool.js';
 import type { Agent } from './types.js';
 
 const DEFAULT_POST_MERGE_MARKETPLACES: Agent[] = ['claude', 'cursor', 'codex'];
-const VALID_AGENTS: readonly Agent[] = ['claude', 'cursor', 'codex'];
 
 /**
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
  */
-export interface MmaappssConfig {
-  /**
-   * Glob patterns for paths/segments to exclude. Applied in discovery (walk + plugin filter), Cursor content sync (destination paths), and Claude MD sync.
-   * Examples: 'packages', '.agents/plugins/git', '.cursor/commands/git/git-pr-fillout-template.md'. Paths normalized to forward slashes.
-   */
-  excluded?: string[];
-  /** When true, write structured logs to repo .mmaappss/logs/mmaappss.log. Env MMAAPPSS_LOGGING_ENABLED overrides. */
-  loggingEnabled?: boolean;
-  /**
-   * Enable all marketplaces ('all') or per-agent flags. Env (MMAAPPSS_MARKETPLACE_*) overrides.
-   * Object variant: `{ claude, cursor, codex }` booleans. Example: `{ claude: true, cursor: false, codex: true }`.
-   */
-  marketplacesEnabled?:
-    | 'all'
-    | {
-        claude: boolean;
-        cursor: boolean;
-        codex: boolean;
-      };
-  /** When true, post-merge git hook (if installed) runs marketplace sync after pull/merge. Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides. */
-  postMergeSyncEnabled?: boolean;
-  /** Agents to sync in post-merge (e.g. ['claude', 'cursor', 'codex']). Defaults to all three if missing or invalid. */
-  postMergeSyncMarketplaces?: (Agent | string)[];
-}
+export type MmaappssConfig = MarketplacesConfig;
 
 /**
  * Namespaced config utilities for env loading, TS config, and marketplace enable flags.
@@ -66,14 +44,12 @@ export const configHelpers = {
     },
 
     /**
-     * Resolve list of agents to sync in post-merge. Uses postMergeSyncMarketplaces from config; defaults to ['claude','cursor','codex'] if missing or invalid.
+     * Resolve list of agents to sync in post-merge. Uses postMergeSyncMarketplaces from config; defaults to presetAgents if missing or invalid.
      */
     getPostMergeSyncMarketplaces(_root: string, tsConfig: MmaappssConfig | null): Agent[] {
       const raw = tsConfig?.postMergeSyncMarketplaces;
       if (!Array.isArray(raw) || raw.length === 0) return [...DEFAULT_POST_MERGE_MARKETPLACES];
-      const filtered = raw.filter(
-        (a): a is Agent => typeof a === 'string' && VALID_AGENTS.includes(a as Agent)
-      );
+      const filtered = raw.filter((a): a is Agent => typeof a === 'string' && a.trim().length > 0);
       return filtered.length > 0 ? filtered : [...DEFAULT_POST_MERGE_MARKETPLACES];
     },
 
@@ -87,26 +63,28 @@ export const configHelpers = {
      * @returns Whether marketplace sync is enabled for that agent
      */
     getMarketplaceEnabled(
-      root: string,
+      _root: string,
       tsConfig: MmaappssConfig | null,
-      agent: 'claude' | 'cursor' | 'codex'
+      agent: Agent | DefinedAgent
     ): boolean {
       const { VARS } = configHelpers.env;
       const allEnv = process.env[VARS.ENV_ALL];
-      const agentEnv =
-        agent === 'claude'
-          ? process.env[VARS.ENV_CLAUDE]
-          : agent === 'cursor'
-            ? process.env[VARS.ENV_CURSOR]
-            : process.env[VARS.ENV_CODEX];
+      const agentName = typeof agent === 'string' ? agent : agent.name;
+      const resolvedAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
+      const defaultPer = Boolean(resolvedAgents[agentName]);
 
-      const enabled = tsConfig?.marketplacesEnabled;
-      const defaultPer =
-        enabled === 'all'
-          ? true
-          : enabled && typeof enabled === 'object'
-            ? (enabled[agent] ?? false)
-            : false;
+      const envVar =
+        typeof agent === 'object' && agent.envVar
+          ? agent.envVar
+          : agentName === 'claude'
+            ? VARS.ENV_CLAUDE
+            : agentName === 'cursor'
+              ? VARS.ENV_CURSOR
+              : agentName === 'codex'
+                ? VARS.ENV_CODEX
+                : undefined;
+      const agentEnv = envVar ? process.env[envVar] : undefined;
+
       const allEnabled = parseBool(allEnv, true);
       const perEnabled = parseBool(agentEnv, defaultPer);
       return allEnabled && perEnabled;
@@ -119,11 +97,11 @@ export const configHelpers = {
     VARS: {
       /** Master switch: MMAAPPSS_MARKETPLACE_ALL */
       ENV_ALL: 'MMAAPPSS_MARKETPLACE_ALL',
-      /** Claude marketplace: MMAAPPSS_MARKETPLACE_CLAUDE */
+      /** Claude preset marketplace: MMAAPPSS_MARKETPLACE_CLAUDE */
       ENV_CLAUDE: 'MMAAPPSS_MARKETPLACE_CLAUDE',
-      /** Cursor marketplace: MMAAPPSS_MARKETPLACE_CURSOR */
+      /** Cursor preset marketplace: MMAAPPSS_MARKETPLACE_CURSOR */
       ENV_CURSOR: 'MMAAPPSS_MARKETPLACE_CURSOR',
-      /** Codex marketplace: MMAAPPSS_MARKETPLACE_CODEX */
+      /** Codex preset marketplace: MMAAPPSS_MARKETPLACE_CODEX */
       ENV_CODEX: 'MMAAPPSS_MARKETPLACE_CODEX',
       /** File logging: MMAAPPSS_LOGGING_ENABLED */
       ENV_LOGGING: 'MMAAPPSS_LOGGING_ENABLED',

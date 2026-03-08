@@ -3,8 +3,13 @@
  * Agent-agnostic; adapters map these to platform-specific manifests.
  */
 
-/** Supported coding agents for marketplace sync. */
-export type Agent = 'claude' | 'cursor' | 'codex';
+import type { PresetAgentName } from './preset-agents.js';
+
+/** Built-in coding agents with presets. Alias for PresetAgentName from preset-agents. */
+export type PresetAgent = PresetAgentName;
+
+/** Any agent name, including preset agents and custom config-defined agents. */
+export type Agent = PresetAgent | (string & {});
 
 /** A plugin discovered under .agents/plugins/<name>/ */
 export interface DiscoveredPlugin {
