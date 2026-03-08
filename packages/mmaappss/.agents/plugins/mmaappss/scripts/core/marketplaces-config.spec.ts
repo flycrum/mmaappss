@@ -23,23 +23,25 @@ describe('marketplacesConfig', () => {
   });
 
   it('resolveEnabledAgents supports custom agent records', () => {
-    const config = marketplacesConfig.defineMarketplacesConfig(({ defineAgent }) => ({
-      marketplacesEnabled: {
-        custom: {
-          acme: defineAgent({
-            name: 'acme',
-            syncModePresets: {
-              markdownSectionSync: {
-                options: {
-                  agentsFile: 'AGENTS.override.md',
-                  sectionHeading: 'acme',
+    const config = marketplacesConfig.defineMarketplacesConfig(({ defineAgent }, config) =>
+      config({
+        marketplacesEnabled: {
+          custom: {
+            acme: defineAgent({
+              name: 'acme',
+              syncModePresets: {
+                markdownSectionSync: {
+                  options: {
+                    agentsFile: 'AGENTS.override.md',
+                    sectionHeading: 'acme',
+                  },
                 },
               },
-            },
-          }),
+            }),
+          },
         },
-      },
-    }));
+      })
+    );
 
     const resolved = marketplacesConfig.resolveEnabledAgents(config);
     expect(Object.keys(resolved)).toEqual(['acme']);

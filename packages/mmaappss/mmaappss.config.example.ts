@@ -5,7 +5,7 @@
 
 import { marketplacesConfig } from './.agents/plugins/mmaappss/scripts/core/marketplaces-config.js';
 
-export const mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig(() => ({
+export const mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig({
   marketplacesEnabled: {
     claude: true,
     cursor: true,
@@ -14,7 +14,7 @@ export const mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig
   excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
   // loggingEnabled: true,
   // postMergeSyncEnabled: true,
-}));
+});
 
 // Example: Advanced preset override + custom agent using folder transforms and per-entry processing hooks.
 // export const mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig(

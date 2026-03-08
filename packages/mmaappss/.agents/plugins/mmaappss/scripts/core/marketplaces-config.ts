@@ -1,3 +1,4 @@
+import type { Exact } from 'type-fest';
 import type { PresetAgentName } from '../common/preset-agents.js';
 import { presetAgents } from '../common/preset-agents.js';
 import type { PluginManifestKey } from '../common/types.js';
@@ -84,8 +85,8 @@ export interface DefineAgentInput<TName extends string = string> {
   syncModePresets?: Partial<Record<SyncModePresetName, SyncModePresetValue>>;
 }
 
-/** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). */
-interface DefineAgentHelpers {
+/** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
+export interface DefineAgentHelpers {
   /** Built-in agent presets available for composition and override. */
   agentPresetsAll: typeof agentPresetsAll;
   /** Back-compat alias for existing config factories. */
@@ -129,6 +130,12 @@ export interface MarketplacesConfig {
   /** Agent names to run during post-merge sync. */
   postMergeSyncMarketplaces?: string[];
 }
+
+/** Exact config input: only keys from MarketplacesConfig allowed (type-fest Exact). */
+export type ExactMarketplacesConfigInput<T extends MarketplacesConfig> = Exact<
+  MarketplacesConfig,
+  T
+>;
 
 /** Type guard for sync mode class references (not factory callbacks). */
 function isClassRef(value: unknown): value is SyncModeClassRef {
@@ -195,6 +202,16 @@ function isDefinedAgent(value: unknown): value is DefinedAgent {
   return isObject(value) && typeof value.name === 'string' && Array.isArray(value.syncModes);
 }
 
+/**
+ * Wraps config so only keys from MarketplacesConfig are allowed (excess properties are a type error).
+ * Callback form uses (helpers, config) => config({ ... }) so config is in parameter position and exact keys are enforced.
+ */
+export function exactMarketplacesConfig<T extends MarketplacesConfig>(
+  config: ExactMarketplacesConfigInput<T>
+): T {
+  return config as T;
+}
+
 /** Creates helper utilities passed into config factory callbacks. */
 function buildHelpers(): DefineAgentHelpers {
   return {
@@ -237,12 +254,27 @@ export const marketplacesConfig = {
     };
   },
 
-  /** Defines the top-level marketplaces config with strongly inferred literal types. */
-  defineMarketplacesConfig<const TConfig extends MarketplacesConfig>(
-    input: TConfig | ((helpers: DefineAgentHelpers) => TConfig)
-  ): TConfig {
+  /**
+   * Defines the top-level marketplaces config.
+   * Object form: enforces exact keys (no excess properties).
+   * Callback form: () => ({ ... }) or (helpers) => ({ ... }) or (helpers, config) => config({ ... }).
+   * TReturn extends Exact<MarketplacesConfig, TReturn> so callback return with excess keys is a type error.
+   */
+  defineMarketplacesConfig<
+    const TConfig extends MarketplacesConfig,
+    TReturn extends Exact<MarketplacesConfig, TReturn> = MarketplacesConfig,
+  >(
+    input:
+      | ExactMarketplacesConfigInput<TConfig>
+      | (() => TReturn)
+      | ((helpers: DefineAgentHelpers) => TReturn)
+      | ((helpers: DefineAgentHelpers, config: typeof exactMarketplacesConfig) => TReturn)
+  ): TConfig extends (...args: unknown[]) => unknown ? MarketplacesConfig : TConfig {
     const helpers = buildHelpers();
-    return typeof input === 'function' ? input(helpers) : input;
+    const result = typeof input === 'function' ? input(helpers, exactMarketplacesConfig) : input;
+    return result as unknown as TConfig extends (...args: unknown[]) => unknown
+      ? MarketplacesConfig
+      : TConfig;
   },
 
   /** Resolves one agent entry (boolean, input object, or resolved definition) into a runtime agent definition. */

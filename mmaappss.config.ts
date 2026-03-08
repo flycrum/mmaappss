@@ -15,9 +15,10 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
   // postMergeSyncEnabled: true,
 }));
 
-// // Example: Advanced preset override + custom agent using folder transforms and per-entry processing hooks.
+// // Example: Advanced preset override + custom agent; use (helpers, config) => config({ ... }) for exact keys.
 // const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
-//   ({ defineAgent, agentPresets }) => ({
+//   ({ defineAgent, agentPresets }, config) =>
+//     config({
 //     marketplacesEnabled: {
 //       claude: true,
 //       cursor: defineAgent({
@@ -112,7 +113,7 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
 //       },
 //     },
 //     excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
-//   })
-// );
+//   });
+// );  // config() enforces exact MarketplacesConfig keys
 
 export default mmaappssConfig;
