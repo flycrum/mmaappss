@@ -1,62 +1,15 @@
-import { markdownSection } from '../../common/markdown-section.js';
 import type { PresetAgentName } from '../../common/preset-agents.js';
 import type { DefineAgentInput } from '../marketplaces-config.js';
+import { claudeAgentPreset } from './agent-presets/claude-agent-preset.js';
+import { codexAgentPreset } from './agent-presets/codex-agent-preset.js';
+import { cursorAgentPreset } from './agent-presets/cursor-agent-preset.js';
 
 /** Built-in agent preset definitions composed from sync mode presets and options. */
-export const agentPresets: Record<PresetAgentName, DefineAgentInput> = {
-  claude: {
-    envVar: 'MMAAPPSS_MARKETPLACE_CLAUDE',
-    name: 'claude',
-    syncModePresets: {
-      agentsMdSymlink: true,
-      localMarketplaceSync: {
-        options: {
-          manifestFilter: 'claude',
-          marketplaceFile: '.claude-plugin/marketplace.json',
-          marketplaceName: 'mmaappss-plugins',
-          sourceFormat: 'prefixed',
-        },
-      },
-      rulesSymlink: {
-        options: {
-          rulesDir: '.claude/rules',
-          syncManifest: '.claude/.mmaappss-claude-sync.json',
-        },
-      },
-      settingsSync: {
-        options: {
-          manifestFilter: 'claude',
-          marketplaceName: 'mmaappss-plugins',
-          settingsFile: '.claude/settings.json',
-        },
-      },
-    },
-  },
-  codex: {
-    envVar: 'MMAAPPSS_MARKETPLACE_CODEX',
-    name: 'codex',
-    syncModePresets: {
-      markdownSectionSync: {
-        options: {
-          agentsFile: 'AGENTS.override.md',
-          removeExistingSectionBlocks: true,
-          sectionHeading: markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, ''),
-        },
-      },
-    },
-  },
-  cursor: {
-    envVar: 'MMAAPPSS_MARKETPLACE_CURSOR',
-    name: 'cursor',
-    syncModePresets: {
-      localPluginsContentSync: {
-        options: {
-          manifestPath: '.cursor/.mmaappss-cursor-sync.json',
-          requiredManifest: 'cursor',
-          strategy: 'cursorCompatible',
-          targetRoot: '.cursor',
-        },
-      },
-    },
-  },
+export const agentPresetsAll: Record<PresetAgentName, DefineAgentInput> = {
+  claude: claudeAgentPreset,
+  codex: codexAgentPreset,
+  cursor: cursorAgentPreset,
 };
+
+/** Back-compat alias for older imports; prefer `agentPresetsAll` going forward. */
+export const agentPresets = agentPresetsAll;

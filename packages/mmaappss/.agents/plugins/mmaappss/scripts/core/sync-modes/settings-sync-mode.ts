@@ -3,14 +3,13 @@ import { err, ok, Result } from 'neverthrow';
 import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
-import type { PresetAgentName } from '../../common/preset-agents.js';
-import type { DiscoveredMarketplace, DiscoveredPlugin } from '../../common/types.js';
+import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
 import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
 /** Options for syncing and tearing down agent settings files. */
 export interface SettingsSyncModeOptions {
-  /** Selects which manifest-bearing plugins are included in enabledPlugins output. */
-  manifestFilter: PresetAgentName;
+  /** Manifest capability key to include (falls back to agent policy default). */
+  manifestKey?: PluginManifestKey;
   /** Optional marketplace name override (defaults to `mmaappss-plugins`). */
   marketplaceName?: string;
   /** Relative path to the target settings file. */
@@ -22,18 +21,16 @@ const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
 class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
   /** Builds plugin IDs that should be represented in the target settings file. */
-  private buildPluginIds(marketplaces: DiscoveredMarketplace[]): string[] {
+  private buildPluginIds(
+    marketplaces: DiscoveredMarketplace[],
+    manifestKey?: PluginManifestKey
+  ): string[] {
     const options = this.options;
     if (!options) return [];
-    const includePlugin = (plugin: DiscoveredPlugin) => {
-      if (options.manifestFilter === 'claude') return plugin.hasClaudeManifest;
-      if (options.manifestFilter === 'cursor') return plugin.hasCursorManifest;
-      return plugin.hasCodexManifest;
-    };
     return uniq(
       marketplaces.flatMap((marketplace) =>
         marketplace.plugins
-          .filter(includePlugin)
+          .filter((plugin) => this.hasPluginManifest(plugin, manifestKey))
           .map((plugin) => plugin.manifestName ?? plugin.name)
       )
     );
@@ -70,15 +67,13 @@ class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
   }
 
   /** Merges mmaappss-managed marketplace and enabled plugin settings into the target file. */
-  private syncSettings(
-    repoRoot: string,
-    marketplaces: DiscoveredMarketplace[]
-  ): Result<void, Error> {
+  private syncSettings(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
 
     const marketplaceName = options.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
-    const pluginIds = this.buildPluginIds(marketplaces);
+    const manifestKey = options.manifestKey ?? context.agentPolicy?.defaultManifestKey;
+    const pluginIds = this.buildPluginIds(context.marketplaces, manifestKey);
     const enabledPlugins: Record<string, boolean> = {};
     for (const pluginId of pluginIds) {
       enabledPlugins[`${pluginId}@${marketplaceName}`] = true;
@@ -91,7 +86,7 @@ class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
       enabledPlugins,
     };
 
-    const filePath = path.join(repoRoot, options.settingsFile);
+    const filePath = path.join(context.repoRoot, options.settingsFile);
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     let existing: Record<string, unknown>;
     if (res.isErr()) {
@@ -120,7 +115,7 @@ class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
 
   /** Sync-phase enabled hook that writes settings integration fields. */
   override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
-    return this.syncSettings(context.repoRoot, context.marketplaces);
+    return this.syncSettings(context);
   }
 
   /** Sync-phase disabled hook that removes settings integration fields. */

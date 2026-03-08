@@ -9,6 +9,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { DefinedAgent, MarketplacesConfig } from '../core/marketplaces-config.js';
 import { marketplacesConfig } from '../core/marketplaces-config.js';
+import { agentPresetsAll } from '../core/presets/agent-presets.js';
 import { parseBool } from './parse-bool.js';
 import type { Agent } from './types.js';
 
@@ -72,19 +73,9 @@ export const configHelpers = {
       const agentName = typeof agent === 'string' ? agent : agent.name;
       const resolvedAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
       const defaultPer = Boolean(resolvedAgents[agentName]);
-
-      const envVar =
-        typeof agent === 'object' && agent.envVar
-          ? agent.envVar
-          : agentName === 'claude'
-            ? VARS.ENV_CLAUDE
-            : agentName === 'cursor'
-              ? VARS.ENV_CURSOR
-              : agentName === 'codex'
-                ? VARS.ENV_CODEX
-                : undefined;
+      const presetEnvVar = agentPresetsAll[agentName as keyof typeof agentPresetsAll]?.envVar;
+      const envVar = typeof agent === 'object' && agent.envVar ? agent.envVar : presetEnvVar;
       const agentEnv = envVar ? process.env[envVar] : undefined;
-
       const allEnabled = parseBool(allEnv, true);
       const perEnabled = parseBool(agentEnv, defaultPer);
       return allEnabled && perEnabled;

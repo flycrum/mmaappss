@@ -75,7 +75,9 @@ export function syncCursorContent(
   if (clearResult.isErr()) return err(clearResult.error);
 
   const allowedPluginNames = new Set(
-    marketplaces.flatMap((m) => m.plugins.filter((p) => p.hasCursorManifest).map((p) => p.name))
+    marketplaces.flatMap((m) =>
+      m.plugins.filter((p) => p.manifests.cursor === true).map((p) => p.name)
+    )
   );
   const cursorDir = path.join(repoRoot, '.cursor');
   for (const sub of CURSOR_CONTENT_DIRS) {
@@ -112,7 +114,7 @@ export function syncCursorContent(
 
     for (const m of marketplaces) {
       for (const plugin of m.plugins) {
-        if (!plugin.hasCursorManifest) continue;
+        if (plugin.manifests.cursor !== true) continue;
 
         // --- Rules: copy to .mdc with frontmatter ---
         const rulesDir = path.join(plugin.path, RULES_SUBDIR);

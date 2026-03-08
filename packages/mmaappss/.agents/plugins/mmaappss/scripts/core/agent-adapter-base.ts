@@ -156,6 +156,7 @@ export class AgentAdapterBase {
     const context: SyncModeContext = {
       agentConfig: this.agentConfig,
       agentName: this.agentConfig.name,
+      agentPolicy: this.agentConfig.policy,
       enabled,
       marketplaces,
       repoRoot,
@@ -194,6 +195,7 @@ export class AgentAdapterBase {
     const context: SyncModeContext = {
       agentConfig: this.agentConfig,
       agentName: this.agentConfig.name,
+      agentPolicy: this.agentConfig.policy,
       enabled: false,
       marketplaces: [],
       repoRoot,

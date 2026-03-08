@@ -28,7 +28,7 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
 //           localPluginsContentSync: {
 //             options: {
 //               manifestPath: '.cursor/.mmaappss-cursor-sync.json',
-//               requiredManifest: 'cursor',
+//               requiredManifestKey: 'cursor',
 //               strategy: 'generic',
 //               targetRoot: '.cursor',
 //               folderSelection: {
@@ -69,7 +69,7 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
 //             ...presets.codex.syncModePresets,
 //             localMarketplaceSync: {
 //               options: {
-//                 manifestFilter: 'claude',
+//                 manifestKey: 'claude',
 //                 marketplaceFile: '.superagent-plugin/marketplace.json',
 //                 marketplaceName: 'mmaappss-superagent',
 //                 sourceFormat: 'prefixed',
@@ -81,7 +81,7 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
 //               modeClass: localPluginsContentSyncMode.LocalPluginsContentSyncMode,
 //               options: {
 //                 manifestPath: '.superagent/.mmaappss-superagent-sync.json',
-//                 requiredManifest: 'claude',
+//                 requiredManifestKey: 'claude',
 //                 strategy: 'generic',
 //                 targetRoot: '.superagent',
 //                 folderSelection: { mode: 'blacklist', folders: ['.claude-plugin'] },

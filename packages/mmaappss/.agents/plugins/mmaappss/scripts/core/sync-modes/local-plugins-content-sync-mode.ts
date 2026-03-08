@@ -3,8 +3,8 @@ import path from 'node:path';
 import type { MmaappssConfig } from '../../common/config-helpers.js';
 import { clearCursorContent, syncCursorContent } from '../../common/cursor-content-sync.js';
 import { isExcluded } from '../../common/excluded-patterns.js';
-import type { PresetAgentName } from '../../common/preset-agents.js';
 import { syncFs } from '../../common/sync-fs.js';
+import type { PluginManifestKey } from '../../common/types.js';
 import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
 /** Rich metadata about one plugin top-level entry offered to transform callbacks. */
@@ -73,8 +73,8 @@ export interface LocalPluginsContentSyncModeOptions {
   manifestPath: string;
   /** Optional callback to inspect/override each plugin top-level entry before processing. */
   processPluginFolderOrFile?: (content: LocalPluginContent) => LocalPluginContentOverride | false;
-  /** Required manifest type for plugin eligibility. */
-  requiredManifest?: PresetAgentName | 'none';
+  /** Required manifest capability key for plugin eligibility. */
+  requiredManifestKey?: PluginManifestKey | 'none';
   /** Processing strategy (`cursorCompatible` wraps legacy cursor content sync behavior). */
   strategy: 'cursorCompatible' | 'generic';
   /** Root output directory for synced content. */
@@ -88,13 +88,11 @@ interface GenericManifestShape {
 
 /** Returns whether a discovered plugin satisfies the required manifest filter. */
 function hasRequiredManifest(
-  requiredManifest: LocalPluginsContentSyncModeOptions['requiredManifest'],
-  plugin: { hasClaudeManifest: boolean; hasCodexManifest: boolean; hasCursorManifest: boolean }
+  requiredManifestKey: LocalPluginsContentSyncModeOptions['requiredManifestKey'],
+  plugin: { manifests: Record<string, boolean> }
 ): boolean {
-  if (!requiredManifest || requiredManifest === 'none') return true;
-  if (requiredManifest === 'claude') return plugin.hasClaudeManifest;
-  if (requiredManifest === 'cursor') return plugin.hasCursorManifest;
-  return plugin.hasCodexManifest;
+  if (!requiredManifestKey || requiredManifestKey === 'none') return true;
+  return plugin.manifests[requiredManifestKey] === true;
 }
 
 /** Returns whether a top-level plugin entry should be included by folder selection rules. */
@@ -136,7 +134,8 @@ class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncMo
 
     for (const marketplace of context.marketplaces) {
       for (const plugin of marketplace.plugins) {
-        if (!hasRequiredManifest(options.requiredManifest, plugin)) continue;
+        const manifestKey = options.requiredManifestKey ?? context.agentPolicy?.defaultManifestKey;
+        if (!hasRequiredManifest(manifestKey, plugin)) continue;
         const entries = syncFs.readdirWithTypes(plugin.path);
         for (const entry of entries) {
           if (!isIncludedFolder(options.folderSelection, entry.name)) continue;

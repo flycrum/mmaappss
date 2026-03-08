@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
-import type { DiscoveredMarketplace, DiscoveredPlugin } from '../../common/types.js';
+import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
 import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
 /** Marketplace plugin entry written into `marketplace.json`. */
@@ -24,8 +24,8 @@ interface MarketplaceJson {
 
 /** Options for syncing and tearing down marketplace JSON files. */
 export interface MarketplaceJsonSyncModeOptions {
-  /** Selects which plugin manifest type is eligible for inclusion. */
-  manifestFilter: 'claude' | 'cursor';
+  /** Manifest capability key used for plugin eligibility (falls back to agent policy default). */
+  manifestKey?: PluginManifestKey;
   /** Relative file path to the target marketplace json file. */
   marketplaceFile: string;
   /** Optional marketplace name override (defaults to `mmaappss-plugins`). */
@@ -40,13 +40,12 @@ const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOptions> {
   /** Builds sorted marketplace plugin entries from discovered marketplaces. */
   private buildMarketplacePluginEntries(
-    marketplaces: DiscoveredMarketplace[]
+    marketplaces: DiscoveredMarketplace[],
+    manifestKey?: PluginManifestKey
   ): MarketplacePluginEntry[] {
     const options = this.options;
     if (!options) return [];
 
-    const hasManifest = (p: DiscoveredPlugin) =>
-      options.manifestFilter === 'claude' ? p.hasClaudeManifest : p.hasCursorManifest;
     const formatSource = (relativePath: string) =>
       options.sourceFormat === 'prefixed' ? `./${relativePath}` : relativePath;
 
@@ -54,7 +53,7 @@ class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOption
     const seen = new Set<string>();
     for (const marketplace of marketplaces) {
       for (const plugin of marketplace.plugins) {
-        if (!hasManifest(plugin)) continue;
+        if (!this.hasPluginManifest(plugin, manifestKey)) continue;
         const key = `${marketplace.relativePath}:${plugin.name}`;
         if (seen.has(key)) continue;
         seen.add(key);
@@ -71,13 +70,16 @@ class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOption
   }
 
   /** Builds the full canonical marketplace JSON document for write/patch operations. */
-  private buildMarketplaceJson(marketplaces: DiscoveredMarketplace[]): MarketplaceJson {
+  private buildMarketplaceJson(
+    marketplaces: DiscoveredMarketplace[],
+    manifestKey?: PluginManifestKey
+  ): MarketplaceJson {
     const options = this.options;
     const name = options?.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
     return {
       name,
       owner: { name: MARKETPLACE_OWNER },
-      plugins: this.buildMarketplacePluginEntries(marketplaces),
+      plugins: this.buildMarketplacePluginEntries(marketplaces, manifestKey),
     };
   }
 
@@ -124,15 +126,13 @@ class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOption
   }
 
   /** Writes or patches marketplace JSON with canonical managed fields. */
-  private syncMarketplaceJson(
-    repoRoot: string,
-    marketplaces: DiscoveredMarketplace[]
-  ): Result<void, Error> {
+  private syncMarketplaceJson(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const filePath = path.join(repoRoot, options.marketplaceFile);
-    const canonical = this.buildMarketplaceJson(marketplaces);
+    const manifestKey = options.manifestKey ?? context.agentPolicy?.defaultManifestKey;
+    const filePath = path.join(context.repoRoot, options.marketplaceFile);
+    const canonical = this.buildMarketplaceJson(context.marketplaces, manifestKey);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
 
     if (res.isErr()) {
@@ -156,7 +156,7 @@ class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOption
 
   /** Sync-phase enabled hook that writes marketplace json content. */
   override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
-    return this.syncMarketplaceJson(context.repoRoot, context.marketplaces);
+    return this.syncMarketplaceJson(context);
   }
 
   /** Sync-phase disabled hook that removes managed marketplace json content. */

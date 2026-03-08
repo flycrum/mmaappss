@@ -10,7 +10,7 @@ import { pathHelpers } from '../common/path-helpers.js';
 import type { Agent, SyncOutcome } from '../common/types.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
 import { marketplacesConfig } from './marketplaces-config.js';
-import { agentPresets } from './presets/agent-presets.js';
+import { agentPresetsAll } from './presets/agent-presets.js';
 
 /** Flushes pending logger writes before process exit or early return. */
 function flushLogger(): Promise<void> {
@@ -44,9 +44,9 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
   for (const agent of agents) {
     const agentConfig =
       enabledAgents[agent] ??
-      (agent in agentPresets
+      (agent in agentPresetsAll
         ? marketplacesConfig.defineAgent(
-            agentPresets[agent as keyof typeof agentPresets] as Parameters<
+            agentPresetsAll[agent as keyof typeof agentPresetsAll] as Parameters<
               typeof marketplacesConfig.defineAgent
             >[0]
           )
@@ -89,9 +89,9 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
   for (const agent of agents) {
     const agentConfig =
       enabledAgents[agent] ??
-      (agent in agentPresets
+      (agent in agentPresetsAll
         ? marketplacesConfig.defineAgent(
-            agentPresets[agent as keyof typeof agentPresets] as Parameters<
+            agentPresetsAll[agent as keyof typeof agentPresetsAll] as Parameters<
               typeof marketplacesConfig.defineAgent
             >[0]
           )

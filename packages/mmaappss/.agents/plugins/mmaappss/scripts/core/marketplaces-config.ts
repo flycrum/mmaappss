@@ -1,6 +1,7 @@
 import type { PresetAgentName } from '../common/preset-agents.js';
 import { presetAgents } from '../common/preset-agents.js';
-import { agentPresets } from './presets/agent-presets.js';
+import type { PluginManifestKey } from '../common/types.js';
+import { agentPresetsAll } from './presets/agent-presets.js';
 import { syncModePresets } from './presets/sync-mode-presets.js';
 import type { SyncModeClassRef, SyncModeDefinition } from './sync-modes/sync-mode-base.js';
 
@@ -13,8 +14,38 @@ export interface DefinedAgent<TName extends string = string> {
   envVar?: string;
   /** Runtime agent identifier. */
   name: TName;
+  /**
+   * Optional cross-sync-mode policy defaults for this agent.
+   * Policy is the agent's "default behavior contract" (shared intent),
+   * while sync mode options remain per-mode overrides.
+   */
+  policy?: AgentPolicy;
   /** Ordered sync mode definitions used to construct sync mode instances. */
   syncModes: SyncModeDefinition[];
+}
+
+/**
+ * Agent-wide policy defaults used by generic sync modes.
+ *
+ * Why this exists:
+ * - Keeps sync modes agent-agnostic (no hardcoded "if claude/cursor/codex")
+ * - Lets presets/custom agents declare intent once and reuse it everywhere
+ *
+ * Example:
+ * - `policy.defaultManifestKey = 'claude'` means any mode that supports
+ *   manifest filtering can default to Claude-compatible plugins unless that
+ *   mode explicitly overrides the manifest key in its own options.
+ */
+export interface AgentPolicy {
+  /**
+   * Default plugin-manifest capability key for this agent.
+   *
+   * A manifest key identifies "which plugin flavor is compatible with this
+   * agent" (for example: `claude`, `cursor`, `codex`, or custom keys).
+   * Sync modes that support manifest filtering use this when their local
+   * options do not provide an explicit manifest key.
+   */
+  defaultManifestKey?: PluginManifestKey;
 }
 
 /** Helper shape passed to sync mode factory callbacks. */
@@ -42,6 +73,11 @@ export interface DefineAgentInput<TName extends string = string> {
   envVar?: string;
   /** Agent name for lookup, logs, and outcomes. */
   name: TName;
+  /**
+   * Optional agent policy defaults merged into runtime context.
+   * Use this to declare shared intent once (for example a default manifest key).
+   */
+  policy?: AgentPolicy;
   /** Additional custom sync modes appended after preset sync modes. */
   syncModeCustom?: Array<SyncModeClassRef | SyncModeDefinition | SyncModeFactory>;
   /** Optional per-preset sync-mode values for enable, replace, or partial override. */
@@ -51,7 +87,9 @@ export interface DefineAgentInput<TName extends string = string> {
 /** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). */
 interface DefineAgentHelpers {
   /** Built-in agent presets available for composition and override. */
-  agentPresets: typeof agentPresets;
+  agentPresetsAll: typeof agentPresetsAll;
+  /** Back-compat alias for existing config factories. */
+  agentPresets: typeof agentPresetsAll;
   /** Factory for producing a strongly typed and normalized agent definition. */
   defineAgent: <const TName extends string>(
     input: DefineAgentInput<TName> | ((helpers: DefineAgentHelpers) => DefineAgentInput<TName>)
@@ -160,7 +198,8 @@ function isDefinedAgent(value: unknown): value is DefinedAgent {
 /** Creates helper utilities passed into config factory callbacks. */
 function buildHelpers(): DefineAgentHelpers {
   return {
-    agentPresets,
+    agentPresetsAll,
+    agentPresets: agentPresetsAll,
     defineAgent: marketplacesConfig.defineAgent,
     syncModePresets,
   };
@@ -193,6 +232,7 @@ export const marketplacesConfig = {
     return {
       envVar: resolvedInput.envVar,
       name: resolvedInput.name,
+      policy: resolvedInput.policy,
       syncModes,
     };
   },
@@ -209,7 +249,7 @@ export const marketplacesConfig = {
   resolveAgentConfig(entryName: string, entry: AgentEntryInput): DefinedAgent | null {
     if (entry === false) return null;
     if (entry === true) {
-      const preset = agentPresets[entryName as keyof typeof agentPresets];
+      const preset = agentPresetsAll[entryName as keyof typeof agentPresetsAll];
       if (!preset) return null;
       return marketplacesConfig.defineAgent(preset as DefineAgentInput);
     }

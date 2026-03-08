@@ -1,6 +1,11 @@
 import { ok, Result } from 'neverthrow';
 import type { MmaappssConfig } from '../../common/config-helpers.js';
-import type { DiscoveredMarketplace } from '../../common/types.js';
+import type {
+  DiscoveredMarketplace,
+  DiscoveredPlugin,
+  PluginManifestKey,
+} from '../../common/types.js';
+import type { AgentPolicy } from '../marketplaces-config.js';
 
 /** Shared runtime context passed to every sync mode hook invocation. */
 export interface SyncModeContext {
@@ -10,6 +15,8 @@ export interface SyncModeContext {
   };
   /** Agent name convenience field for hook branching and logging. */
   agentName: string;
+  /** Agent-level policy defaults used by generic sync mode logic. */
+  agentPolicy?: AgentPolicy;
   /** Whether this adapter run is in enabled mode (`true`) or teardown mode (`false`). */
   enabled: boolean;
   /** Marketplaces discovered for this run (empty during disabled/clear runs). */
@@ -45,6 +52,12 @@ export abstract class SyncModeBase<TOptions = unknown> {
   /** Creates a sync mode instance with optional mode options. */
   constructor(options?: TOptions) {
     this.options = options;
+  }
+
+  /** Checks whether a plugin advertises a given manifest capability key. */
+  protected hasPluginManifest(plugin: DiscoveredPlugin, manifestKey?: PluginManifestKey): boolean {
+    if (!manifestKey) return true;
+    return plugin.manifests[manifestKey] === true;
   }
 
   /** Hook before sync setup begins. */
