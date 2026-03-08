@@ -17,7 +17,7 @@ export interface MarkdownSectionSyncModeOptions {
   sectionHeading: string;
 }
 
-class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncModeOptions> {
+export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncModeOptions> {
   /** Removes the managed markdown section from target file. */
   private teardownMarkdownSection(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
@@ -77,8 +77,3 @@ class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncModeOption
     return this.teardownMarkdownSection(context);
   }
 }
-
-/** Named export wrapper for markdown section sync mode class. */
-export const markdownSectionSyncMode = {
-  MarkdownSectionSyncMode,
-};

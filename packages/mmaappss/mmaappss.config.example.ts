@@ -79,7 +79,7 @@ export const mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig
 //           },
 //           syncModeCustom: [
 //             {
-//               modeClass: localPluginsContentSyncMode.LocalPluginsContentSyncMode,
+//               modeClass: LocalPluginsContentSyncMode,
 //               options: {
 //                 manifestPath: '.superagent/.mmaappss-superagent-sync.json',
 //                 requiredManifestKey: 'claude',

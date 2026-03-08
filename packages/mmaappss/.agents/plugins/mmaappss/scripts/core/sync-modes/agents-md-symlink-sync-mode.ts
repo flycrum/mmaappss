@@ -7,7 +7,7 @@ import {
 import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
 /** Sync mode that manages sourceFile→targetFile symlink lifecycle (e.g. AGENTS.md→CLAUDE.md). */
-class AgentsMdSymlinkSyncMode extends SyncModeBase<AgentsMdSymlinkOptions> {
+export class AgentsMdSymlinkSyncMode extends SyncModeBase<AgentsMdSymlinkOptions> {
   override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
@@ -26,8 +26,3 @@ class AgentsMdSymlinkSyncMode extends SyncModeBase<AgentsMdSymlinkOptions> {
     return clearAgentsMdSymlinks(context.repoRoot, options);
   }
 }
-
-export const agentsMdSymlinkSyncMode = {
-  AgentsMdSymlinkSyncMode,
-};
-export type { AgentsMdSymlinkOptions };

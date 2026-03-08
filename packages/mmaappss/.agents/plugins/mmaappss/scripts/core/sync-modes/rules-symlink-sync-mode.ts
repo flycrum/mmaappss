@@ -1,5 +1,5 @@
-import path from 'node:path';
 import { ok, Result } from 'neverthrow';
+import path from 'node:path';
 import { rulesSync } from '../../common/rules-sync.js';
 import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
@@ -11,7 +11,7 @@ export interface RulesSymlinkSyncModeOptions {
   syncManifest: string;
 }
 
-class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptions> {
+export class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptions> {
   /** Clears all previously managed rules links for this mode. */
   private clearRules(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
@@ -49,8 +49,3 @@ class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptions> {
     return this.clearRules(context);
   }
 }
-
-/** Named export wrapper for rules symlink sync mode class. */
-export const rulesSymlinkSyncMode = {
-  RulesSymlinkSyncMode,
-};

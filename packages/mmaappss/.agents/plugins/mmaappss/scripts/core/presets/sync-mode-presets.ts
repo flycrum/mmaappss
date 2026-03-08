@@ -1,28 +1,28 @@
-import { agentsMdSymlinkSyncMode } from '../sync-modes/agents-md-symlink-sync-mode.js';
-import { localPluginsContentSyncMode } from '../sync-modes/local-plugins-content-sync-mode.js';
-import { markdownSectionSyncMode } from '../sync-modes/markdown-section-sync-mode.js';
-import { marketplaceJsonSyncMode } from '../sync-modes/marketplace-json-sync-mode.js';
-import { rulesSymlinkSyncMode } from '../sync-modes/rules-symlink-sync-mode.js';
-import { settingsSyncMode } from '../sync-modes/settings-sync-mode.js';
+import { AgentsMdSymlinkSyncMode } from '../sync-modes/agents-md-symlink-sync-mode.js';
+import { LocalPluginsContentSyncMode } from '../sync-modes/local-plugins-content-sync-mode.js';
+import { MarkdownSectionSyncMode } from '../sync-modes/markdown-section-sync-mode.js';
+import { MarketplaceJsonSyncMode } from '../sync-modes/marketplace-json-sync-mode.js';
+import { RulesSymlinkSyncMode } from '../sync-modes/rules-symlink-sync-mode.js';
+import { SettingsSyncMode } from '../sync-modes/settings-sync-mode.js';
 
 /** Built-in sync mode presets that map stable names to sync mode classes. */
 export const syncModePresets = {
   agentsMdSymlink: {
-    modeClass: agentsMdSymlinkSyncMode.AgentsMdSymlinkSyncMode,
+    modeClass: AgentsMdSymlinkSyncMode,
   },
   localMarketplaceSync: {
-    modeClass: marketplaceJsonSyncMode.MarketplaceJsonSyncMode,
+    modeClass: MarketplaceJsonSyncMode,
   },
   localPluginsContentSync: {
-    modeClass: localPluginsContentSyncMode.LocalPluginsContentSyncMode,
+    modeClass: LocalPluginsContentSyncMode,
   },
   markdownSectionSync: {
-    modeClass: markdownSectionSyncMode.MarkdownSectionSyncMode,
+    modeClass: MarkdownSectionSyncMode,
   },
   rulesSymlink: {
-    modeClass: rulesSymlinkSyncMode.RulesSymlinkSyncMode,
+    modeClass: RulesSymlinkSyncMode,
   },
   settingsSync: {
-    modeClass: settingsSyncMode.SettingsSyncMode,
+    modeClass: SettingsSyncMode,
   },
 } as const;

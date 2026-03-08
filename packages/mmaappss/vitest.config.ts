@@ -14,6 +14,6 @@ export default defineVitestConfig({
     ],
   },
   typecheck: {
-    include: ['.agents/**/*.spec-d.ts'],
+    include: ['**/*.spec-d.ts'],
   },
 });

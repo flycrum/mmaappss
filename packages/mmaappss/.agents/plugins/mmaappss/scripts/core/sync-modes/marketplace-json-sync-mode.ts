@@ -37,7 +37,7 @@ export interface MarketplaceJsonSyncModeOptions {
 const MARKETPLACE_OWNER = 'mmaappss';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
-class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOptions> {
+export class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOptions> {
   /** Builds sorted marketplace plugin entries from discovered marketplaces. */
   private buildMarketplacePluginEntries(
     marketplaces: DiscoveredMarketplace[],
@@ -169,8 +169,3 @@ class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOption
     return this.teardownMarketplaceJson(context.repoRoot);
   }
 }
-
-/** Named export wrapper for marketplace json sync mode class. */
-export const marketplaceJsonSyncMode = {
-  MarketplaceJsonSyncMode,
-};

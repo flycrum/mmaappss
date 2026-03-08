@@ -105,7 +105,7 @@ function isIncludedFolder(
   return folderSelection.mode === 'whitelist' ? selected : !selected;
 }
 
-class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncModeOptions> {
+export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncModeOptions> {
   /** Clears generic strategy outputs from manifest and removes manifest file. */
   private clearGeneric(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
@@ -237,8 +237,3 @@ class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncMo
     return this.syncRunDisabled(context);
   }
 }
-
-/** Named export wrapper for local plugins content sync mode class. */
-export const localPluginsContentSyncMode = {
-  LocalPluginsContentSyncMode,
-};

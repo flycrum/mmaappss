@@ -19,7 +19,7 @@ export interface SettingsSyncModeOptions {
 const SOURCE_TYPE = 'directory';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
-class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
+export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
   /** Builds plugin IDs that should be represented in the target settings file. */
   private buildPluginIds(
     marketplaces: DiscoveredMarketplace[],
@@ -129,8 +129,3 @@ class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
     return this.teardownSettings(context.repoRoot);
   }
 }
-
-/** Named export wrapper for settings sync mode class. */
-export const settingsSyncMode = {
-  SettingsSyncMode,
-};
