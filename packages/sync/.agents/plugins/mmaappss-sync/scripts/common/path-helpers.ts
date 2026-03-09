@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const _scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Namespaced path utilities. Paths are derived from this module's location under packages/sync/.agents/plugins/mmaappss/scripts/common.
+ * Namespaced path utilities. Paths are derived from this module's location under packages/sync/.agents/plugins/mmaappss-sync/scripts/common.
  */
 export const pathHelpers = {
   /** Directory of this path-helpers module (scripts/common). */

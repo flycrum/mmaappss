@@ -3,9 +3,9 @@
  * Ensures runClear tears down state created by sync (same assertions as sync test).
  *
  * Usage:
- *   tsx integration-test/mmaappss-marketplaces-clear-integration-test.ts <agent|all>
+ *   tsx integration-test/mmaappss-sync-clear-integration-test.ts <agent|all>
  *
- * Run: pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:clear:test
+ * Run: pnpm -F @mmaappss/sync run mmaappss:sync:clear:all:test
  */
 
 import fs from 'node:fs';
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
   const validArgs = [...presetAgents, 'all'] as const;
   if (!agentArg || !validArgs.includes(agentArg as (typeof validArgs)[number])) {
     console.error(
-      `Usage: tsx mmaappss-marketplaces-clear-integration-test.ts <${presetAgents.join('|')}|all>`
+      `Usage: tsx mmaappss-sync-clear-integration-test.ts <${presetAgents.join('|')}|all>`
     );
     process.exit(1);
   }
@@ -118,6 +118,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('Unexpected error in mmaappss-marketplaces-clear-integration-test', err);
+  console.error('Unexpected error in mmaappss-sync-clear-integration-test', err);
   process.exit(1);
 });

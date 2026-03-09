@@ -3,13 +3,13 @@ import { discoverMarketplaces } from './discovery.js';
 import { pathHelpers } from './path-helpers.js';
 
 describe('discoverMarketplaces', () => {
-  it('finds marketplaces and mmaappss plugin', () => {
+  it('finds marketplaces and mmaappss-sync plugin', () => {
     const repoRoot = pathHelpers.repoRoot;
     const result = discoverMarketplaces(repoRoot, null);
 
     expect(result.length).toBeGreaterThanOrEqual(1);
-    const withMmaappss = result.find((m) => m.plugins.some((p) => p.name === 'mmaappss'));
-    expect(withMmaappss).toBeDefined();
+    const withMmaappssSync = result.find((m) => m.plugins.some((p) => p.name === 'mmaappss-sync'));
+    expect(withMmaappssSync).toBeDefined();
   });
 
   it('respects excluded (walk: segment names)', () => {

@@ -15,6 +15,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('Unexpected error in mmaappss-marketplaces-all-sync', err);
+  console.error('Unexpected error in mmaappss-sync-all', err);
   process.exit(1);
 });

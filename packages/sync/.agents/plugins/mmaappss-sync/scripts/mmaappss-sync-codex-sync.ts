@@ -31,6 +31,6 @@ main().catch((err: unknown) => {
       msg = String(err);
     }
   }
-  console.error('Unexpected error in mmaappss-marketplaces-codex-sync', msg);
+  console.error('Unexpected error in mmaappss-sync-codex-sync', msg);
   process.exit(1);
 });

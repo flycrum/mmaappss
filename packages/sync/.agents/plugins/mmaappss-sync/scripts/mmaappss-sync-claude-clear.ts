@@ -1,11 +1,11 @@
 /**
- * Clear (teardown) Codex AGENTS.override.md section.
+ * Clear (teardown) Claude local marketplace and rules.
  */
 
 import { runClear } from './core/sync-runner.js';
 
 async function main(): Promise<void> {
-  const result = await runClear(['codex']);
+  const result = await runClear(['claude']);
   if (result.isErr()) {
     console.error(result.error.message);
     process.exit(1);
@@ -14,6 +14,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('Unexpected error in mmaappss-marketplaces-codex-clear', err);
+  console.error('Unexpected error in mmaappss-sync-claude-clear', err);
   process.exit(1);
 });

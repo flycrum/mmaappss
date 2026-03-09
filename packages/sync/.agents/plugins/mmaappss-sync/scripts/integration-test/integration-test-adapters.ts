@@ -1,7 +1,7 @@
 /**
  * Integration test adapters: class-based, colocated.
  * Each adapter defines paths, assertions, and optional step overrides.
- * Not part of vitest. Run via mmaappss-marketplaces-sync-integration-test.ts
+ * Not part of vitest. Run via mmaappss-sync-integration-test.ts
  */
 
 import fs from 'node:fs';

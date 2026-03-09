@@ -31,17 +31,17 @@ pnpm run <script>
 
 | Script | What it does |
 |--------|----------------|
-| `mmaappss:marketplaces:all:sync` | Sync all agents (Claude, Cursor, Codex) |
-| `mmaappss:marketplaces:claude:sync` | Sync Claude only |
-| `mmaappss:marketplaces:cursor:sync` | Sync Cursor only |
-| `mmaappss:marketplaces:codex:sync` | Sync Codex only |
-| `mmaappss:marketplaces:all:clear` | Clear all agents (teardown manifests/symlinks) |
-| `mmaappss:marketplaces:claude:clear` | Clear Claude only |
-| `mmaappss:marketplaces:cursor:clear` | Clear Cursor only |
-| `mmaappss:marketplaces:codex:clear` | Clear Codex only |
+| `mmaappss:sync:all` | Sync all agents (Claude, Cursor, Codex) |
+| `mmaappss:sync:claude:sync` | Sync Claude only |
+| `mmaappss:sync:cursor:sync` | Sync Cursor only |
+| `mmaappss:sync:codex:sync` | Sync Codex only |
+| `mmaappss:sync:clear:all` | Clear all agents (teardown manifests/symlinks) |
+| `mmaappss:sync:claude:clear` | Clear Claude only |
+| `mmaappss:sync:cursor:clear` | Clear Cursor only |
+| `mmaappss:sync:codex:clear` | Clear Codex only |
 | `mmaappss:post-merge` | Sync all only if `postMergeSyncEnabled` (for git hooks) |
 
-**Tests (integration):** `mmaappss:marketplaces:all:sync:test`, `...:claude:sync:test`, `...:cursor:sync:test`, `...:codex:sync:test`, and `...:all:clear:test` / `...:claude:clear:test`, etc.
+**Tests (integration):** `mmaappss:sync:all:test`, `...:claude:sync:test`, `...:cursor:sync:test`, `...:codex:sync:test`, and `mmaappss:sync:clear:all:test` / `...:claude:clear:test`, etc.
 
 ## Config
 

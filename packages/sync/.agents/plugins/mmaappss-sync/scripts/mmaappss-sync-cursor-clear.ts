@@ -14,6 +14,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('Unexpected error in mmaappss-marketplaces-cursor-clear', err);
+  console.error('Unexpected error in mmaappss-sync-cursor-clear', err);
   process.exit(1);
 });

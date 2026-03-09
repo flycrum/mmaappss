@@ -20,7 +20,7 @@ describe('isExcluded', () => {
         '.cursor/commands/git/git-pr-fillout-template.md',
       ])
     ).toBe(true);
-    expect(isExcluded('.agents/plugins/mmaappss', ['.agents/plugins/git'])).toBe(false);
+    expect(isExcluded('.agents/plugins/mmaappss-sync', ['.agents/plugins/git'])).toBe(false);
   });
 
   it('normalizes backslashes to forward slashes', () => {

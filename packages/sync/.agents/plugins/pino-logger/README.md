@@ -6,7 +6,7 @@ Documentation and agent guidance for **Pino-based file logging** in mmaappss. Th
 
 ## Package goal: script entrypoints for consumers
 
-As an npm package, **mmaappss** aims to give consuming projects a clear way to **point to and run** its scripts (e.g. marketplace sync, clear, post-merge) from **their own automation**—git hooks, CI, or other tooling. Consumers keep full control: they choose which hooks to install and when to call our scripts. The package exposes named npm scripts (e.g. `mmaappss:marketplaces:all:sync`, `mmaappss:post-merge`) and, when installed, the script paths under the package so that projects can wire `post-merge`, `post-checkout`, or custom hooks to run these commands with no lock-in.
+As an npm package, **mmaappss** aims to give consuming projects a clear way to **point to and run** its scripts (e.g. marketplace sync, clear, post-merge) from **their own automation**—git hooks, CI, or other tooling. Consumers keep full control: they choose which hooks to install and when to call our scripts. The package exposes named npm scripts (e.g. `mmaappss:sync:all`, `mmaappss:post-merge`) and, when installed, the script paths under the package so that projects can wire `post-merge`, `post-checkout`, or custom hooks to run these commands with no lock-in.
 
 ---
 
@@ -73,7 +73,7 @@ export default {
 Example (bash):
 
 ```bash
-MMAAPPSS_LOGGING_ENABLED=true pnpm run mmaappss:marketplaces:cursor:sync
+MMAAPPSS_LOGGING_ENABLED=true pnpm run mmaappss:sync:cursor:sync
 ```
 
 ### Option 3: `.env` or `.envrc.local`

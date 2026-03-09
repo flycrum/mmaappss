@@ -3,14 +3,14 @@
  * Colada-style backup/restore, class-based adapters.
  *
  * Usage:
- *   tsx integration-test/mmaappss-marketplaces-sync-integration-test.ts <agent|all> [mode]
+ *   tsx integration-test/mmaappss-sync-integration-test.ts <agent|all> [mode]
  *
  * Examples:
  *   tsx ... claude              # run all conditions for claude
  *   tsx ... cursor enabled      # run single condition for cursor
  *   tsx ... all                 # run all conditions for all 3 agents
  *
- * Not part of vitest. Run: pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:sync:test
+ * Not part of vitest. Run: pnpm -F @mmaappss/sync run mmaappss:sync:all:test
  */
 
 import { pathHelpers } from '../common/path-helpers.js';
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 
   if (!agentArg || (agentArg !== 'all' && !AGENTS.includes(agentArg as Agent))) {
     console.error(
-      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <${AGENTS.join('|')}|all> [enabled|disabled]`
+      `Usage: tsx mmaappss-sync-integration-test.ts <${AGENTS.join('|')}|all> [enabled|disabled]`
     );
     console.error('  Agent only: run all conditions (backup → steps → restore)');
     console.error('  Agent + mode: run single condition');

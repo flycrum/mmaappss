@@ -18,9 +18,9 @@ Use this skill when you need to **diagnose why mmaappss sync or clear failed** o
 1. **One-off (no config change)**  
    Run the failing command with env set:
    ```bash
-   MMAAPPSS_LOGGING_ENABLED=true pnpm run mmaappss:marketplaces:cursor:sync
+   MMAAPPSS_LOGGING_ENABLED=true pnpm run mmaappss:sync:cursor:sync
    ```
-   (Replace with the actual script: `mmaappss:marketplaces:claude:sync`, `mmaappss:marketplaces:all:clear`, etc.)
+   (Replace with the actual script: `mmaappss:sync:claude:sync`, `mmaappss:sync:clear:all`, etc.)
 
 2. **Persistent (config)**  
    In repo root `mmaappss.config.ts` set:

@@ -192,13 +192,13 @@ Focus here is **local marketplaces** (repo-as-marketplace), not public Cursor Ma
 
 Plugins extend coding agents (Claude, Cursor, Codex) with rules, skills, agents, commands, hooks, MCP, etc. Our convention: **`.agents/plugins/`** is the single place for agent-agnostic, locally defined plugins. Each plugin has thin `.cursor-plugin/` and `.claude-plugin/` manifests that point at shared content — "define once, empower developers to use with their preferred coding agent(s)."
 
-**How to build and organize plugins:** See the [mmaappss plugin README](.agents/plugins/mmaappss/README.md). It documents the canonical plugin layout, agent-agnostic conventions, platform differences, and configuration. Use it as a reference when creating plugins under `.agents/plugins/<your-plugin>/`.
+**How to build and organize plugins:** See the [mmaappss-sync plugin README](.agents/plugins/mmaappss-sync/README.md). It documents the canonical plugin layout, agent-agnostic conventions, platform differences, and configuration. Use it as a reference when creating plugins under `.agents/plugins/<your-plugin>/`.
 
 Official docs: [Claude Plugins](https://code.claude.com/docs/en/plugins) · [Cursor Building plugins](https://cursor.com/docs/plugins/building) · [Codex](https://developers.openai.com/codex) (no plugin marketplace yet)
 
 ## The mmaappss plugin (driver)
 
-The **mmaappss** plugin lives at `.agents/plugins/mmaappss/` (under this package). It is the sync engine: discovers root and nested plugins, writes marketplace manifests for Claude/Cursor/Codex, symlinks rules, and provides meta docs for running and auditing the system. Full details: [.agents/plugins/mmaappss/README.md](.agents/plugins/mmaappss/README.md).
+The **mmaappss-sync** plugin lives at `.agents/plugins/mmaappss-sync/` (under this package). It is the sync engine: discovers root and nested plugins, writes marketplace manifests for Claude/Cursor/Codex, symlinks rules, and provides meta docs for running and auditing the system. Full details: [.agents/plugins/mmaappss-sync/README.md](.agents/plugins/mmaappss-sync/README.md).
 
 ## Configuration
 
@@ -206,8 +206,8 @@ The **mmaappss** plugin lives at `.agents/plugins/mmaappss/` (under this package
 - **TypeScript config:** `mmaappss.config.ts` at repo root for same enable/disable semantics. Env overrides TS config.
 - **Exclusions:** Directory exclusions supported; plugin/file exclusions planned.
 
-See [plugin README](.agents/plugins/mmaappss/README.md#configuration) for full configuration details.
+See [plugin README](.agents/plugins/mmaappss-sync/README.md#configuration) for full configuration details.
 
 ## Root and nested context
 
-Cursor and Codex can use `AGENTS.md` natively; Claude uses `CLAUDE.md`. We symlink `CLAUDE.md` from `AGENTS.md` (recursively) so Claude sees the same instructions. Symlinked `CLAUDE.md` files go in `.gitignore`. For Codex we write the generated plugin list to **`AGENTS.override.md`** so your `AGENTS.md` stays hand-editable. See [plugin README](.agents/plugins/mmaappss/README.md#root-and-nested-context) and [Codex sync target](.agents/plugins/mmaappss/README.md#codex-sync-target-agentsoverridemd).
+Cursor and Codex can use `AGENTS.md` natively; Claude uses `CLAUDE.md`. We symlink `CLAUDE.md` from `AGENTS.md` (recursively) so Claude sees the same instructions. Symlinked `CLAUDE.md` files go in `.gitignore`. For Codex we write the generated plugin list to **`AGENTS.override.md`** so your `AGENTS.md` stays hand-editable. See [plugin README](.agents/plugins/mmaappss-sync/README.md#root-and-nested-context) and [Codex sync target](.agents/plugins/mmaappss-sync/README.md#codex-sync-target-agentsoverridemd).

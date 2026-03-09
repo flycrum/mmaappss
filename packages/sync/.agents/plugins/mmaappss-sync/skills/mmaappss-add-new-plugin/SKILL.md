@@ -14,4 +14,4 @@ Use this skill when you need to **create or update an agents plugin for the loca
 3. Put context in **rules/** as `.md` only; prefix rule filenames with plugin name per [mmaappss-file-naming](../../rules/mmaappss-file-naming.md). **AGENTS.md** must exist only at the plugin root — do not place AGENTS.md inside rules/ or any other subdirectory
 4. Optional: commands/, skills/, agents/, hooks/ per [mmaappss plugin README](../../README.md). Same file-naming prefix for content files
 5. Keep rules/commands/skills DRY and lean per [mmaappss-writing-rules-commands-skills](../../rules/mmaappss-writing-rules-commands-skills.md)
-6. After adding or modifying a plugin, run sync from repo root: `pnpm run mmaappss:marketplaces:all:sync` (or per-agent sync). Sync discovers plugins automatically; no hand-edit of marketplace list
+6. After adding or modifying a plugin, run sync from repo root: `pnpm run mmaappss:sync:all` (or per-agent sync). Sync discovers plugins automatically; no hand-edit of marketplace list

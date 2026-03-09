@@ -1,20 +1,20 @@
 # Integration tests
 
-Integration tests for marketplace sync and clear (Claude, Cursor, Codex). **Not part of vitest** — run via package scripts (e.g. `pnpm -F @mmaappss/sync run mmaappss:marketplaces:cursor:sync:test`).
+Integration tests for marketplace sync and clear (Claude, Cursor, Codex). **Not part of vitest** — run via package scripts (e.g. `pnpm -F @mmaappss/sync run mmaappss:sync:cursor:sync:test`).
 
 ## What they do
 
-- **Sync test** (`mmaappss-marketplaces-sync-integration-test.ts`): Backs up agent-specific dirs, runs a sequence of steps (disabled → enabled → disabled → …) with `runSync([agent])`, and asserts expected filesystem state after each step. Restores backups when done.
-- **Clear test** (`mmaappss-marketplaces-clear-integration-test.ts`): For each agent, enables sync, asserts output exists, runs `runClear([agent])`, then asserts output is torn down.
+- **Sync test** (`mmaappss-sync-integration-test.ts`): Backs up agent-specific dirs, runs a sequence of steps (disabled → enabled → disabled → …) with `runSync([agent])`, and asserts expected filesystem state after each step. Restores backups when done.
+- **Clear test** (`mmaappss-sync-clear-integration-test.ts`): For each agent, enables sync, asserts output exists, runs `runClear([agent])`, then asserts output is torn down.
 
 ## How to run
 
 From repo root or package root:
 
-- `pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:sync:test` — all agents, all sync steps
-- `pnpm -F @mmaappss/sync run mmaappss:marketplaces:cursor:sync:test` — Cursor only, all steps
-- `tsx .agents/plugins/mmaappss/scripts/integration-test/mmaappss-marketplaces-sync-integration-test.ts cursor enabled` — Cursor, single condition (enabled)
-- `pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:clear:test` — all agents, clear test
+- `pnpm -F @mmaappss/sync run mmaappss:sync:all:test` — all agents, all sync steps
+- `pnpm -F @mmaappss/sync run mmaappss:sync:cursor:sync:test` — Cursor only, all steps
+- `tsx .agents/plugins/mmaappss-sync/scripts/integration-test/mmaappss-sync-integration-test.ts cursor enabled` — Cursor, single condition (enabled)
+- `pnpm -F @mmaappss/sync run mmaappss:sync:clear:all:test` — all agents, clear test
 
 ## Data flow
 

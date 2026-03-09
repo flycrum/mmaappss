@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
 const scriptPath = path.join(
   packageRoot,
-  '.agents/plugins/mmaappss/scripts/mmaappss-marketplaces-all-sync.ts'
+  '.agents/plugins/mmaappss-sync/scripts/mmaappss-sync-all.ts'
 );
 
 const result = spawnSync(process.execPath, ['--import', 'tsx', scriptPath], {
