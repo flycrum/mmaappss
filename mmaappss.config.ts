@@ -35,7 +35,6 @@ if (configMode === 'basic') {
                 options: {
                   manifestPath: '.cursor/.mmaappss-cursor-sync.json',
                   requiredManifestKey: 'cursor',
-                  strategy: 'generic',
                   targetRoot: '.cursor',
                   folderSelection: {
                     mode: 'whitelist',

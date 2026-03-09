@@ -118,7 +118,7 @@ describe('markdown-section', () => {
     expect(content).toContain('Keep this.');
   });
 
-  it('removeLegacyOrphanCodexBlocks removes ### X marketplace blocks without ## parent', () => {
+  it('removeBlocksMatching removes blocks starting with matching line', () => {
     const filePath = path.join(tmpDir, 'AGENTS.md');
     fs.writeFileSync(
       filePath,
@@ -135,7 +135,9 @@ describe('markdown-section', () => {
       ].join('\n')
     );
 
-    const result = markdownSection.removeLegacyOrphanCodexBlocks(filePath);
+    const result = markdownSection.removeBlocksMatching(filePath, {
+      blockStartLineRegex: /^###\s+[^`]+marketplace\s*$/,
+    });
     expect(result.isOk()).toBe(true);
 
     const content = fs.readFileSync(filePath, 'utf8');

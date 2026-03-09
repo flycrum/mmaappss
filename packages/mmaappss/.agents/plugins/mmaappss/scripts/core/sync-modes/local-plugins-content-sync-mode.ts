@@ -1,7 +1,5 @@
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
-import type { MmaappssConfig } from '../../common/config-helpers.js';
-import { clearCursorContent, syncCursorContent } from '../../common/cursor-content-sync.js';
 import { isExcluded } from '../../common/excluded-patterns.js';
 import { syncFs } from '../../common/sync-fs.js';
 import type { PluginManifestKey } from '../../common/types.js';
@@ -61,8 +59,16 @@ export interface FolderSelectionConfig {
   mode: 'blacklist' | 'whitelist';
 }
 
-/** Options for generic or cursor-compatible local plugins content sync mode. */
+/** Optional custom sync/clear handler; when set, the mode delegates to it instead of generic logic. */
+export interface LocalPluginsContentSyncCustomHandler {
+  clear(context: SyncModeContext): Result<void, Error>;
+  sync(context: SyncModeContext): Result<void, Error>;
+}
+
+/** Options for generic or custom-handler local plugins content sync mode. */
 export interface LocalPluginsContentSyncModeOptions {
+  /** Optional custom handler; when set, sync/clear delegate to it instead of built-in generic logic. */
+  customHandler?: LocalPluginsContentSyncCustomHandler;
   /** Optional excluded patterns overriding config-level `excluded` for this mode. */
   excluded?: string[];
   /** Optional whitelist/blacklist control over top-level plugin entries. */
@@ -73,11 +79,9 @@ export interface LocalPluginsContentSyncModeOptions {
   manifestPath: string;
   /** Optional callback to inspect/override each plugin top-level entry before processing. */
   processPluginFolderOrFile?: (content: LocalPluginContent) => LocalPluginContentOverride | false;
-  /** Required manifest capability key for plugin eligibility. */
+  /** Manifest capability key for plugin eligibility (generic path only). Defaults to context.agentName when omitted. */
   requiredManifestKey?: PluginManifestKey | 'none';
-  /** Processing strategy (`cursorCompatible` wraps legacy cursor content sync behavior). */
-  strategy: 'cursorCompatible' | 'generic';
-  /** Root output directory for synced content. */
+  /** Root output directory for synced content (generic path only). */
   targetRoot: string;
 }
 
@@ -138,7 +142,7 @@ export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsConten
 
     for (const marketplace of context.marketplaces) {
       for (const plugin of marketplace.plugins) {
-        const manifestKey = options.requiredManifestKey ?? context.agentPolicy?.defaultManifestKey;
+        const manifestKey = options.requiredManifestKey ?? context.agentName;
         if (!hasRequiredManifest(manifestKey, plugin)) continue;
         const entries = syncFs.readdirWithTypes(plugin.path);
         for (const entry of entries) {
@@ -205,34 +209,21 @@ export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsConten
     return ok(undefined);
   }
 
-  /** Sync-phase enabled hook for cursor-compatible or generic strategy. */
+  /** Sync-phase enabled hook: custom handler or generic sync. */
   override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    if (options.strategy === 'cursorCompatible') {
-      const manifestPath = path.join(context.repoRoot, options.manifestPath);
-      return syncCursorContent(
-        context.repoRoot,
-        context.marketplaces,
-        manifestPath,
-        context.tsConfig as Pick<MmaappssConfig, 'excluded'> | null
-      ).map(() => undefined);
-    }
+    if (options.customHandler) return options.customHandler.sync(context);
     const clearResult = this.clearGeneric(context);
     if (clearResult.isErr()) return clearResult;
     return this.syncGeneric(context);
   }
 
-  /** Sync-phase disabled hook for cursor-compatible or generic strategy. */
+  /** Sync-phase disabled hook: custom handler or generic clear. */
   override syncRunDisabled(context: SyncModeContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    if (options.strategy === 'cursorCompatible') {
-      return clearCursorContent(
-        context.repoRoot,
-        path.join(context.repoRoot, options.manifestPath)
-      );
-    }
+    if (options.customHandler) return options.customHandler.clear(context);
     return this.clearGeneric(context);
   }
 

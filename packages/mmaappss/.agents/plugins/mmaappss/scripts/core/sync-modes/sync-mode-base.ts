@@ -5,7 +5,6 @@ import type {
   DiscoveredPlugin,
   PluginManifestKey,
 } from '../../common/types.js';
-import type { AgentPolicy } from '../marketplaces-config.js';
 
 /** Shared runtime context passed to every sync mode hook invocation. */
 export interface SyncModeContext {
@@ -15,8 +14,6 @@ export interface SyncModeContext {
   };
   /** Agent name convenience field for hook branching and logging. */
   agentName: string;
-  /** Agent-level policy defaults used by generic sync mode logic. */
-  agentPolicy?: AgentPolicy;
   /** Whether this adapter run is in enabled mode (`true`) or teardown mode (`false`). */
   enabled: boolean;
   /** Marketplaces discovered for this run (empty during disabled/clear runs). */

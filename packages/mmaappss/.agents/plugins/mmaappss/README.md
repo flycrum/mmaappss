@@ -46,6 +46,63 @@ The mmaappss plugin is the **driver** of the local marketplace system:
 
 ---
 
+## Sync and clear flow
+
+From a sync entrypoint (e.g. `mmaappss-marketplaces-claude-sync.ts`) to output:
+
+```mermaid
+flowchart TB
+  subgraph entry [Entry]
+    Script["mmaappss-marketplaces-claude-sync.ts"]
+    RunSync["runSync(['claude'])"]
+  end
+  subgraph config [Config]
+    LoadEnv["loadEnv, loadConfig"]
+    ResolveAgents["resolveEnabledAgents"]
+    GetAgent["getAgentConfig('claude')"]
+  end
+  subgraph adapter [Adapter]
+    NewAdapter["new AgentAdapterBase(agentConfig)"]
+    AdapterRun["adapter.run(repoRoot, tsConfig)"]
+    Context["context: enabled, marketplaces, repoRoot, tsConfig"]
+  end
+  subgraph lifecycle [Sync lifecycle]
+    SetupBefore["syncSetupBefore"]
+    RunEnabled["syncRunEnabled: each sync mode"]
+    Teardown["syncTeardownBefore/After"]
+  end
+  subgraph clearLifecycle [Clear lifecycle]
+    ClearRun["clearRun: each sync mode"]
+  end
+  subgraph out [Output]
+    OutFiles[".claude-plugin/marketplace.json, .claude/rules, .claude/settings.json, CLAUDE.md"]
+  end
+  Script --> RunSync
+  RunSync --> LoadEnv
+  LoadEnv --> ResolveAgents
+  ResolveAgents --> GetAgent
+  GetAgent --> NewAdapter
+  NewAdapter --> AdapterRun
+  AdapterRun --> Context
+  Context --> SetupBefore
+  SetupBefore --> RunEnabled
+  RunEnabled --> Teardown
+  Teardown --> OutFiles
+  AdapterRun --> ClearRun
+  ClearRun --> OutFiles
+```
+
+- **Sync:** Config is loaded, enabled agents resolved, then for each requested agent an `AgentAdapterBase` is created and `adapter.run()` runs the sync lifecycle (setup → syncRunEnabled for each mode → teardown). Sync modes (e.g. rulesSymlink, localMarketplaceSync) receive context and write artifacts.
+- **Clear:** Same config resolution; `adapter.clear()` runs the clear lifecycle (clearRun for each mode). Modes remove or strip the same artifacts.
+
+---
+
+## Integration tests
+
+Integration tests live under **scripts/integration-test/** and are **not part of vitest**. They back up agent dirs, run sync or clear, and assert filesystem outcomes. See [scripts/integration-test/README.md](scripts/integration-test/README.md) for how they work, default steps, and the data-flow diagram.
+
+---
+
 ## Plugin layout spec
 
 Canonical structure for an agent-agnostic plugin under `.agents/plugins/<plugin-name>/`:

@@ -3,7 +3,7 @@
  * Colada-style backup/restore, class-based adapters.
  *
  * Usage:
- *   tsx mmaappss-marketplaces-sync-integration-test.ts <agent|all> [mode]
+ *   tsx integration-test/mmaappss-marketplaces-sync-integration-test.ts <agent|all> [mode]
  *
  * Examples:
  *   tsx ... claude              # run all conditions for claude
@@ -13,13 +13,10 @@
  * Not part of vitest. Run: pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync:test
  */
 
-import { pathHelpers } from './common/path-helpers.js';
-import { presetAgents } from './common/preset-agents.js';
-import type { Agent } from './common/types.js';
-import {
-  INTEGRATION_ADAPTERS,
-  type IntegrationTestMode,
-} from './integration-test/integration-test-adapters.js';
+import { pathHelpers } from '../common/path-helpers.js';
+import { presetAgents } from '../common/preset-agents.js';
+import type { Agent } from '../common/types.js';
+import { INTEGRATION_ADAPTERS, type IntegrationTestMode } from './integration-test-adapters.js';
 
 const AGENTS: Agent[] = [...presetAgents];
 const MODES: IntegrationTestMode[] = ['enabled', 'disabled'];

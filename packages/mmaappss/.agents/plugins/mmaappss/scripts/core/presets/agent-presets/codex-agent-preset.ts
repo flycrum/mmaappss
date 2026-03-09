@@ -1,19 +1,18 @@
-import { markdownSection } from '../../../common/markdown-section.js';
 import type { DefineAgentInput } from '../../marketplaces-config.js';
+import { codexAgentPresetConfig } from './codex-agent-preset.config.js';
 
-/** Codex preset with policy-driven manifest defaults and sync-mode composition. */
+/** Codex preset: sync-mode composition and codex-specific paths/manifest key. */
 export const codexAgentPreset: DefineAgentInput<'codex'> = {
   envVar: 'MMAAPPSS_MARKETPLACE_CODEX',
   name: 'codex',
-  policy: {
-    defaultManifestKey: 'codex',
-  },
   syncModePresets: {
     markdownSectionSync: {
       options: {
         agentsFile: 'AGENTS.override.md',
+        legacyHeadingsToRemove: [codexAgentPresetConfig.CODEX_LEGACY_HEADING],
         removeExistingSectionBlocks: true,
-        sectionHeading: markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, ''),
+        removeOrphanBlocksFn: codexAgentPresetConfig.removeCodexLegacyOrphanBlocks,
+        sectionHeading: codexAgentPresetConfig.CODEX_SECTION_HEADING.replace(/^#+\s*/, ''),
       },
     },
   },

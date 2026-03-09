@@ -8,7 +8,7 @@ import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
 
 /** Options for syncing and tearing down agent settings files. */
 export interface SettingsSyncModeOptions {
-  /** Manifest capability key to include (falls back to agent policy default). */
+  /** Manifest capability key to include. Defaults to context.agentName when omitted. */
   manifestKey?: PluginManifestKey;
   /** Optional marketplace name override (defaults to `mmaappss-plugins`). */
   marketplaceName?: string;
@@ -76,7 +76,7 @@ export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
     if (!options) return ok(undefined);
 
     const marketplaceName = options.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
-    const manifestKey = options.manifestKey ?? context.agentPolicy?.defaultManifestKey;
+    const manifestKey = options.manifestKey ?? context.agentName;
     const pluginIds = this.buildPluginIds(context.marketplaces, manifestKey);
     const enabledPlugins: Record<string, boolean> = {};
     for (const pluginId of pluginIds) {

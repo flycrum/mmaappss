@@ -24,7 +24,7 @@ interface MarketplaceJson {
 
 /** Options for syncing and tearing down marketplace JSON files. */
 export interface MarketplaceJsonSyncModeOptions {
-  /** Manifest capability key used for plugin eligibility (falls back to agent policy default). */
+  /** Manifest capability key used for plugin eligibility. Defaults to context.agentName when omitted. */
   manifestKey?: PluginManifestKey;
   /** Relative file path to the target marketplace json file. */
   marketplaceFile: string;
@@ -134,7 +134,7 @@ export class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncMod
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const manifestKey = options.manifestKey ?? context.agentPolicy?.defaultManifestKey;
+    const manifestKey = options.manifestKey ?? context.agentName;
     const filePath = path.join(context.repoRoot, options.marketplaceFile);
     const canonical = this.buildMarketplaceJson(context.marketplaces, manifestKey);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);

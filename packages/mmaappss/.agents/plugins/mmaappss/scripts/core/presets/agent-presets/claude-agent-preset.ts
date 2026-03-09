@@ -1,12 +1,9 @@
 import type { DefineAgentInput } from '../../marketplaces-config.js';
 
-/** Claude preset with policy-driven manifest defaults and sync-mode composition. */
+/** Claude preset: all Claude-specific choices (paths, filenames, manifest key) are defined here. */
 export const claudeAgentPreset: DefineAgentInput<'claude'> = {
   envVar: 'MMAAPPSS_MARKETPLACE_CLAUDE',
   name: 'claude',
-  policy: {
-    defaultManifestKey: 'claude',
-  },
   syncModePresets: {
     agentsMdSymlink: {
       options: {

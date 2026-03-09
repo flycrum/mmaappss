@@ -7,9 +7,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { configHelpers } from '../common/config-helpers.js';
-import { markdownSection } from '../common/markdown-section.js';
 import { pathHelpers } from '../common/path-helpers.js';
 import type { Agent } from '../common/types.js';
+import { codexAgentPresetConfig } from '../core/presets/agent-presets/codex-agent-preset.config.js';
 import { runSync } from '../core/sync-runner.js';
 
 /** Suffix for temporary backup paths used during integration tests. */
@@ -539,7 +539,10 @@ export class CodexIntegrationAdapter extends IntegrationTestAdapterBase {
     },
   ];
 
-  private readonly sectionHeading = markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, '');
+  private readonly sectionHeading = codexAgentPresetConfig.CODEX_SECTION_HEADING.replace(
+    /^#+\s*/,
+    ''
+  );
 
   private getSectionHeadingRegex(): RegExp {
     const escaped = this.sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

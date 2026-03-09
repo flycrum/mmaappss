@@ -3,21 +3,21 @@
  * Ensures runClear tears down state created by sync (same assertions as sync test).
  *
  * Usage:
- *   tsx mmaappss-marketplaces-clear-integration-test.ts <agent|all>
+ *   tsx integration-test/mmaappss-marketplaces-clear-integration-test.ts <agent|all>
  *
  * Run: pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:clear:test
  */
 
 import fs from 'node:fs';
-import { configHelpers } from './common/config-helpers.js';
-import { pathHelpers } from './common/path-helpers.js';
-import { presetAgents } from './common/preset-agents.js';
-import type { Agent } from './common/types.js';
-import { runClear, runSync } from './core/sync-runner.js';
+import { configHelpers } from '../common/config-helpers.js';
+import { pathHelpers } from '../common/path-helpers.js';
+import { presetAgents } from '../common/preset-agents.js';
+import type { Agent } from '../common/types.js';
+import { runClear, runSync } from '../core/sync-runner.js';
 import {
   INTEGRATION_ADAPTERS,
   removeIfExists,
-} from './integration-test/integration-test-adapters.js';
+} from './integration-test-adapters.js';
 
 const AGENTS: Agent[] = [...presetAgents];
 

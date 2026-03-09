@@ -1,6 +1,6 @@
 /**
  * Shared exclusion matcher for config.excluded patterns.
- * Used by discovery (walk + plugin filter), cursor-content-sync, and agents-md-symlink-sync.
+ * Used by discovery (walk + plugin filter), agents-md-symlink-sync, and preset sync handlers.
  */
 
 import { minimatch } from 'minimatch';

@@ -11,8 +11,12 @@ export interface MarkdownSectionSyncModeOptions {
   beforeSyncFn?: (context: SyncModeContext) => Result<void, Error>;
   /** Optional builder for section body content; defaults to marketplace/plugin list markdown. */
   buildSectionContentFn?: (context: SyncModeContext) => string;
-  /** When true, removes known legacy Codex headings before writing section content. */
+  /** Optional list of section headings to remove before writing (when removeExistingSectionBlocks is true). */
+  legacyHeadingsToRemove?: string[];
+  /** When true, runs legacy cleanup: removes legacyHeadingsToRemove sections then removeOrphanBlocksFn if set. */
   removeExistingSectionBlocks?: boolean;
+  /** Optional callback to remove orphan blocks (e.g. legacy ### blocks). Run after legacyHeadingsToRemove. */
+  removeOrphanBlocksFn?: (filePath: string) => Result<void, Error>;
   /** Section heading text used for replace/remove operations. */
   sectionHeading: string;
 }
@@ -56,9 +60,17 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
     if (options.beforeSyncFn) return options.beforeSyncFn(context);
     if (!options.removeExistingSectionBlocks) return ok(undefined);
     const filePath = path.join(context.repoRoot, options.agentsFile);
-    return markdownSection
-      .removeSection(filePath, markdownSection.CODEX_LEGACY_HEADING)
-      .andThen(() => markdownSection.removeLegacyOrphanCodexBlocks(filePath));
+    let result: Result<void, Error> = ok(undefined);
+    for (const heading of options.legacyHeadingsToRemove ?? []) {
+      result = result.andThen(() =>
+        markdownSection.removeSection(filePath, heading.replace(/^#+\s*/, ''))
+      );
+      if (result.isErr()) return result;
+    }
+    if (options.removeOrphanBlocksFn) {
+      result = result.andThen(() => options.removeOrphanBlocksFn!(filePath));
+    }
+    return result;
   }
 
   /** Sync-phase enabled hook that writes or replaces the managed section content. */
