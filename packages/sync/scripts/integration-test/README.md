@@ -13,7 +13,7 @@ From repo root or package root:
 
 - `pnpm -F @mmaappss/sync run mmaappss:sync:all:test` — all agents, all sync steps
 - `pnpm -F @mmaappss/sync run mmaappss:sync:cursor:sync:test` — Cursor only, all steps
-- `tsx .agents/plugins/mmaappss-sync/scripts/integration-test/mmaappss-sync-integration-test.ts cursor enabled` — Cursor, single condition (enabled)
+- `tsx scripts/integration-test/mmaappss-sync-integration-test.ts cursor enabled` — Cursor, single condition (enabled)
 - `pnpm -F @mmaappss/sync run mmaappss:sync:clear:all:test` — all agents, clear test
 
 ## Data flow

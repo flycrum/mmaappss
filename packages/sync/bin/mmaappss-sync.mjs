@@ -9,10 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
-const scriptPath = path.join(
-  packageRoot,
-  '.agents/plugins/mmaappss-sync/scripts/mmaappss-sync-all.ts'
-);
+const scriptPath = path.join(packageRoot, 'scripts/mmaappss-sync-all.ts');
 
 const result = spawnSync(process.execPath, ['--import', 'tsx', scriptPath], {
   stdio: 'inherit',

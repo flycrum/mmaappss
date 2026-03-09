@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const _scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Namespaced path utilities. Paths are derived from this module's location under packages/sync/.agents/plugins/mmaappss-sync/scripts/common.
+ * Namespaced path utilities. Paths are derived from this module's location under packages/sync/scripts/common.
  */
 export const pathHelpers = {
   /** Directory of this path-helpers module (scripts/common). */
@@ -17,7 +17,7 @@ export const pathHelpers = {
   },
   /** packages/sync — the @mmaappss/sync package root. */
   get packageRoot(): string {
-    return path.resolve(_scriptDir, '..', '..', '..', '..', '..');
+    return path.resolve(_scriptDir, '..', '..');
   },
   /**
    * Repo root: when this package is under node_modules (consumer install), the directory that contains that node_modules; otherwise monorepo root (parent of packages/).

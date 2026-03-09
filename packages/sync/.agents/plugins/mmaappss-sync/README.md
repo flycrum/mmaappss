@@ -99,7 +99,7 @@ flowchart TB
 
 ## Integration tests
 
-Integration tests live under **scripts/integration-test/** and are **not part of vitest**. They back up agent dirs, run sync or clear, and assert filesystem outcomes. See [scripts/integration-test/README.md](scripts/integration-test/README.md) for how they work, default steps, and the data-flow diagram.
+Integration tests live under **scripts/integration-test/** and are **not part of vitest**. They back up agent dirs, run sync or clear, and assert filesystem outcomes. See [scripts/integration-test/README.md](../../scripts/integration-test/README.md) for how they work, default steps, and the data-flow diagram.
 
 ---
 
@@ -189,7 +189,7 @@ Committed defaults: `.env`. Overrides: `.envrc.local` (gitignored). Process env 
 
 ### TypeScript config
 
-`mmaappss.config.ts` at **repo root** provides the same enable/disable semantics as env vars. Use env, TS config, or both; env overrides TS config. Scripts run via `tsx` (e.g. `pnpm exec tsx .agents/plugins/mmaappss-sync/scripts/mmaappss-sync-claude-sync.ts`).
+`mmaappss.config.ts` at **repo root** provides the same enable/disable semantics as env vars. Use env, TS config, or both; env overrides TS config. Scripts run via `tsx` (e.g. `pnpm exec tsx scripts/mmaappss-sync-claude-sync.ts`).
 
 ### Exclusions
 

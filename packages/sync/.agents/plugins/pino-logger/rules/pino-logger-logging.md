@@ -1,6 +1,6 @@
 # Pino logging in mmaappss
 
-When editing or adding code under `packages/sync/.agents/plugins/mmaappss-sync/scripts/` (sync runner, adapters, discovery, config, etc.):
+When editing or adding code under `packages/sync/scripts/` (sync runner, adapters, discovery, config, etc.):
 
 - Use the shared logger — import `getLogger` and `setLoggerContext` from `../common/logger.js` (or correct relative path). Do not add `console.log`/`console.warn`/`console.error` for operational flow; use `getLogger().info()`, `.debug()`, `.error()` with a short `msg` and structured fields. Keep `console.error` only for user-facing errors that must always appear on stderr (optionally duplicate with `getLogger().error()`).
 - Structured fields — one message string plus an object of context, e.g. `log.info({ agents, configSource }, 'sync started')`. Avoid logging large objects or full stack traces unless at error level and useful for debugging.
