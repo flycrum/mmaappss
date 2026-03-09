@@ -34,13 +34,13 @@ const PATHS = {
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
 export interface IntegrationTestStep {
-  /** When set (Claude adapter), assert .claude/rules is absent after sync (e.g. after configModeOverride no-rules-for-claude). */
+  /** When set (Claude adapter), assert .claude/rules is absent after sync (e.g. after configModeOverride disable-claude-rules). */
   assertClaudeRulesRemoved?: boolean;
   /** After sync with configOverride, assert this repo-relative path does not exist (e.g. excluded). */
   assertExcludedFile?: string;
   /** After sync with configOverride, assert this plugin's synced content is removed (e.g. .cursor/commands/<plugin>). */
   assertExcludedPlugin?: string;
-  /** Optional: backup config, replace configMode with this value, run sync, restore. Used to test no-rules-for-claude idempotency. */
+  /** Optional: backup config, replace configMode with this value, run sync, restore. Used to test disable-claude-rules idempotency. */
   configModeOverride?: string;
   /** Optional config override (backup mmaappss.config.ts, write override, run, restore). */
   configOverride?: Record<string, unknown>;
@@ -160,8 +160,8 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
   },
   {
     mode: 'enabled',
-    label: 'sync with no-rules-for-claude: .claude/rules removed',
-    configModeOverride: 'no-rules-for-claude',
+    label: 'sync with disable-claude-rules: .claude/rules removed',
+    configModeOverride: 'disable-claude-rules',
     assertClaudeRulesRemoved: true,
   },
   {
@@ -198,8 +198,7 @@ function renameIfExists(from: string, to: string): void {
     } catch (fallbackErr) {
       // Log and swallow so teardown continues; include both errors for debugging
       const renameMsg = _e instanceof Error ? _e.message : String(_e);
-      const fallbackMsg =
-        fallbackErr instanceof Error ? (fallbackErr as Error).message : String(fallbackErr);
+      const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
       console.error(
         'renameIfExists: rename failed, fallback copy+remove also failed.',
         `Rename: ${renameMsg}. Fallback: ${fallbackMsg}`,
@@ -299,10 +298,16 @@ export abstract class IntegrationTestAdapterBase {
           if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackupPath);
           const content = fs.readFileSync(configBackupPath, 'utf8');
           const modified = content.replace(
-            /const configMode = .+;/,
-            `const configMode = '${step.configModeOverride}';`
+            /const\s+configMode\s*=\s*['"]?[^'";]+['"]?\s*(?:as\s+\w+)?\s*;/,
+            `const configMode = '${step.configModeOverride}' as ConfigMode;`
           );
           fs.writeFileSync(configPath, modified);
+          const verifyContent = fs.readFileSync(configPath, 'utf8');
+          if (!verifyContent.includes(`'${step.configModeOverride}'`)) {
+            if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
+            console.error('Config mode override: replacement did not apply');
+            return false;
+          }
         } catch (e) {
           console.error('Config mode override failed:', (e as Error).message);
           if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
@@ -372,7 +377,7 @@ export abstract class IntegrationTestAdapterBase {
               const entries = fs.readdirSync(rulesDir);
               if (entries.length > 0) {
                 console.error(
-                  `.claude/rules should be absent or empty when rulesSymlink is disabled (no-rules-for-claude), found: ${entries.join(', ')}`
+                  `.claude/rules should be absent or empty when rulesSymlink is disabled (disable-claude-rules), found: ${entries.join(', ')}`
                 );
                 passed = false;
               }

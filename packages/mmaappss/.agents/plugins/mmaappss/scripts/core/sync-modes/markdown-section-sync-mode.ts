@@ -21,6 +21,11 @@ export interface MarkdownSectionSyncModeOptions {
   sectionHeading: string;
 }
 
+/** Strips leading # and whitespace from a section heading for replace/remove operations. */
+function normalizeSectionHeading(heading: string): string {
+  return heading.replace(/^#+\s*/, '');
+}
+
 export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncModeOptions> {
   constructor(options?: MarkdownSectionSyncModeOptions) {
     super(options);
@@ -31,7 +36,7 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
     const options = this.options;
     if (!options) return ok(undefined);
     const filePath = path.join(context.repoRoot, options.agentsFile);
-    const heading = options.sectionHeading.replace(/^#+\s*/, '');
+    const heading = normalizeSectionHeading(options.sectionHeading);
     return markdownSection.removeSection(filePath, heading);
   }
 
@@ -63,7 +68,7 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
     let result: Result<void, Error> = ok(undefined);
     for (const heading of options.legacyHeadingsToRemove ?? []) {
       result = result.andThen(() =>
-        markdownSection.removeSection(filePath, heading.replace(/^#+\s*/, ''))
+        markdownSection.removeSection(filePath, normalizeSectionHeading(heading))
       );
       if (result.isErr()) return result;
     }
@@ -78,7 +83,7 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
     const options = this.options;
     if (!options) return ok(undefined);
     const filePath = path.join(context.repoRoot, options.agentsFile);
-    const heading = options.sectionHeading.replace(/^#+\s*/, '');
+    const heading = normalizeSectionHeading(options.sectionHeading);
     const content = this.buildMarkdownSectionContent(context);
     return markdownSection.replaceOrAddSection(filePath, heading, content);
   }

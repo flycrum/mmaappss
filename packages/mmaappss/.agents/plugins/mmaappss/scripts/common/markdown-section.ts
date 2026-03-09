@@ -19,9 +19,15 @@ function getHeadingLevel(line: string): number {
 
 /** Options for removeBlocksMatching: which lines start a block and which lines belong to it. */
 export interface RemoveBlocksMatchingOptions {
-  /** Regex to detect the first line of a block to remove. */
+  /**
+   * Regex to detect the first line of a block to remove.
+   * Do not use the 'g' flag; the implementation calls .test() repeatedly and resets lastIndex. Using 'g' can cause incorrect matches.
+   */
   blockStartLineRegex: RegExp;
-  /** Return true for lines that are part of the block after the start line (blank, list, subheading, etc.). */
+  /**
+   * Return true for lines that are part of the block after the start line (blank, list, subheading, etc.).
+   * Receives the original, untrimmed line (including leading/trailing whitespace). Callers pass raw line text from the source; implementers must trim or handle indentation themselves when deciding continuation.
+   */
   isBlockContinuationLine?: (line: string) => boolean;
 }
 
@@ -56,6 +62,7 @@ export const markdownSection = {
       while (i < lines.length) {
         const line = lines[i]!;
         const trimmed = line.trim();
+        options.blockStartLineRegex.lastIndex = 0;
         if (options.blockStartLineRegex.test(trimmed)) {
           let end = i + 1;
           while (end < lines.length && isContinuation(lines[end]!)) {

@@ -2,7 +2,7 @@ import { defineVitestConfig } from '@mmaappss/vitest-config';
 
 export default defineVitestConfig({
   test: {
-    include: ['.agents/**/*.spec.ts', '**/*.spec.ts'],
+    include: ['**/*.spec.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

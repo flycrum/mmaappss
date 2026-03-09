@@ -148,10 +148,13 @@ export const cursorAgentPresetConfig = {
       const commandsTarget = path.join(cursorDir, 'commands');
       const skillsTarget = path.join(cursorDir, 'skills');
       const agentsTarget = path.join(cursorDir, 'agents');
+      const processedPluginNames = new Set<string>();
 
       for (const m of marketplaces) {
         for (const plugin of m.plugins) {
           if (plugin.manifests.cursor !== true) continue;
+          if (processedPluginNames.has(plugin.name)) continue;
+          processedPluginNames.add(plugin.name);
 
           // --- Rules: copy to .mdc with frontmatter ---
           const rulesDir = path.join(plugin.path, RULES_SUBDIR);

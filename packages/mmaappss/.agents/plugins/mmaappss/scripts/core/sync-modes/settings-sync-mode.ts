@@ -19,7 +19,12 @@ export interface SettingsSyncModeOptions {
 const SOURCE_TYPE = 'directory';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
+/**
+ * Sync mode for agent settings files. Options.settingsFile is required for real work.
+ * Omitting options (or passing undefined) intentionally creates a no-op instance; methods guard for missing options and return early.
+ */
 export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
+  /** @param options - When omitted, instance is no-op; methods check this.options and skip when undefined. */
   constructor(options?: SettingsSyncModeOptions) {
     super(options);
   }

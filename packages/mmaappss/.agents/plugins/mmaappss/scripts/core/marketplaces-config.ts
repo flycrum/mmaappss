@@ -236,6 +236,7 @@ export const marketplacesConfig = {
       const presetValue = presetConfig[presetName];
       if (presetValue === undefined) continue;
       if (presetValue === false) {
+        // Only preset agents support default clearing; custom agents have no presetEntry so syncModesToClear is not populated for them.
         const presetAgent = agentPresets[resolvedInput.name as PresetAgentName];
         const presetEntry = presetAgent?.syncModePresets?.[presetName];
         if (presetEntry !== undefined && presetEntry !== false) {

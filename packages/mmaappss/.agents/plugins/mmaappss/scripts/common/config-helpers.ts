@@ -79,7 +79,7 @@ export const configHelpers = {
       const agentName = typeof agent === 'string' ? agent : agent.name;
       const resolvedAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
       const defaultPer = Boolean(resolvedAgents[agentName]);
-      const presetEnvVar = agentPresets[agentName as keyof typeof agentPresets]?.envVar;
+      const presetEnvVar = (agentPresets as Record<string, { envVar?: string }>)[agentName]?.envVar;
       const envVar = typeof agent === 'object' && agent.envVar ? agent.envVar : presetEnvVar;
       const agentEnv = envVar ? process.env[envVar] : undefined;
       const allEnabled = parseBool(allEnv, true);

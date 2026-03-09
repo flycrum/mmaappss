@@ -6,7 +6,6 @@ import { marketplacesConfig } from './packages/mmaappss/.agents/plugins/mmaappss
 import { LocalPluginsContentSyncMode } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/core/sync-modes/local-plugins-content-sync-mode.js';
 
 type ConfigMode = 'basic' | 'crazy' | 'disable-claude-rules';
-// const configMode = 'disable-claude-rules' as ConfigMode;
 const configMode = 'basic' as ConfigMode;
 
 let mmaappssConfig: ReturnType<typeof marketplacesConfig.defineMarketplacesConfig>;

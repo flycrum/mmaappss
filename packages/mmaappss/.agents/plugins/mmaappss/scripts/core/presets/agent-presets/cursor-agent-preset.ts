@@ -19,6 +19,7 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
             );
           },
           sync(context) {
+            // Intentionally discard syncCursorContent result to satisfy handler return type (Result<void, Error>).
             return cursorAgentPresetConfig
               .syncCursorContent(
                 context.repoRoot,
