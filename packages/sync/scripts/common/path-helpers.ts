@@ -20,9 +20,13 @@ export const pathHelpers = {
     return path.resolve(_scriptDir, '..', '..');
   },
   /**
-   * Repo root: when this package is under node_modules (consumer install), the directory that contains that node_modules; otherwise monorepo root (parent of packages/).
+   * Repo root: uses MMAAPPSS_REPO_ROOT when set (bin sets it to cwd so linked installs use the
+   * consumer repo; otherwise package location is used (node_modules → consumer root, or monorepo).
    */
   get repoRoot(): string {
+    if (process.env.MMAAPPSS_REPO_ROOT) {
+      return path.resolve(process.env.MMAAPPSS_REPO_ROOT);
+    }
     return pathHelpers.resolveRepoRootFromPackageRoot(pathHelpers.packageRoot);
   },
   /**

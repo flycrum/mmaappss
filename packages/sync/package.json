@@ -15,10 +15,15 @@
   "bin": {
     "mmaappss-sync": "./bin/mmaappss-sync.mjs"
   },
+  "exports": {
+    "./config": "./config/index.ts"
+  },
   "files": [
     "scripts",
     ".agents",
-    "bin"
+    "bin",
+    "getting-started",
+    "config"
   ],
   "scripts": {
     "lint": "eslint .",
