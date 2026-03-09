@@ -9,6 +9,11 @@ import type { SyncModeClassRef, SyncModeDefinition } from './sync-modes/sync-mod
 /** Preset sync-mode names available in `syncModePresets`. */
 export type SyncModePresetName = keyof typeof syncModePresets;
 
+/** Options type for a sync mode preset (from its modeClass constructor first parameter). */
+export type SyncModePresetOptions<K extends SyncModePresetName> = ConstructorParameters<
+  (typeof syncModePresets)[K]['modeClass']
+>[0];
+
 /** Fully resolved agent definition used at runtime by the adapter runner. */
 export interface DefinedAgent<TName extends string = string> {
   /** Optional env var key that controls this agent's enabled state. */
@@ -68,6 +73,28 @@ type SyncModePresetValue =
   | (Partial<SyncModeDefinition> & { enabled?: boolean })
   | SyncModeFactory;
 
+/** Per-preset value type so config object literals get options inference (e.g. folderTransforms callbacks). */
+type SyncModePresetValueForKey<K extends SyncModePresetName> =
+  | SyncModeDefinition<SyncModePresetOptions<K>>
+  | (Partial<SyncModeDefinition<SyncModePresetOptions<K>>> & { enabled?: boolean })
+  | boolean
+  | SyncModeClassRef
+  | SyncModeFactory;
+
+/** Union of all per-preset value types (for resolveSyncModeEntry when receiving config values). */
+type SyncModePresetValueFromConfig = {
+  [K in SyncModePresetName]: SyncModePresetValueForKey<K>;
+}[SyncModePresetName];
+
+/** Discriminated union for syncModeCustom entries so options (e.g. processPluginFolderOrFile) get inferred from modeClass. */
+type SyncModeCustomEntry = {
+  [K in SyncModePresetName]: {
+    modeClass: (typeof syncModePresets)[K]['modeClass'];
+    options?: SyncModePresetOptions<K>;
+    enabled?: boolean;
+  };
+}[SyncModePresetName];
+
 /** Input accepted by `defineAgent` before the config is normalized. */
 export interface DefineAgentInput<TName extends string = string> {
   /** Optional env var key for this agent. */
@@ -80,9 +107,9 @@ export interface DefineAgentInput<TName extends string = string> {
    */
   policy?: AgentPolicy;
   /** Additional custom sync modes appended after preset sync modes. */
-  syncModeCustom?: Array<SyncModeClassRef | SyncModeDefinition | SyncModeFactory>;
+  syncModeCustom?: Array<SyncModeCustomEntry | SyncModeClassRef | SyncModeFactory>;
   /** Optional per-preset sync-mode values for enable, replace, or partial override. */
-  syncModePresets?: Partial<Record<SyncModePresetName, SyncModePresetValue>>;
+  syncModePresets?: Partial<{ [K in SyncModePresetName]: SyncModePresetValueForKey<K> }>;
 }
 
 /** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
@@ -153,7 +180,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 /** Resolves one preset sync-mode entry into a normalized sync mode definition. */
 function resolveSyncModeEntry(
   presetName: SyncModePresetName,
-  rawValue: SyncModePresetValue,
+  rawValue: SyncModePresetValue | SyncModePresetValueFromConfig,
   helpers: SyncModeHelpers
 ): SyncModeDefinition | null {
   const value =
@@ -181,7 +208,7 @@ function resolveSyncModeEntry(
 
 /** Resolves one custom sync-mode entry into a normalized sync mode definition. */
 function resolveCustomSyncModeEntry(
-  rawValue: SyncModeClassRef | SyncModeDefinition | SyncModeFactory,
+  rawValue: SyncModeCustomEntry | SyncModeClassRef | SyncModeDefinition | SyncModeFactory,
   helpers: SyncModeHelpers
 ): SyncModeDefinition | null {
   const value =
