@@ -5,7 +5,9 @@
 import { marketplacesConfig } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/core/marketplaces-config.js';
 import { LocalPluginsContentSyncMode } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/core/sync-modes/local-plugins-content-sync-mode.js';
 
-const configMode = 'basic' as 'basic' | 'crazy';
+type ConfigMode = 'basic' | 'crazy' | 'disable-claude-rules';
+// const configMode = 'disable-claude-rules' as ConfigMode;
+const configMode = 'basic' as ConfigMode;
 
 let mmaappssConfig: ReturnType<typeof marketplacesConfig.defineMarketplacesConfig>;
 
@@ -20,9 +22,28 @@ if (configMode === 'basic') {
     // loggingEnabled: true,
     // postMergeSyncEnabled: true,
   }));
+} else if (configMode === 'disable-claude-rules') {
+  mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
+    ({ config, defineAgent, agentPresets }) =>
+      config({
+        marketplacesEnabled: {
+          claude: defineAgent({
+            ...agentPresets.claude,
+            name: 'claude',
+            syncModePresets: {
+              ...agentPresets.claude.syncModePresets,
+              // disable rules symlink for claude
+              rulesSymlink: false,
+            },
+          }),
+          cursor: true,
+          codex: true,
+        },
+      })
+  );
 } else {
   mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
-    ({ defineAgent, agentPresets }, config) =>
+    ({ config, defineAgent, agentPresets }) =>
       config({
         marketplacesEnabled: {
           claude: true,

@@ -63,6 +63,8 @@ export class AgentAdapterBase {
   protected readonly agentConfig: DefinedAgent;
   /** Enabled sync mode instances for this adapter run. */
   private readonly syncModeInstances: SyncModeBase[];
+  /** Instances for modes that are disabled in config; we run their clearRun at start of sync to tear down artifacts. */
+  private readonly syncModesToClearInstances: SyncModeBase[];
   /** Mutable state shared across adapter and mode lifecycle steps. */
   private readonly sharedState: Map<string, unknown>;
 
@@ -72,6 +74,9 @@ export class AgentAdapterBase {
     this.syncModeInstances = agentConfig.syncModes
       .filter((syncMode) => syncMode.enabled !== false)
       .map((syncMode: SyncModeDefinition) => new syncMode.modeClass(syncMode.options));
+    this.syncModesToClearInstances = (agentConfig.syncModesToClear ?? []).map(
+      (def: SyncModeDefinition) => new def.modeClass(def.options)
+    );
     this.sharedState = new Map<string, unknown>();
   }
 
@@ -163,6 +168,18 @@ export class AgentAdapterBase {
       tsConfig,
     };
     getLogger().info({ agent: this.agentConfig.name, enabled }, 'adapter lifecycle run');
+
+    if (enabled && this.syncModesToClearInstances.length > 0) {
+      const clearContext: SyncModeContext = {
+        ...context,
+        enabled: false,
+        marketplaces: [],
+      };
+      for (const mode of this.syncModesToClearInstances) {
+        const clearResult = mode.clearRun(clearContext);
+        if (clearResult.isErr()) return err(clearResult.error);
+      }
+    }
 
     const syncResult = LifecycleChain.start(this, this.syncModeInstances)
       .runAdapterHook((adapter) => adapter.syncSetupBefore(context))

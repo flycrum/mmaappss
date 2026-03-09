@@ -34,10 +34,14 @@ const PATHS = {
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
 export interface IntegrationTestStep {
+  /** When set (Claude adapter), assert .claude/rules is absent after sync (e.g. after configModeOverride no-rules-for-claude). */
+  assertClaudeRulesRemoved?: boolean;
   /** After sync with configOverride, assert this repo-relative path does not exist (e.g. excluded). */
   assertExcludedFile?: string;
   /** After sync with configOverride, assert this plugin's synced content is removed (e.g. .cursor/commands/<plugin>). */
   assertExcludedPlugin?: string;
+  /** Optional: backup config, replace configMode with this value, run sync, restore. Used to test no-rules-for-claude idempotency. */
+  configModeOverride?: string;
   /** Optional config override (backup mmaappss.config.ts, write override, run, restore). */
   configOverride?: Record<string, unknown>;
   /** Human-readable step name for logs. */
@@ -153,6 +157,16 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
     mode: 'enabled',
     label: 'restore full set (no excluded)',
     configOverride: { excluded: [] },
+  },
+  {
+    mode: 'enabled',
+    label: 'sync with no-rules-for-claude: .claude/rules removed',
+    configModeOverride: 'no-rules-for-claude',
+    assertClaudeRulesRemoved: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'sync with default config: .claude/rules restored',
   },
 ];
 
@@ -280,7 +294,21 @@ export abstract class IntegrationTestAdapterBase {
     const configBackupPath = path.join(root, PATHS.CONFIG_BACKUP_FILE);
 
     const runStep = async (step: IntegrationTestStep): Promise<boolean> => {
-      if (step.configOverride) {
+      if (step.configModeOverride) {
+        try {
+          if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackupPath);
+          const content = fs.readFileSync(configBackupPath, 'utf8');
+          const modified = content.replace(
+            /const configMode = .+;/,
+            `const configMode = '${step.configModeOverride}';`
+          );
+          fs.writeFileSync(configPath, modified);
+        } catch (e) {
+          console.error('Config mode override failed:', (e as Error).message);
+          if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
+          return false;
+        }
+      } else if (step.configOverride) {
         try {
           if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackupPath);
           const fullConfig = {
@@ -334,11 +362,36 @@ export abstract class IntegrationTestAdapterBase {
           } else {
             console.error('runSync failed:', result.isErr() ? result.error.message : '');
           }
+        } else if (step.assertClaudeRulesRemoved && this.agent === 'claude') {
+          this.setEnv(step.mode);
+          const result = await runSync([this.agent]);
+          passed = result.isOk();
+          if (passed) {
+            const rulesDir = path.join(root, PATHS.CLAUDE_DIR, 'rules');
+            if (fs.existsSync(rulesDir)) {
+              const entries = fs.readdirSync(rulesDir);
+              if (entries.length > 0) {
+                console.error(
+                  `.claude/rules should be absent or empty when rulesSymlink is disabled (no-rules-for-claude), found: ${entries.join(', ')}`
+                );
+                passed = false;
+              }
+            }
+            const manifestPath = path.join(root, PATHS.CLAUDE_DIR, PATHS.CLAUDE_SYNC_MANIFEST);
+            if (fs.existsSync(manifestPath)) {
+              console.error(
+                `.claude/${PATHS.CLAUDE_SYNC_MANIFEST} should not exist when rulesSymlink is disabled`
+              );
+              passed = false;
+            }
+          } else {
+            console.error('runSync failed:', result.isErr() ? result.error.message : '');
+          }
         } else {
           passed = await this.runSingleCondition(root, step.mode);
         }
       } finally {
-        if (step.configOverride) {
+        if (step.configModeOverride || step.configOverride) {
           try {
             removeIfExists(configPath);
             if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);

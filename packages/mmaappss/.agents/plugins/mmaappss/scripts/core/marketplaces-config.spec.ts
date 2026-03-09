@@ -23,7 +23,7 @@ describe('marketplacesConfig', () => {
   });
 
   it('resolveEnabledAgents supports custom agent records', () => {
-    const config = marketplacesConfig.defineMarketplacesConfig(({ defineAgent }, config) =>
+    const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(({ config, defineAgent }) =>
       config({
         marketplacesEnabled: {
           custom: {
@@ -43,7 +43,7 @@ describe('marketplacesConfig', () => {
       })
     );
 
-    const resolved = marketplacesConfig.resolveEnabledAgents(config);
+    const resolved = marketplacesConfig.resolveEnabledAgents(mmaappssConfig);
     expect(Object.keys(resolved)).toEqual(['acme']);
   });
 });

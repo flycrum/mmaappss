@@ -21,6 +21,11 @@ export interface DefinedAgent<TName extends string = string> {
   name: TName;
   /** Ordered sync mode definitions used to construct sync mode instances. */
   syncModes: SyncModeDefinition[];
+  /**
+   * Modes to clear (tear down) at the start of sync when they were disabled in config.
+   * Used so toggling e.g. rulesSymlink to false removes that mode's artifacts on the next sync.
+   */
+  syncModesToClear?: SyncModeDefinition[];
 }
 
 /** Helper shape passed to sync mode factory callbacks. */
@@ -80,6 +85,8 @@ export interface DefineAgentInput<TName extends string = string> {
 export interface DefineAgentHelpers {
   /** Built-in agent presets available for composition and override. */
   agentPresets: typeof agentPresets;
+  /** Wrapper to enforce exact config keys; use as `helpers.config({ ... })` in defineMarketplacesConfig callbacks. */
+  config: typeof exactMarketplacesConfig;
   /** Factory for producing a strongly typed and normalized agent definition. */
   defineAgent: <const TName extends string>(
     input: DefineAgentInput<TName> | ((helpers: DefineAgentHelpers) => DefineAgentInput<TName>)
@@ -205,6 +212,7 @@ export function exactMarketplacesConfig<T extends MarketplacesConfig>(
 function buildHelpers(): DefineAgentHelpers {
   return {
     agentPresets,
+    config: exactMarketplacesConfig,
     defineAgent: marketplacesConfig.defineAgent,
     syncModePresets,
   };
@@ -222,9 +230,20 @@ export const marketplacesConfig = {
 
     const presetConfig = resolvedInput.syncModePresets ?? {};
     const syncModeHelpers: SyncModeHelpers = { syncModePresets };
+    const syncModesToClear: SyncModeDefinition[] = [];
+
     for (const presetName of Object.keys(presetConfig) as SyncModePresetName[]) {
       const presetValue = presetConfig[presetName];
       if (presetValue === undefined) continue;
+      if (presetValue === false) {
+        const presetAgent = agentPresets[resolvedInput.name as PresetAgentName];
+        const presetEntry = presetAgent?.syncModePresets?.[presetName];
+        if (presetEntry !== undefined && presetEntry !== false) {
+          const cleared = resolveSyncModeEntry(presetName, presetEntry, syncModeHelpers);
+          if (cleared) syncModesToClear.push(cleared);
+        }
+        continue;
+      }
       const resolved = resolveSyncModeEntry(presetName, presetValue, syncModeHelpers);
       if (resolved) syncModes.push(resolved);
     }
@@ -238,6 +257,7 @@ export const marketplacesConfig = {
       envVar: resolvedInput.envVar,
       name: resolvedInput.name,
       syncModes,
+      ...(syncModesToClear.length > 0 ? { syncModesToClear } : {}),
     };
   },
 
@@ -255,10 +275,9 @@ export const marketplacesConfig = {
       | ExactMarketplacesConfigInput<TConfig>
       | (() => TReturn)
       | ((helpers: DefineAgentHelpers) => TReturn)
-      | ((helpers: DefineAgentHelpers, config: typeof exactMarketplacesConfig) => TReturn)
   ): TConfig extends (...args: unknown[]) => unknown ? MarketplacesConfig : TConfig {
     const helpers = buildHelpers();
-    const result = typeof input === 'function' ? input(helpers, exactMarketplacesConfig) : input;
+    const result = typeof input === 'function' ? input(helpers) : input;
     return result as unknown as TConfig extends (...args: unknown[]) => unknown
       ? MarketplacesConfig
       : TConfig;
