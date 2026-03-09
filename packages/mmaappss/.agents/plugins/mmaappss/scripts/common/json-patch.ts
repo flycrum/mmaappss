@@ -48,7 +48,16 @@ export const jsonPatch = {
       return ok(parsed as T);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
-      return err(new Error(`${filePath}: ${errMsg}`));
+      const errObj = new Error(`${filePath}: ${errMsg}`) as Error & { code?: string };
+      const code =
+        e &&
+        typeof e === 'object' &&
+        'code' in e &&
+        typeof (e as NodeJS.ErrnoException).code === 'string'
+          ? (e as NodeJS.ErrnoException).code
+          : undefined;
+      if (code) errObj.code = code;
+      return err(errObj);
     }
   },
   /**

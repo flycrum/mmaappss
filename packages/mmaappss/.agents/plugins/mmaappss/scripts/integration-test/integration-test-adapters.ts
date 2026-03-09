@@ -7,9 +7,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { configHelpers } from '../common/config-helpers.js';
-import { markdownSection } from '../common/markdown-section.js';
 import { pathHelpers } from '../common/path-helpers.js';
 import type { Agent } from '../common/types.js';
+import { codexAgentPresetConfig } from '../core/presets/agent-presets/codex-agent-preset.config.js';
 import { runSync } from '../core/sync-runner.js';
 
 /** Suffix for temporary backup paths used during integration tests. */
@@ -34,10 +34,14 @@ const PATHS = {
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
 export interface IntegrationTestStep {
+  /** When set (Claude adapter), assert .claude/rules is absent after sync (e.g. after configModeOverride disable-claude-rules). */
+  assertClaudeRulesRemoved?: boolean;
   /** After sync with configOverride, assert this repo-relative path does not exist (e.g. excluded). */
   assertExcludedFile?: string;
   /** After sync with configOverride, assert this plugin's synced content is removed (e.g. .cursor/commands/<plugin>). */
   assertExcludedPlugin?: string;
+  /** Optional: backup config, replace configMode with this value, run sync, restore. Used to test disable-claude-rules idempotency. */
+  configModeOverride?: string;
   /** Optional config override (backup mmaappss.config.ts, write override, run, restore). */
   configOverride?: Record<string, unknown>;
   /** Human-readable step name for logs. */
@@ -54,8 +58,10 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
   { mode: 'disabled', label: 'remove' },
   { mode: 'enabled', label: 'recreate' },
   { mode: 'enabled', label: 'idempotent: enabled again (no changes)' },
+  { mode: 'enabled', label: 'idempotent: enabled third run' },
   { mode: 'disabled', label: 'remove again' },
   { mode: 'disabled', label: 'idempotent: disabled again (no-op)' },
+  { mode: 'disabled', label: 'idempotent: disabled third run' },
   { mode: 'enabled', label: 'final create' },
   {
     mode: 'enabled',
@@ -77,14 +83,90 @@ const DEFAULT_STEPS: IntegrationTestStep[] = [
   },
   {
     mode: 'enabled',
+    label: 'exclude plugin wildcard-like segment: [plugins/git]',
+    configOverride: { excluded: ['plugins/git'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
     label: 'exclude single file (excluded): sync then assert file absent',
     configOverride: { excluded: ['.cursor/commands/git/git-pr-fillout-template.md'] },
     assertExcludedFile: '.cursor/commands/git/git-pr-fillout-template.md',
   },
   {
     mode: 'enabled',
+    label: 'exclude single file by segment only',
+    configOverride: { excluded: ['git-pr-fillout-template.md'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'empty excluded array maintains full sync',
+    configOverride: { excluded: [] },
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded non-existent path should be harmless',
+    configOverride: { excluded: ['.agents/plugins/does-not-exist'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded top-level .agents should remove all plugin sync',
+    configOverride: { excluded: ['.agents'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded node_modules should not break sync',
+    configOverride: { excluded: ['node_modules'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded dist should not break sync',
+    configOverride: { excluded: ['dist'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded .turbo should not break sync',
+    configOverride: { excluded: ['.turbo'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'excluded .next should not break sync',
+    configOverride: { excluded: ['.next'] },
+    relaxAssertions: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'strict enabled after broad exclusions reset',
+    configOverride: { excluded: [] },
+  },
+  {
+    mode: 'disabled',
+    label: 'disable after complex enabled variants',
+  },
+  {
+    mode: 'enabled',
+    label: 're-enable after complex disabled step',
+  },
+  {
+    mode: 'enabled',
     label: 'restore full set (no excluded)',
     configOverride: { excluded: [] },
+  },
+  {
+    mode: 'enabled',
+    label: 'sync with disable-claude-rules: .claude/rules removed',
+    configModeOverride: 'disable-claude-rules',
+    assertClaudeRulesRemoved: true,
+  },
+  {
+    mode: 'enabled',
+    label: 'sync with default config: .claude/rules restored',
   },
 ];
 
@@ -109,15 +191,18 @@ function renameIfExists(from: string, to: string): void {
   try {
     if (fs.existsSync(to)) fs.rmSync(to, { recursive: true });
     fs.renameSync(from, to);
-  } catch (e) {
+  } catch (_e) {
     try {
       fs.copyFileSync(from, to);
       removeIfExists(from);
     } catch (fallbackErr) {
-      // Log and swallow so teardown continues
+      // Log and swallow so teardown continues; include both errors for debugging
+      const renameMsg = _e instanceof Error ? _e.message : String(_e);
+      const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
       console.error(
-        'renameIfExists failed, fallback copy+remove also failed:',
-        (fallbackErr as Error).message
+        'renameIfExists: rename failed, fallback copy+remove also failed.',
+        `Rename: ${renameMsg}. Fallback: ${fallbackMsg}`,
+        { renameError: _e, fallbackError: fallbackErr }
       );
     }
   }
@@ -208,7 +293,27 @@ export abstract class IntegrationTestAdapterBase {
     const configBackupPath = path.join(root, PATHS.CONFIG_BACKUP_FILE);
 
     const runStep = async (step: IntegrationTestStep): Promise<boolean> => {
-      if (step.configOverride) {
+      if (step.configModeOverride) {
+        try {
+          if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackupPath);
+          const content = fs.readFileSync(configBackupPath, 'utf8');
+          const modified = content.replace(
+            /const\s+configMode\s*=\s*['"]?[^'";]+['"]?\s*(?:as\s+\w+)?\s*;/,
+            `const configMode = '${step.configModeOverride}' as ConfigMode;`
+          );
+          fs.writeFileSync(configPath, modified);
+          const verifyContent = fs.readFileSync(configPath, 'utf8');
+          if (!verifyContent.includes(`'${step.configModeOverride}'`)) {
+            if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
+            console.error('Config mode override: replacement did not apply');
+            return false;
+          }
+        } catch (e) {
+          console.error('Config mode override failed:', (e as Error).message);
+          if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
+          return false;
+        }
+      } else if (step.configOverride) {
         try {
           if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackupPath);
           const fullConfig = {
@@ -262,11 +367,36 @@ export abstract class IntegrationTestAdapterBase {
           } else {
             console.error('runSync failed:', result.isErr() ? result.error.message : '');
           }
+        } else if (step.assertClaudeRulesRemoved && this.agent === 'claude') {
+          this.setEnv(step.mode);
+          const result = await runSync([this.agent]);
+          passed = result.isOk();
+          if (passed) {
+            const rulesDir = path.join(root, PATHS.CLAUDE_DIR, 'rules');
+            if (fs.existsSync(rulesDir)) {
+              const entries = fs.readdirSync(rulesDir);
+              if (entries.length > 0) {
+                console.error(
+                  `.claude/rules should be absent or empty when rulesSymlink is disabled (disable-claude-rules), found: ${entries.join(', ')}`
+                );
+                passed = false;
+              }
+            }
+            const manifestPath = path.join(root, PATHS.CLAUDE_DIR, PATHS.CLAUDE_SYNC_MANIFEST);
+            if (fs.existsSync(manifestPath)) {
+              console.error(
+                `.claude/${PATHS.CLAUDE_SYNC_MANIFEST} should not exist when rulesSymlink is disabled`
+              );
+              passed = false;
+            }
+          } else {
+            console.error('runSync failed:', result.isErr() ? result.error.message : '');
+          }
         } else {
           passed = await this.runSingleCondition(root, step.mode);
         }
       } finally {
-        if (step.configOverride) {
+        if (step.configModeOverride || step.configOverride) {
           try {
             removeIfExists(configPath);
             if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configPath);
@@ -467,7 +597,10 @@ export class CodexIntegrationAdapter extends IntegrationTestAdapterBase {
     },
   ];
 
-  private readonly sectionHeading = markdownSection.CODEX_SECTION_HEADING.replace(/^#+\s*/, '');
+  private readonly sectionHeading = codexAgentPresetConfig.CODEX_SECTION_HEADING.replace(
+    /^#+\s*/,
+    ''
+  );
 
   private getSectionHeadingRegex(): RegExp {
     const escaped = this.sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

@@ -8,12 +8,14 @@ import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
 import { isExcluded } from './excluded-patterns.js';
 import { getLogger } from './logger.js';
-import type { DiscoveredMarketplace, DiscoveredPlugin } from './types.js';
+import type { DiscoveredMarketplace, DiscoveredPlugin, PluginManifestKey } from './types.js';
 
 const PLUGINS_SUBDIR = '.agents/plugins';
-const CLAUDE_MANIFEST = '.claude-plugin/plugin.json';
-const CURSOR_MANIFEST = '.cursor-plugin/plugin.json';
-const CODEX_MANIFEST = '.codex-plugin/plugin.json';
+const MANIFEST_PATHS: Record<PluginManifestKey, string> = {
+  claude: '.claude-plugin/plugin.json',
+  codex: '.codex-plugin/plugin.json',
+  cursor: '.cursor-plugin/plugin.json',
+};
 
 /** Default segments to exclude from walk (always applied). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
@@ -38,11 +40,7 @@ function loadManifest(
   }
 }
 
-function discoverPluginsInDir(
-  pluginsDir: string,
-  repoRoot: string,
-  relativePluginsPath: string
-): DiscoveredPlugin[] {
+function discoverPluginsInDir(pluginsDir: string, relativePluginsPath: string): DiscoveredPlugin[] {
   const plugins: DiscoveredPlugin[] = [];
   const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
 
@@ -50,28 +48,27 @@ function discoverPluginsInDir(
     if (!ent.isDirectory()) continue;
 
     const pluginPath = path.join(pluginsDir, ent.name);
-    const claudeManifestPath = path.join(pluginPath, CLAUDE_MANIFEST);
-    const cursorManifestPath = path.join(pluginPath, CURSOR_MANIFEST);
-    const codexManifestPath = path.join(pluginPath, CODEX_MANIFEST);
-    const hasClaude = fs.existsSync(claudeManifestPath);
-    const hasCursor = fs.existsSync(cursorManifestPath);
-    const hasCodex = fs.existsSync(codexManifestPath);
+    // Priority: claude → codex → cursor, per MANIFEST_PATHS insertion order. The guard below is retained for defensive type narrowing to avoid surprising TS errors.
+    const manifestEntries = Object.entries(MANIFEST_PATHS) as Array<[PluginManifestKey, string]>;
+    const manifests = Object.fromEntries(
+      manifestEntries.map(([manifestKey, manifestRelativePath]) => [
+        manifestKey,
+        fs.existsSync(path.join(pluginPath, manifestRelativePath)),
+      ])
+    ) as Record<PluginManifestKey, boolean>;
+    const hasAnyManifest = Object.values(manifests).some(Boolean);
+    if (!hasAnyManifest) continue;
 
-    if (!hasClaude && !hasCursor && !hasCodex) continue;
-
-    const manifestPath = hasClaude
-      ? claudeManifestPath
-      : hasCursor
-        ? cursorManifestPath
-        : codexManifestPath;
-    const manifest = loadManifest(manifestPath);
+    const firstPresentManifest = manifestEntries.find(([manifestKey]) => manifests[manifestKey]);
+    if (!firstPresentManifest) continue;
+    const manifestPath = firstPresentManifest[1];
+    const absoluteManifestPath = path.join(pluginPath, manifestPath);
+    const manifest = loadManifest(absoluteManifestPath);
     const relativePath = path.join(relativePluginsPath, ent.name);
 
     plugins.push({
       description: manifest?.description,
-      hasClaudeManifest: hasClaude,
-      hasCodexManifest: hasCodex,
-      hasCursorManifest: hasCursor,
+      manifests,
       manifestName: manifest?.name ?? ent.name,
       name: ent.name,
       path: pluginPath,
@@ -136,7 +133,7 @@ export function discoverMarketplaces(
     const relativePath = path.relative(repoRoot, pluginsDir).replace(/\\/g, '/');
     const label =
       relativePath === PLUGINS_SUBDIR ? 'Root marketplace' : `${relativePath} marketplace`;
-    const allPlugins = discoverPluginsInDir(pluginsDir, repoRoot, relativePath);
+    const allPlugins = discoverPluginsInDir(pluginsDir, relativePath);
     const plugins = excluded.length
       ? allPlugins.filter(
           (p) => !isExcluded(p.relativePath, excluded) && !isExcluded(p.name, excluded)

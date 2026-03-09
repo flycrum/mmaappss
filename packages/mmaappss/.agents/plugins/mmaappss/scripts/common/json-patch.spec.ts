@@ -21,6 +21,8 @@ describe('json-patch', () => {
       const result = jsonPatch.readJson<{ foo: string }>(filePath);
 
       expect(result.isErr()).toBe(true);
+      const err = result._unsafeUnwrapErr() as NodeJS.ErrnoException;
+      expect(err.code).toBe('ENOENT');
     });
 
     it('parses valid JSON and returns typed value', () => {

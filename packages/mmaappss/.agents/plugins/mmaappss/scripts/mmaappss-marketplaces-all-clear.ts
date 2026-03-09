@@ -1,11 +1,12 @@
 /**
- * Clear (teardown) all marketplace sync state for Claude, Cursor, and Codex.
+ * Clear (teardown) all marketplace sync state for configured preset agents (presetAgents).
  */
 
+import { presetAgents } from './common/preset-agents.js';
 import { runClear } from './core/sync-runner.js';
 
 async function main(): Promise<void> {
-  const result = await runClear(['claude', 'cursor', 'codex']);
+  const result = await runClear([...presetAgents]);
   if (result.isErr()) {
     console.error(result.error.message);
     process.exit(1);

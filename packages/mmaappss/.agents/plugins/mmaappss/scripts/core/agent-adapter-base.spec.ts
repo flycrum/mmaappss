@@ -1,223 +1,140 @@
-/**
- * Unit tests for AgentAdapterBase: buildMarketplacePluginEntries, buildMarketplaceJson, config flow.
- */
-
-import { ok, Result } from 'neverthrow';
+import { ok, type Result } from 'neverthrow';
 import { describe, expect, it } from 'vitest';
 import { pathHelpers } from '../common/path-helpers.js';
-import type { DiscoveredMarketplace, DiscoveredPlugin } from '../common/types.js';
-import {
-  AdapterAgentConfig,
-  AgentAdapterBase,
-  type MarketplaceJson,
-  type MarketplacePluginEntry,
-} from './agent-adapter-base.js';
-import { codexAdapter } from './codex-adapter.js';
+import { AgentAdapterBase } from './agent-adapter-base.js';
+import type { DefinedAgent } from './marketplaces-config.js';
+import { SyncModeBase, type SyncModeContext } from './sync-modes/sync-mode-base.js';
 
-/** Test subclass that exposes protected methods for unit testing. */
-class TestAdapter extends AgentAdapterBase {
-  constructor(config: AdapterAgentConfig) {
-    super(config);
+class RecordingSyncMode extends SyncModeBase {
+  constructor(
+    options?: unknown,
+    private readonly calls: string[] = []
+  ) {
+    super(options);
   }
 
-  public exposeBuildPluginEntries(m: DiscoveredMarketplace[]): MarketplacePluginEntry[] {
-    return this.buildMarketplacePluginEntries(m);
+  override syncSetupBefore(): Result<void, Error> {
+    this.calls.push('syncMode.syncSetupBefore');
+    return ok(undefined);
   }
 
-  public exposeBuildMarketplaceJson(m: DiscoveredMarketplace[]): MarketplaceJson {
-    return this.buildMarketplaceJson(m);
+  override syncRunEnabled(): Result<void, Error> {
+    this.calls.push('syncMode.syncRunEnabled');
+    return ok(undefined);
+  }
+
+  override syncRunDisabled(): Result<void, Error> {
+    this.calls.push('syncMode.syncRunDisabled');
+    return ok(undefined);
+  }
+
+  override clearRun(): Result<void, Error> {
+    this.calls.push('syncMode.clearRun');
+    return ok(undefined);
   }
 }
 
-function mockPlugin(overrides: Partial<DiscoveredPlugin>): DiscoveredPlugin {
-  const base = {
-    description: 'Test',
-    hasClaudeManifest: true,
-    hasCodexManifest: false,
-    hasCursorManifest: true,
-    name: 'test-plugin',
-    path: '/repo/.agents/plugins/test-plugin',
-    relativePath: '.agents/plugins/test-plugin',
-    version: '1.0.0',
-  };
-  const merged = { ...base, ...overrides };
-  return { ...merged, manifestName: overrides.manifestName ?? merged.name };
+class HookedAdapter extends AgentAdapterBase {
+  constructor(
+    agentConfig: DefinedAgent,
+    private readonly calls: string[]
+  ) {
+    super(agentConfig);
+  }
+
+  override syncSetupBefore(_context: SyncModeContext): Result<void, Error> {
+    this.calls.push('adapter.syncSetupBefore');
+    return ok(undefined);
+  }
+
+  override syncRunEnabled(_context: SyncModeContext): Result<void, Error> {
+    this.calls.push('adapter.syncRunEnabled');
+    return ok(undefined);
+  }
+
+  override syncRunDisabled(_context: SyncModeContext): Result<void, Error> {
+    this.calls.push('adapter.syncRunDisabled');
+    return ok(undefined);
+  }
+
+  override clearRunBefore(_context: SyncModeContext): Result<void, Error> {
+    this.calls.push('adapter.clearRunBefore');
+    return ok(undefined);
+  }
 }
 
-function mockMarketplace(
-  plugins: DiscoveredPlugin[],
-  relativePath = '.agents/plugins'
-): DiscoveredMarketplace {
-  return {
-    label: relativePath === '.agents/plugins' ? 'Root marketplace' : `${relativePath} marketplace`,
-    plugins,
-    pluginsDir: '/repo/' + relativePath,
-    relativePath,
-  };
-}
-
-describe('AgentAdapterBase', () => {
-  describe('buildMarketplacePluginEntries', () => {
-    it('filters by manifestFilter claude', () => {
-      const adapter = new TestAdapter({
-        agent: 'claude',
-        manifestFilter: 'claude',
-        sourceFormat: 'prefixed',
-      });
-      const p1 = mockPlugin({ name: 'a', hasClaudeManifest: true, hasCursorManifest: false });
-      const p2 = mockPlugin({ name: 'b', hasClaudeManifest: false, hasCursorManifest: true });
-      const m = mockMarketplace([p1, p2]);
-      const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries).toHaveLength(1);
-      expect(entries[0]!.name).toBe('a');
-    });
-
-    it('filters by manifestFilter cursor', () => {
-      const adapter = new TestAdapter({
-        agent: 'cursor',
-        manifestFilter: 'cursor',
-        sourceFormat: 'relative',
-      });
-      const p1 = mockPlugin({ name: 'a', hasClaudeManifest: false, hasCursorManifest: true });
-      const p2 = mockPlugin({ name: 'b', hasClaudeManifest: true, hasCursorManifest: false });
-      const m = mockMarketplace([p1, p2]);
-      const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries).toHaveLength(1);
-      expect(entries[0]!.name).toBe('a');
-    });
-
-    it('uses sourceFormat prefixed for Claude', () => {
-      const adapter = new TestAdapter({
-        agent: 'claude',
-        manifestFilter: 'claude',
-        sourceFormat: 'prefixed',
-      });
-      const p = mockPlugin({ relativePath: '.agents/plugins/foo' });
-      const m = mockMarketplace([p]);
-      const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries[0]!.source).toBe('./.agents/plugins/foo');
-    });
-
-    it('uses sourceFormat relative for Cursor', () => {
-      const adapter = new TestAdapter({
-        agent: 'cursor',
-        manifestFilter: 'cursor',
-        sourceFormat: 'relative',
-      });
-      const p = mockPlugin({ relativePath: 'packages/pkg/.agents/plugins/foo' });
-      const m = mockMarketplace([p], 'packages/pkg/.agents/plugins');
-      const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries[0]!.source).toBe('packages/pkg/.agents/plugins/foo');
-    });
-
-    it('preserves same-named plugins across different marketplaces (marketplace:plugin composite key)', () => {
-      const adapter = new TestAdapter({
-        agent: 'claude',
-        manifestFilter: 'claude',
-        sourceFormat: 'prefixed',
-      });
-      const p = mockPlugin({ name: 'same' });
-      const m1 = mockMarketplace([p], '.agents/plugins');
-      const m2 = mockMarketplace([{ ...p }], 'packages/foo/.agents/plugins');
-      const entries = adapter.exposeBuildPluginEntries([m1, m2]);
-      expect(entries).toHaveLength(2);
-    });
-
-    it('returns empty when manifestFilter not set', () => {
-      const adapter = new TestAdapter({ agent: 'codex' });
-      const m = mockMarketplace([mockPlugin({})]);
-      const entries = adapter.exposeBuildPluginEntries([m]);
-      expect(entries).toHaveLength(0);
-    });
-  });
-
-  describe('buildMarketplaceJson', () => {
-    it('produces canonical shape with owner and plugins', () => {
-      const adapter = new TestAdapter({
-        agent: 'claude',
-        manifestFilter: 'claude',
-        sourceFormat: 'prefixed',
-        marketplaceName: 'my-plugins',
-      });
-      const p = mockPlugin({ name: 'foo', manifestName: 'foo' });
-      const m = mockMarketplace([p]);
-      const json = adapter.exposeBuildMarketplaceJson([m]);
-      expect(json.name).toBe('my-plugins');
-      expect(json.owner).toEqual({ name: 'mmaappss' });
-      expect(json.plugins).toHaveLength(1);
-      expect(json.plugins[0]!.name).toBe('foo');
-    });
-
-    it('defaults marketplaceName to mmaappss-plugins', () => {
-      const adapter = new TestAdapter({
-        agent: 'cursor',
-        manifestFilter: 'cursor',
-        sourceFormat: 'relative',
-      });
-      const json = adapter.exposeBuildMarketplaceJson([]);
-      expect(json.name).toBe('mmaappss-plugins');
-    });
-  });
-
-  describe('Codex buildMarkdownSectionContent', () => {
-    it('produces markdown list per marketplace (production codex adapter)', () => {
-      const adapter = codexAdapter as unknown as {
-        buildMarkdownSectionContent(m: DiscoveredMarketplace[]): string;
-      };
-      const p1 = mockPlugin({
-        name: 'foo',
-        manifestName: 'foo',
-        relativePath: '.agents/plugins/foo',
-      });
-      const p2 = mockPlugin({
-        name: 'bar',
-        manifestName: 'bar',
-        relativePath: 'pkg/.agents/plugins/bar',
-      });
-      const m1 = mockMarketplace([p1], '.agents/plugins');
-      const m2 = mockMarketplace([p2], 'pkg/.agents/plugins');
-      const content = adapter.buildMarkdownSectionContent([m1, m2]);
-      expect(content).toContain('### `.agents/plugins` marketplace');
-      expect(content).toContain('- [foo](./.agents/plugins/foo)');
-      expect(content).toContain('### `pkg/.agents/plugins` marketplace');
-      expect(content).toContain('- [bar](./pkg/.agents/plugins/bar)');
-    });
-  });
-
-  describe('hooks', () => {
-    it('calls beforeTeardown and afterTeardown when overridden', () => {
-      const calls: string[] = [];
-      class HookedAdapter extends AgentAdapterBase {
-        constructor() {
-          super({
-            agent: 'codex',
-            usesMarkdownSection: true,
-            agentsFile: 'AGENTS.override.md',
-            sectionHeading: 'Codex Marketplace',
-          });
-        }
-
-        protected override beforeTeardown(repoRoot: string): Result<void, Error> {
-          calls.push(`beforeTeardown:${repoRoot}`);
-          return ok(undefined);
-        }
-
-        protected override afterTeardown(repoRoot: string): Result<void, Error> {
-          calls.push(`afterTeardown:${repoRoot}`);
-          return ok(undefined);
-        }
+describe('AgentAdapterBase lifecycle orchestration', () => {
+  it('runs enabled sync hook chain and sync mode enabled hook', () => {
+    const calls: string[] = [];
+    class RecordingSyncModeClass extends RecordingSyncMode {
+      constructor(options?: unknown) {
+        super(options, calls);
       }
-      const adapter = new HookedAdapter();
-      const repoRoot = pathHelpers.repoRoot;
-      const result = adapter.run(repoRoot, {
-        marketplacesEnabled: { claude: false, cursor: false, codex: false },
-      });
-      expect(result.isOk()).toBe(true);
-      expect(calls).toContain(`beforeTeardown:${repoRoot}`);
-      expect(calls).toContain(`afterTeardown:${repoRoot}`);
-      expect(calls.indexOf(`beforeTeardown:${repoRoot}`)).toBeLessThan(
-        calls.indexOf(`afterTeardown:${repoRoot}`)
-      );
+    }
+    const adapter = new HookedAdapter(
+      {
+        name: 'claude',
+        syncModes: [{ modeClass: RecordingSyncModeClass }],
+      },
+      calls
+    );
+
+    const result = adapter.run(pathHelpers.repoRoot, {
+      marketplacesEnabled: {
+        claude: true,
+      },
     });
+    expect(result.isOk()).toBe(true);
+    expect(calls).toContain('adapter.syncSetupBefore');
+    expect(calls).toContain('adapter.syncRunEnabled');
+    expect(calls).toContain('syncMode.syncSetupBefore');
+    expect(calls).toContain('syncMode.syncRunEnabled');
+    expect(calls).not.toContain('syncMode.syncRunDisabled');
+  });
+
+  it('runs disabled sync hook chain and sync mode disabled hook', () => {
+    const calls: string[] = [];
+    class RecordingSyncModeClass extends RecordingSyncMode {
+      constructor(options?: unknown) {
+        super(options, calls);
+      }
+    }
+    const adapter = new HookedAdapter(
+      {
+        name: 'claude',
+        syncModes: [{ modeClass: RecordingSyncModeClass }],
+      },
+      calls
+    );
+
+    const result = adapter.run(pathHelpers.repoRoot, {
+      marketplacesEnabled: {
+        claude: false,
+      },
+    });
+    expect(result.isOk()).toBe(true);
+    expect(calls).toContain('adapter.syncRunDisabled');
+    expect(calls).toContain('syncMode.syncRunDisabled');
+    expect(calls).not.toContain('syncMode.syncRunEnabled');
+  });
+
+  it('runs clear lifecycle hooks and sync mode clear hook', () => {
+    const calls: string[] = [];
+    class RecordingSyncModeClass extends RecordingSyncMode {
+      constructor(options?: unknown) {
+        super(options, calls);
+      }
+    }
+    const adapter = new HookedAdapter(
+      {
+        name: 'cursor',
+        syncModes: [{ modeClass: RecordingSyncModeClass }],
+      },
+      calls
+    );
+    const result = adapter.clear(pathHelpers.repoRoot, null);
+    expect(result.isOk()).toBe(true);
+    expect(calls).toContain('adapter.clearRunBefore');
+    expect(calls).toContain('syncMode.clearRun');
   });
 });

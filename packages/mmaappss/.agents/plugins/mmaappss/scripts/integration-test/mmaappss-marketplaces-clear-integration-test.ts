@@ -3,26 +3,31 @@
  * Ensures runClear tears down state created by sync (same assertions as sync test).
  *
  * Usage:
- *   tsx mmaappss-marketplaces-clear-integration-test.ts <agent|all>
+ *   tsx integration-test/mmaappss-marketplaces-clear-integration-test.ts <agent|all>
  *
  * Run: pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:clear:test
  */
 
 import fs from 'node:fs';
-import { configHelpers } from './common/config-helpers.js';
-import { pathHelpers } from './common/path-helpers.js';
-import type { Agent } from './common/types.js';
-import { runClear, runSync } from './core/sync-runner.js';
+import { configHelpers } from '../common/config-helpers.js';
+import { pathHelpers } from '../common/path-helpers.js';
+import { presetAgents } from '../common/preset-agents.js';
+import type { Agent } from '../common/types.js';
+import { runClear, runSync } from '../core/sync-runner.js';
 import {
   INTEGRATION_ADAPTERS,
   removeIfExists,
-} from './integration-test/integration-test-adapters.js';
+} from './integration-test-adapters.js';
 
-const AGENTS: Agent[] = ['claude', 'cursor', 'codex'];
+const AGENTS: Agent[] = [...presetAgents];
 
 async function runClearTestForAgent(agent: Agent): Promise<boolean> {
   const root = pathHelpers.repoRoot;
   const adapter = INTEGRATION_ADAPTERS[agent];
+  if (!adapter) {
+    console.error(`Missing integration adapter for ${agent}`);
+    return false;
+  }
   const VARS = configHelpers.env.VARS;
 
   const renameIfExists = (from: string, to: string): void => {
@@ -95,9 +100,10 @@ async function runClearTestForAgent(agent: Agent): Promise<boolean> {
 async function main(): Promise<void> {
   const agentArg = process.argv[2];
 
-  if (!agentArg || !['claude', 'cursor', 'codex', 'all'].includes(agentArg)) {
+  const validArgs = [...presetAgents, 'all'] as const;
+  if (!agentArg || !validArgs.includes(agentArg as (typeof validArgs)[number])) {
     console.error(
-      `Usage: tsx mmaappss-marketplaces-clear-integration-test.ts <claude|cursor|codex|all>`
+      `Usage: tsx mmaappss-marketplaces-clear-integration-test.ts <${presetAgents.join('|')}|all>`
     );
     process.exit(1);
   }

@@ -3,19 +3,40 @@
  * Agent-agnostic; adapters map these to platform-specific manifests.
  */
 
-/** Supported coding agents for marketplace sync. */
-export type Agent = 'claude' | 'cursor' | 'codex';
+import type { PresetAgentName } from './preset-agents.js';
+
+/** Built-in coding agents with presets. Alias for PresetAgentName from preset-agents. */
+export type PresetAgent = PresetAgentName;
+
+/** Any agent name, including preset agents and custom config-defined agents. */
+export type Agent = PresetAgent | (string & {});
+
+/**
+ * Plugin-manifest capability key.
+ *
+ * What it represents:
+ * - A compatibility label for a plugin's manifest flavor
+ * - Examples: `claude`, `cursor`, `codex`, or custom keys for new agents
+ *
+ * Why it matters:
+ * - Sync modes use this key to decide which plugins are eligible for a given
+ *   agent run without hardcoding agent-specific branches.
+ */
+export type PluginManifestKey = string & {};
 
 /** A plugin discovered under .agents/plugins/<name>/ */
 export interface DiscoveredPlugin {
   /** Parsed manifest description */
   description?: string;
-  /** Whether this plugin has .claude-plugin/plugin.json */
-  hasClaudeManifest: boolean;
-  /** Whether this plugin has .codex-plugin/plugin.json (parity; Codex sync currently uses the same plugin list and writes AGENTS.override.md) */
-  hasCodexManifest: boolean;
-  /** Whether this plugin has .cursor-plugin/plugin.json */
-  hasCursorManifest: boolean;
+  /**
+   * Manifest capability map keyed by `PluginManifestKey`.
+   *
+   * Example:
+   * - `{ claude: true, cursor: false, codex: true }`
+   * means the plugin can be selected by Claude and Codex manifest filters,
+   * but not Cursor.
+   */
+  manifests: Record<PluginManifestKey, boolean>;
   /** Parsed manifest name (from plugin.json) or directory name */
   manifestName?: string;
   /** Plugin directory name (e.g. 'mmaappss', 'git') */

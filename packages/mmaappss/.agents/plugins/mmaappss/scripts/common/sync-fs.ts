@@ -1,5 +1,5 @@
 /**
- * Shared file-system helpers for sync scripts (rules-sync, cursor-content-sync, claude-md-sync, etc.).
+ * Shared file-system helpers for sync scripts (rules-sync, agents-md-symlink-sync, preset-specific sync, etc.).
  * Uses fs-extra for ensureDir/outputFile; provides symlink, manifest, and teardown helpers.
  */
 
@@ -111,13 +111,15 @@ export const syncFs = {
   },
 
   /**
-   * Read directory entries with name and isDirectory. Returns [] if dir does not exist.
+   * Read directory entries with name, isDirectory, and isFile (from Dirent). Returns [] if dir does not exist.
+   * Use isFile for file classification; !isDirectory misclassifies symlinks as files.
    */
-  readdirWithTypes(dir: string): Array<{ name: string; isDirectory: boolean }> {
+  readdirWithTypes(dir: string): Array<{ name: string; isDirectory: boolean; isFile: boolean }> {
     if (!fs.existsSync(dir)) return [];
     return fs.readdirSync(dir, { withFileTypes: true }).map((e) => ({
       name: e.name,
       isDirectory: e.isDirectory(),
+      isFile: e.isFile(),
     }));
   },
 

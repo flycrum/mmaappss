@@ -3,7 +3,7 @@
  * Colada-style backup/restore, class-based adapters.
  *
  * Usage:
- *   tsx mmaappss-marketplaces-sync-integration-test.ts <agent|all> [mode]
+ *   tsx integration-test/mmaappss-marketplaces-sync-integration-test.ts <agent|all> [mode]
  *
  * Examples:
  *   tsx ... claude              # run all conditions for claude
@@ -13,14 +13,12 @@
  * Not part of vitest. Run: pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync:test
  */
 
-import { pathHelpers } from './common/path-helpers.js';
-import type { Agent } from './common/types.js';
-import {
-  INTEGRATION_ADAPTERS,
-  type IntegrationTestMode,
-} from './integration-test/integration-test-adapters.js';
+import { pathHelpers } from '../common/path-helpers.js';
+import { presetAgents } from '../common/preset-agents.js';
+import type { Agent } from '../common/types.js';
+import { INTEGRATION_ADAPTERS, type IntegrationTestMode } from './integration-test-adapters.js';
 
-const AGENTS = Object.keys(INTEGRATION_ADAPTERS) as Agent[];
+const AGENTS: Agent[] = [...presetAgents];
 const MODES: IntegrationTestMode[] = ['enabled', 'disabled'];
 
 async function main(): Promise<void> {
@@ -29,7 +27,7 @@ async function main(): Promise<void> {
 
   if (!agentArg || (agentArg !== 'all' && !AGENTS.includes(agentArg as Agent))) {
     console.error(
-      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <claude|cursor|codex|all> [enabled|disabled]`
+      `Usage: tsx mmaappss-marketplaces-sync-integration-test.ts <${AGENTS.join('|')}|all> [enabled|disabled]`
     );
     console.error('  Agent only: run all conditions (backup → steps → restore)');
     console.error('  Agent + mode: run single condition');
@@ -45,6 +43,10 @@ async function main(): Promise<void> {
     }
     for (const agent of AGENTS) {
       const adapter = INTEGRATION_ADAPTERS[agent];
+      if (!adapter) {
+        console.error(`Missing integration adapter: ${agent}`);
+        process.exit(1);
+      }
       const code = await adapter.runAllConditions(root);
       if (code !== 0) process.exit(code);
     }
@@ -52,6 +54,10 @@ async function main(): Promise<void> {
   }
 
   const adapter = INTEGRATION_ADAPTERS[agentArg as Agent];
+  if (!adapter) {
+    console.error(`Missing integration adapter: ${agentArg}`);
+    process.exit(1);
+  }
 
   if (modeArg) {
     if (!MODES.includes(modeArg as IntegrationTestMode)) {

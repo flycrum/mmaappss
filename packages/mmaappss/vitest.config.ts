@@ -2,8 +2,7 @@ import { defineVitestConfig } from '@mmaappss/vitest-config';
 
 export default defineVitestConfig({
   test: {
-    include: ['.agents/**/*.spec.ts', '**/*.spec.ts'],
-    // Exclude auxiliary test helpers; use recursive globs and common Vitest defaults.
+    include: ['**/*.spec.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -13,5 +12,8 @@ export default defineVitestConfig({
       'cypress/**',
       '*.config.*',
     ],
+  },
+  typecheck: {
+    include: ['**/*.spec-d.ts'],
   },
 });

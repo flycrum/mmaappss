@@ -1,5 +1,5 @@
 /**
- * Symlink plugin rules/ into .claude/rules/ and .cursor/rules/.
+ * Symlink plugin rules into a target directory. Target dir and manifest path are supplied by the caller (e.g. agent presets).
  * Tracks created paths in a manifest for idempotent teardown.
  *
  * Call sequence: callers should invoke clearRules before syncRules (remove stale symlinks, then recreate). syncRules assumes clearRules has been run so the run is idempotent.

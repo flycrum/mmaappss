@@ -15,9 +15,7 @@ function createPlugin(repoRoot: string, name: string, hasRules = true): Discover
     fs.writeFileSync(path.join(rulesDir, 'bar.mdc'), '# Bar');
   }
   return {
-    hasClaudeManifest: false,
-    hasCodexManifest: false,
-    hasCursorManifest: false,
+    manifests: {},
     name,
     path: pluginDir,
     relativePath: `.agents/plugins/${name}`,
@@ -134,9 +132,7 @@ describe('rulesSync', () => {
       fs.mkdirSync(rulesDirNested, { recursive: true });
       fs.writeFileSync(path.join(rulesDirNested, 'baz.md'), '# Baz');
       const pluginNested: DiscoveredPlugin = {
-        hasClaudeManifest: false,
-        hasCodexManifest: false,
-        hasCursorManifest: false,
+        manifests: {},
         name: 'nested',
         path: path.join(nestedPluginsDir, 'nested'),
         relativePath: 'packages/pkg/.agents/plugins/nested',

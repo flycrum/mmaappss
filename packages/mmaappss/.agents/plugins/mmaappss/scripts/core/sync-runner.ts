@@ -9,16 +9,23 @@ import { getLogger, setLoggerContext } from '../common/logger.js';
 import { pathHelpers } from '../common/path-helpers.js';
 import type { Agent, SyncOutcome } from '../common/types.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
-import { claudeAdapter } from './claude-adapter.js';
-import { codexAdapter } from './codex-adapter.js';
-import { cursorAdapter } from './cursor-adapter.js';
+import { marketplacesConfig, type DefinedAgent } from './marketplaces-config.js';
+import { agentPresets } from './presets/agent-presets.js';
 
-const AGENT_ADAPTERS_ALL: Record<Agent, AgentAdapterBase> = {
-  claude: claudeAdapter,
-  cursor: cursorAdapter,
-  codex: codexAdapter,
-};
+/** Resolves agent config from enabled-agents lookup or preset fallback; returns undefined for unknown agents. */
+function getAgentConfig(
+  agent: Agent,
+  enabledAgents: Record<string, DefinedAgent>
+): DefinedAgent | undefined {
+  return (
+    enabledAgents[agent] ??
+    (agent in agentPresets
+      ? marketplacesConfig.defineAgent(agentPresets[agent as keyof typeof agentPresets])
+      : undefined)
+  );
+}
 
+/** Flushes pending logger writes before process exit or early return. */
 function flushLogger(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     getLogger().flush((err?: Error) => {
@@ -37,6 +44,7 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
   configHelpers.env.loadEnv(repoRoot);
 
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+  const enabledAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
   setLoggerContext(repoRoot, tsConfig);
   const log = getLogger();
   log.info(
@@ -47,11 +55,12 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
   const outcomes: SyncOutcome[] = [];
 
   for (const agent of agents) {
-    const adapter = AGENT_ADAPTERS_ALL[agent];
-    if (!adapter) {
+    const agentConfig = getAgentConfig(agent, enabledAgents);
+    if (!agentConfig) {
       outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
       continue;
     }
+    const adapter = new AgentAdapterBase(agentConfig);
 
     const result = adapter.run(repoRoot, tsConfig);
     if (result.isErr()) {
@@ -75,6 +84,7 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
   configHelpers.env.loadEnv(repoRoot);
 
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+  const enabledAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
   setLoggerContext(repoRoot, tsConfig);
   const log = getLogger();
   log.info({ agents }, 'clear started');
@@ -82,13 +92,14 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
   const outcomes: SyncOutcome[] = [];
 
   for (const agent of agents) {
-    const adapter = AGENT_ADAPTERS_ALL[agent];
-    if (!adapter) {
+    const agentConfig = getAgentConfig(agent, enabledAgents);
+    if (!agentConfig) {
       outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
       continue;
     }
+    const adapter = new AgentAdapterBase(agentConfig);
 
-    const result = adapter.clear(repoRoot);
+    const result = adapter.clear(repoRoot, tsConfig);
     if (result.isErr()) {
       log.error({ err: result.error, agent }, 'clear agent failed');
       await flushLogger();
