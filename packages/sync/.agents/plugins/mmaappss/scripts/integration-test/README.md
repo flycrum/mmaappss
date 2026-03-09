@@ -1,6 +1,6 @@
 # Integration tests
 
-Integration tests for marketplace sync and clear (Claude, Cursor, Codex). **Not part of vitest** — run via package scripts (e.g. `pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync:test`).
+Integration tests for marketplace sync and clear (Claude, Cursor, Codex). **Not part of vitest** — run via package scripts (e.g. `pnpm -F @mmaappss/sync run mmaappss:marketplaces:cursor:sync:test`).
 
 ## What they do
 
@@ -11,10 +11,10 @@ Integration tests for marketplace sync and clear (Claude, Cursor, Codex). **Not 
 
 From repo root or package root:
 
-- `pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync:test` — all agents, all sync steps
-- `pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync:test` — Cursor only, all steps
+- `pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:sync:test` — all agents, all sync steps
+- `pnpm -F @mmaappss/sync run mmaappss:marketplaces:cursor:sync:test` — Cursor only, all steps
 - `tsx .agents/plugins/mmaappss/scripts/integration-test/mmaappss-marketplaces-sync-integration-test.ts cursor enabled` — Cursor, single condition (enabled)
-- `pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:clear:test` — all agents, clear test
+- `pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:clear:test` — all agents, clear test
 
 ## Data flow
 

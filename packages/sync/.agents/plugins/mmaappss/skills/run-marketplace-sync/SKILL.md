@@ -15,13 +15,13 @@ Use this skill when you need to **run the mmaappss agent-plugins-for-local-marke
 
 ## How to run
 
-Scripts live in **`packages/mmaappss`** (`@mmaappss/mmaappss`). From **monorepo root**:
+Scripts live in **`packages/sync`** (`@mmaappss/sync`). From **monorepo root**:
 
 ```bash
-pnpm --filter @mmaappss/mmaappss run <script>
+pnpm --filter @mmaappss/sync run <script>
 ```
 
-From **`packages/mmaappss`**:
+From **`packages/sync`**:
 
 ```bash
 pnpm run <script>

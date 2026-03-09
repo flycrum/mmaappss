@@ -1,13 +1,24 @@
 {
-  "name": "@mmaappss/mmaappss",
-  "version": "0.0.0",
-  "description": "Define once and share rules, commands, skills, and agent plugins across teams and coding agents, with minimal config and powerful options when needed.",
-  "private": true,
+  "name": "@mmaappss/sync",
+  "version": "0.1.0-beta.1",
+  "description": "(Beta) Define once and share rules, commands, skills, and agent plugins across teams and coding agents, with minimal config and powerful options when needed.",
   "type": "module",
   "license": "Unlicense",
+  "repository": "github:flycrum/mmaappss",
+  "homepage": "https://github.com/flycrum/mmaappss#readme",
+  "bugs": {
+    "url": "https://github.com/flycrum/mmaappss/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "mmaappss-sync": "./bin/mmaappss-sync.mjs"
+  },
   "files": [
     "scripts",
-    ".agents"
+    ".agents",
+    "bin"
   ],
   "scripts": {
     "lint": "eslint .",
@@ -36,7 +47,8 @@
     "lodash-es": "^4.17.21",
     "minimatch": "^10.0.0",
     "neverthrow": "^7.2.0",
-    "pino": "^9.6.0"
+    "pino": "^9.6.0",
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
     "@mmaappss/eslint-config": "workspace:*",

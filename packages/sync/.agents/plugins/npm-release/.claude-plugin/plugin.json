@@ -1,0 +1,7 @@
+{
+  "name": "npm-release",
+  "version": "0.1.0",
+  "description": "Rules and skills for publishing @mmaappss/sync to npm: version bump, dist-tag, and release steps. No release tool; npm version + npm publish only.",
+  "author": { "name": "mmaappss" },
+  "keywords": ["npm", "release", "publish", "version", "mmaappss"]
+}

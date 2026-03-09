@@ -2,8 +2,8 @@
  * Root mmaappss config. Env vars (MMAAPPSS_MARKETPLACE_*) override these when set.
  */
 
-import { marketplacesConfig } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/core/marketplaces-config.js';
-import { LocalPluginsContentSyncMode } from './packages/mmaappss/.agents/plugins/mmaappss/scripts/core/sync-modes/local-plugins-content-sync-mode.js';
+import { marketplacesConfig } from './packages/sync/.agents/plugins/mmaappss/scripts/core/marketplaces-config.js';
+import { LocalPluginsContentSyncMode } from './packages/sync/.agents/plugins/mmaappss/scripts/core/sync-modes/local-plugins-content-sync-mode.js';
 
 type ConfigMode = 'basic' | 'crazy' | 'disable-claude-rules';
 const configMode = 'basic' as ConfigMode;

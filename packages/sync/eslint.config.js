@@ -12,4 +12,8 @@ export default [
       globals: { ...globals.node },
     },
   },
+  {
+    files: ['**/*.mjs'],
+    languageOptions: { globals: { ...globals.node } },
+  },
 ];

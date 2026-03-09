@@ -5,7 +5,7 @@
  * Usage:
  *   tsx integration-test/mmaappss-marketplaces-clear-integration-test.ts <agent|all>
  *
- * Run: pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:clear:test
+ * Run: pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:clear:test
  */
 
 import fs from 'node:fs';
@@ -14,10 +14,7 @@ import { pathHelpers } from '../common/path-helpers.js';
 import { presetAgents } from '../common/preset-agents.js';
 import type { Agent } from '../common/types.js';
 import { runClear, runSync } from '../core/sync-runner.js';
-import {
-  INTEGRATION_ADAPTERS,
-  removeIfExists,
-} from './integration-test-adapters.js';
+import { INTEGRATION_ADAPTERS, removeIfExists } from './integration-test-adapters.js';
 
 const AGENTS: Agent[] = [...presetAgents];
 

@@ -73,10 +73,9 @@ test('defineMarketplacesConfig creator form rejects excess property in return ob
   }));
 });
 
-// ---- defineMarketplacesConfig callback form: (helpers, config) => config({ ... }) ----
 test('defineMarketplacesConfig callback form accepts valid config', () => {
-  const config = marketplacesConfig.defineMarketplacesConfig((helpers, config) =>
-    config({
+  const config = marketplacesConfig.defineMarketplacesConfig((helpers) =>
+    helpers.config({
       marketplacesEnabled: { claude: true, cursor: true },
       excluded: [],
     })
@@ -86,8 +85,8 @@ test('defineMarketplacesConfig callback form accepts valid config', () => {
 });
 
 test('defineMarketplacesConfig callback form rejects excess property when using config()', () => {
-  marketplacesConfig.defineMarketplacesConfig((helpers, config) =>
-    config({
+  marketplacesConfig.defineMarketplacesConfig((helpers) =>
+    helpers.config({
       // @ts-expect-error - excess property marketplacesEnabledBadName not in MarketplacesConfig
       marketplacesEnabledBadName: { claude: true },
       excluded: [],

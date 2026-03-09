@@ -10,7 +10,7 @@
  *   tsx ... cursor enabled      # run single condition for cursor
  *   tsx ... all                 # run all conditions for all 3 agents
  *
- * Not part of vitest. Run: pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync:test
+ * Not part of vitest. Run: pnpm -F @mmaappss/sync run mmaappss:marketplaces:all:sync:test
  */
 
 import { pathHelpers } from '../common/path-helpers.js';

@@ -1,5 +1,7 @@
 # mmaappss
 
+**Beta.** This package is in beta. API and behavior may change; we recommend pinning the version (e.g. `0.1.0-beta.1`).
+
 **pronounced:** `maps`
 
 **stands for:**
