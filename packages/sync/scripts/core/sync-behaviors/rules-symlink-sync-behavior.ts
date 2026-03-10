@@ -1,4 +1,4 @@
-import { ok, Result } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
 import { rulesSync } from '../../common/rules-sync.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
@@ -7,8 +7,13 @@ import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base
 export interface RulesSymlinkSyncBehaviorOptions {
   /** Target rules directory where plugin rules are linked. */
   rulesDir: string;
-  /** Manifest file storing created link paths for teardown. */
+  /** Manifest file storing created link paths for teardown (legacy; unified manifest used when available). */
   syncManifest: string;
+}
+
+/** Custom data registered by this behavior (rule paths for teardown). */
+export interface RulesSymlinkCustomData {
+  rules: string[];
 }
 
 export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncBehaviorOptions> {
@@ -16,14 +21,16 @@ export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncB
     super(options);
   }
 
-  /** Clears all previously managed rules links for this behavior. */
-  private clearRules(context: SyncBehaviorContext): Result<void, Error> {
+  /** Clears rules from stored manifest entry (unified manifest). */
+  private clearFromContents(context: SyncBehaviorContext): Result<void, Error> {
+    const entry = context.manifestContent;
+    if (!entry || typeof entry !== 'object' || !entry.customData) return ok(undefined);
     const options = this.options;
     if (!options) return ok(undefined);
-    return rulesSync.clearRules(
+    return rulesSync.clearRulesFromContents(
       context.repoRoot,
       path.join(context.repoRoot, options.rulesDir),
-      path.join(context.repoRoot, options.syncManifest)
+      entry.customData as RulesSymlinkCustomData
     );
   }
 
@@ -31,25 +38,31 @@ export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncB
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const clearResult = this.clearRules(context);
+    const clearResult = this.clearFromContents(context);
     if (clearResult.isErr()) return clearResult;
-    return rulesSync
-      .syncRules(
-        context.repoRoot,
-        context.marketplaces,
-        path.join(context.repoRoot, options.rulesDir),
-        path.join(context.repoRoot, options.syncManifest)
-      )
-      .map(() => undefined);
+    const result = rulesSync.syncRules(
+      context.repoRoot,
+      context.marketplaces,
+      path.join(context.repoRoot, options.rulesDir),
+      path.join(context.repoRoot, options.syncManifest),
+      true
+    );
+    if (result.isErr()) return err(result.error);
+    const key = context.currentBehaviorManifestKey ?? 'rulesSymlink';
+    context.registerContentToMmaappssSyncManifest(context.agentName, key, {
+      options: context.currentBehaviorOptionsForManifest,
+      customData: { rules: result.value } satisfies RulesSymlinkCustomData,
+    });
+    return ok(undefined);
   }
 
   /** Sync-phase disabled hook that tears down rules symlinks. */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
-    return this.clearRules(context);
+    return this.clearFromContents(context);
   }
 
   /** Clear hook that tears down rules symlinks. */
   override clearRun(context: SyncBehaviorContext): Result<void, Error> {
-    return this.clearRules(context);
+    return this.clearFromContents(context);
   }
 }

@@ -22,7 +22,26 @@ export interface RulesSyncManifest {
  */
 export const rulesSync = {
   /**
-   * Remove rules symlinks and empty dirs using manifest. Idempotent.
+   * Remove rules symlinks and empty dirs using stored content (e.g. from unified sync manifest).
+   */
+  clearRulesFromContents(
+    repoRoot: string,
+    rulesTargetDir: string,
+    contents: { rules?: string[] }
+  ): Result<void, Error> {
+    try {
+      const rulePaths = contents.rules ?? [];
+      syncFs.unlinkPaths(repoRoot, rulePaths);
+      syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
+  },
+
+  /**
+   * Remove rules symlinks and empty dirs using manifest file. Idempotent.
+   * @deprecated Prefer unified sync manifest and clearRulesFromContents.
    */
   clearRules(repoRoot: string, rulesTargetDir: string, manifestPath: string): Result<void, Error> {
     try {
@@ -32,12 +51,13 @@ export const rulesSync = {
         if (e.code === 'ENOENT') return ok(undefined);
         return err(manifestResult.error);
       }
-      const rulePaths = manifestResult.value.rules ?? [];
-
-      syncFs.unlinkPaths(repoRoot, rulePaths);
-      syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
+      const result = rulesSync.clearRulesFromContents(
+        repoRoot,
+        rulesTargetDir,
+        manifestResult.value
+      );
+      if (result.isErr()) return result;
       syncFs.unlinkIfExists(manifestPath);
-
       return ok(undefined);
     } catch (e) {
       return err(e instanceof Error ? e : new Error(String(e)));
@@ -46,13 +66,14 @@ export const rulesSync = {
 
   /**
    * Symlink each plugin's rules/*.md into rulesTargetDir/<pluginName>/.
-   * Returns paths relative to repoRoot for manifest.
+   * Returns paths relative to repoRoot. When skipManifestWrite is true, does not write manifestPath.
    */
   syncRules(
     repoRoot: string,
     marketplaces: DiscoveredMarketplace[],
     rulesTargetDir: string,
-    manifestPath: string
+    manifestPath: string,
+    skipManifestWrite?: boolean
   ): Result<string[], Error> {
     const created: string[] = [];
 
@@ -77,10 +98,12 @@ export const rulesSync = {
         }
       }
 
-      if (created.length > 0) {
-        syncFs.writeJsonManifest(manifestPath, { rules: created } satisfies RulesSyncManifest);
-      } else {
-        syncFs.unlinkIfExists(manifestPath);
+      if (!skipManifestWrite) {
+        if (created.length > 0) {
+          syncFs.writeJsonManifest(manifestPath, { rules: created } satisfies RulesSyncManifest);
+        } else {
+          syncFs.unlinkIfExists(manifestPath);
+        }
       }
 
       return ok(created);

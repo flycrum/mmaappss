@@ -72,115 +72,125 @@ function ensureGitignore(repoRoot: string, options: AgentsMdSymlinkOptions): Res
 }
 
 /**
- * Find all directories under repoRoot that contain sourceFile (respecting exclusions).
- * Returns paths relative to repoRoot (directory of sourceFile).
+ * Sync and clear API for agents-md symlink (e.g. AGENTS.md → CLAUDE.md).
  */
-export function findAgentsMdDirs(
-  repoRoot: string,
-  config: MmaappssConfig | null,
-  options: AgentsMdSymlinkOptions
-): string[] {
-  const patterns = getExcludePatterns(options, config);
-  const found: string[] = [];
-
-  const walk = (dir: string): void => {
-    const entries = syncFs.readdirWithTypes(dir);
-    const hasSource = entries.some((e) => !e.isDirectory && e.name === options.sourceFile);
-    if (hasSource) found.push(path.relative(repoRoot, dir));
-    for (const ent of entries) {
-      if (!ent.isDirectory) continue;
-      if (isExcluded(ent.name, patterns)) continue;
-      walk(path.join(dir, ent.name));
-    }
-  };
-
-  walk(repoRoot);
-  return found.sort();
-}
-
-/**
- * Remove managed target symlinks using manifest. Idempotent.
- * Only removes paths that are symlinks; does not touch regular files.
- */
-export function clearAgentsMdSymlinks(
-  repoRoot: string,
-  options: AgentsMdSymlinkOptions
-): Result<void, Error> {
-  const manifestPath = path.join(repoRoot, options.manifestPath);
-  try {
-    const manifestResult = syncFs.readJsonManifest<AgentsMdSymlinkManifest>(manifestPath);
-    if (manifestResult.isErr()) {
-      const e = manifestResult.error as Error & { code?: string };
-      if (e.code === 'ENOENT') return ok(undefined);
-      return err(manifestResult.error);
-    }
-    const paths = manifestResult.value.paths ?? [];
-    for (const rel of paths) {
-      const full = path.join(repoRoot, rel);
-      try {
-        if (syncFs.pathExists(full) && syncFs.isSymlink(full)) {
-          syncFs.unlinkIfExists(full);
-        }
-      } catch (e) {
-        getLogger().debug({ err: e, path: full }, 'agentsMdSymlink: unlink failed');
+export const agentsMdSymlinkSync = {
+  /**
+   * Find all directories under repoRoot that contain sourceFile (respecting exclusions).
+   * Returns paths relative to repoRoot (directory of sourceFile).
+   */
+  findAgentsMdDirs(
+    repoRoot: string,
+    config: MmaappssConfig | null,
+    options: AgentsMdSymlinkOptions
+  ): string[] {
+    const patterns = getExcludePatterns(options, config);
+    const found: string[] = [];
+    const walk = (dir: string): void => {
+      const entries = syncFs.readdirWithTypes(dir);
+      const hasSource = entries.some((e) => !e.isDirectory && e.name === options.sourceFile);
+      if (hasSource) found.push(path.relative(repoRoot, dir));
+      for (const ent of entries) {
+        if (!ent.isDirectory) continue;
+        if (isExcluded(ent.name, patterns)) continue;
+        walk(path.join(dir, ent.name));
       }
-    }
-    syncFs.unlinkIfExists(manifestPath);
-    return ok(undefined);
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
-  }
-}
+    };
+    walk(repoRoot);
+    return found.sort();
+  },
 
-/**
- * Create targetFile symlinks for every directory that has sourceFile.
- * Skips directories where targetFile already exists as a regular file.
- * Writes manifest for idempotent clear.
- */
-export function syncAgentsMdSymlinks(
-  repoRoot: string,
-  config: MmaappssConfig | null,
-  options: AgentsMdSymlinkOptions
-): Result<string[], Error> {
-  const created: string[] = [];
-  try {
-    const ensureGit = ensureGitignore(repoRoot, options);
-    if (ensureGit.isErr()) return err(ensureGit.error);
-
-    const dirs = findAgentsMdDirs(repoRoot, config, options);
-    for (const relDir of dirs) {
-      const dir = path.join(repoRoot, relDir);
-      const sourcePath = path.join(dir, options.sourceFile);
-      const targetPath = path.join(dir, options.targetFile);
-      const relTarget = path.join(relDir, options.targetFile).replace(/\\/g, '/');
-
-      if (!syncFs.pathExists(sourcePath)) continue;
-
-      if (syncFs.pathExists(targetPath)) {
-        if (!syncFs.isSymlink(targetPath)) continue;
-        const target = syncFs.readlink(targetPath);
-        const expected = path.relative(path.dirname(targetPath), sourcePath);
-        if (target === expected || path.resolve(path.dirname(targetPath), target) === sourcePath) {
-          created.push(relTarget);
-          continue;
+  /**
+   * Remove managed target symlinks using stored manifest content (e.g. from unified sync manifest).
+   * Only removes paths that are symlinks; does not touch regular files.
+   */
+  clearFromContents(repoRoot: string, contents: { paths?: string[] }): Result<void, Error> {
+    const paths = contents.paths ?? [];
+    try {
+      for (const rel of paths) {
+        const full = path.join(repoRoot, rel);
+        try {
+          if (syncFs.pathExists(full) && syncFs.isSymlink(full)) {
+            syncFs.unlinkIfExists(full);
+          }
+        } catch (e) {
+          getLogger().debug({ err: e, path: full }, 'agentsMdSymlink: unlink failed');
         }
-        syncFs.unlinkIfExists(targetPath);
       }
-
-      syncFs.symlinkRelative(sourcePath, targetPath);
-      created.push(relTarget);
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
     }
+  },
 
+  /**
+   * Remove managed target symlinks using manifest file. Idempotent.
+   * Only removes paths that are symlinks; does not touch regular files.
+   * @deprecated Prefer unified sync manifest and clearFromContents.
+   */
+  clear(repoRoot: string, options: AgentsMdSymlinkOptions): Result<void, Error> {
     const manifestPath = path.join(repoRoot, options.manifestPath);
-    if (created.length > 0) {
-      syncFs.ensureDir(path.dirname(manifestPath));
-      syncFs.writeJsonManifest(manifestPath, { paths: created } satisfies AgentsMdSymlinkManifest);
-    } else {
+    try {
+      const manifestResult = syncFs.readJsonManifest<AgentsMdSymlinkManifest>(manifestPath);
+      if (manifestResult.isErr()) {
+        const e = manifestResult.error as Error & { code?: string };
+        if (e.code === 'ENOENT') return ok(undefined);
+        return err(manifestResult.error);
+      }
+      const result = agentsMdSymlinkSync.clearFromContents(repoRoot, manifestResult.value);
+      if (result.isErr()) return result;
       syncFs.unlinkIfExists(manifestPath);
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
     }
+  },
 
-    return ok(created);
-  } catch (e) {
-    return err(e instanceof Error ? e : new Error(String(e)));
-  }
-}
+  /**
+   * Create targetFile symlinks for every directory that has sourceFile.
+   * Skips directories where targetFile already exists as a regular file.
+   * Returns created paths for caller to register to unified manifest.
+   */
+  sync(
+    repoRoot: string,
+    config: MmaappssConfig | null,
+    options: AgentsMdSymlinkOptions
+  ): Result<string[], Error> {
+    const created: string[] = [];
+    try {
+      const ensureGit = ensureGitignore(repoRoot, options);
+      if (ensureGit.isErr()) return err(ensureGit.error);
+
+      const dirs = agentsMdSymlinkSync.findAgentsMdDirs(repoRoot, config, options);
+      for (const relDir of dirs) {
+        const dir = path.join(repoRoot, relDir);
+        const sourcePath = path.join(dir, options.sourceFile);
+        const targetPath = path.join(dir, options.targetFile);
+        const relTarget = path.join(relDir, options.targetFile).replace(/\\/g, '/');
+
+        if (!syncFs.pathExists(sourcePath)) continue;
+
+        if (syncFs.pathExists(targetPath)) {
+          if (!syncFs.isSymlink(targetPath)) continue;
+          const target = syncFs.readlink(targetPath);
+          const expected = path.relative(path.dirname(targetPath), sourcePath);
+          if (
+            target === expected ||
+            path.resolve(path.dirname(targetPath), target) === sourcePath
+          ) {
+            created.push(relTarget);
+            continue;
+          }
+          syncFs.unlinkIfExists(targetPath);
+        }
+
+        syncFs.symlinkRelative(sourcePath, targetPath);
+        created.push(relTarget);
+      }
+
+      return ok(created);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
+  },
+};

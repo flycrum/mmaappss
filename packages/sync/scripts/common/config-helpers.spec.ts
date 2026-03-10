@@ -176,7 +176,9 @@ describe('configHelpers.general.getPostMergeSyncMarketplaces', () => {
       configHelpers.general.getPostMergeSyncMarketplaces(ROOT, { postMergeSyncMarketplaces: [] })
     ).toEqual(['claude', 'cursor', 'codex']);
     expect(
-      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, { postMergeSyncMarketplaces: undefined })
+      configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
+        postMergeSyncMarketplaces: undefined,
+      })
     ).toEqual(['claude', 'cursor', 'codex']);
   });
 

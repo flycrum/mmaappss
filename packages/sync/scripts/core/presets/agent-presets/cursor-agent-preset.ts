@@ -1,6 +1,7 @@
+import { err, ok } from 'neverthrow';
 import path from 'node:path';
-import { cursorAgentPresetConfig } from './cursor-agent-preset.config.js';
 import type { DefineAgentInput } from '../../marketplaces-config.js';
+import { cursorAgentPresetConfig } from './cursor-agent-preset.config.js';
 
 const CURSOR_MANIFEST_PATH = '.cursor/.mmaappss-cursor-sync.json';
 
@@ -13,21 +14,53 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
       options: {
         customHandler: {
           clear(context) {
+            const entry = context.manifestContent;
+            if (
+              entry &&
+              typeof entry === 'object' &&
+              entry.customData &&
+              typeof entry.customData === 'object'
+            ) {
+              return cursorAgentPresetConfig.clearCursorContentFromContents(
+                context.repoRoot,
+                entry.customData as {
+                  rules: string[];
+                  commands: string[];
+                  skills: string[];
+                  agents: string[];
+                }
+              );
+            }
             return cursorAgentPresetConfig.clearCursorContent(
               context.repoRoot,
               path.join(context.repoRoot, CURSOR_MANIFEST_PATH)
             );
           },
           sync(context) {
-            // Intentionally discard syncCursorContent result to satisfy handler return type (Result<void, Error>).
-            return cursorAgentPresetConfig
-              .syncCursorContent(
-                context.repoRoot,
-                context.marketplaces,
-                path.join(context.repoRoot, CURSOR_MANIFEST_PATH),
-                context.tsConfig
-              )
-              .map(() => undefined);
+            const entry = context.manifestContent;
+            const clearFromContents =
+              entry && typeof entry === 'object' && entry.customData
+                ? (entry.customData as {
+                    rules: string[];
+                    commands: string[];
+                    skills: string[];
+                    agents: string[];
+                  })
+                : undefined;
+            const result = cursorAgentPresetConfig.syncCursorContent(
+              context.repoRoot,
+              context.marketplaces,
+              path.join(context.repoRoot, CURSOR_MANIFEST_PATH),
+              context.tsConfig,
+              { clearFromContents, skipManifestWrite: true }
+            );
+            if (result.isErr()) return err(result.error);
+            const key = context.currentBehaviorManifestKey ?? 'localPluginsContentSync';
+            context.registerContentToMmaappssSyncManifest(context.agentName, key, {
+              options: context.currentBehaviorOptionsForManifest,
+              customData: result.value,
+            });
+            return ok(undefined);
           },
         },
         manifestPath: CURSOR_MANIFEST_PATH,

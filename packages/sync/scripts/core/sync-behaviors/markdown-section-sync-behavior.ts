@@ -85,7 +85,16 @@ export class MarkdownSectionSyncBehavior extends SyncBehaviorBase<MarkdownSectio
     const filePath = path.join(context.repoRoot, options.agentsFile);
     const heading = normalizeSectionHeading(options.sectionHeading);
     const content = this.buildMarkdownSectionContent(context);
-    return markdownSection.replaceOrAddSection(filePath, heading, content);
+    const result = markdownSection.replaceOrAddSection(filePath, heading, content);
+    if (result.isErr()) return result;
+    const key = context.currentBehaviorManifestKey ?? 'markdownSectionSync';
+    const opts = context.currentBehaviorOptionsForManifest;
+    context.registerContentToMmaappssSyncManifest(
+      context.agentName,
+      key,
+      opts && Object.keys(opts).length > 0 ? { options: opts } : true
+    );
+    return ok(undefined);
   }
 
   /** Sync-phase disabled hook that removes the managed section. */

@@ -1,10 +1,18 @@
 import { ok, Result } from 'neverthrow';
 import type { MmaappssConfig } from '../../common/config-helpers.js';
+import type { SyncManifestEntry } from '../../common/sync-manifest.js';
 import type {
   DiscoveredMarketplace,
   DiscoveredPlugin,
   PluginManifestKey,
 } from '../../common/types.js';
+
+/** Callback for a sync behavior to register into the unified sync manifest (options + customData or true). */
+export type RegisterContentToSyncManifestFn = (
+  agent: string,
+  syncBehavior: string,
+  entry: SyncManifestEntry
+) => void;
 
 /** Shared runtime context passed to every sync behavior hook invocation. */
 export interface SyncBehaviorContext {
@@ -14,10 +22,18 @@ export interface SyncBehaviorContext {
   };
   /** Agent name convenience field for hook branching and logging. */
   agentName: string;
+  /** Manifest key for the current behavior (used when calling registerContentToMmaappssSyncManifest). */
+  currentBehaviorManifestKey?: string;
+  /** Serializable options for the current behavior (for manifest entry.options). Set by adapter. */
+  currentBehaviorOptionsForManifest?: Record<string, unknown>;
   /** Whether this adapter run is in enabled mode (`true`) or teardown mode (`false`). */
   enabled: boolean;
+  /** Stored entry for this behavior when running clear (from unified sync manifest: options + customData or true). */
+  manifestContent?: SyncManifestEntry;
   /** Marketplaces discovered for this run (empty during disabled/clear runs). */
   marketplaces: DiscoveredMarketplace[];
+  /** Register into the unified sync manifest (sync only; no-op when clearing). */
+  registerContentToMmaappssSyncManifest: RegisterContentToSyncManifestFn;
   /** Repository root absolute path. */
   repoRoot: string;
   /** Mutable state bag shared across adapter and sync behaviors during one adapter lifetime. */
@@ -37,6 +53,8 @@ export interface SyncBehaviorDefinition<TOptions = unknown> {
   enabled?: boolean;
   /** Behavior class constructor invoked by the adapter runtime. */
   behaviorClass: SyncBehaviorClassRef<TOptions>;
+  /** Key used in unified sync manifest for this behavior (preset name or generated for custom). */
+  manifestKey?: string;
   /** Optional behavior-specific options passed to the behavior constructor. */
   options?: TOptions;
 }

@@ -125,7 +125,16 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
 
   /** Sync-phase enabled hook that writes settings integration fields. */
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
-    return this.syncSettings(context);
+    const result = this.syncSettings(context);
+    if (result.isErr()) return result;
+    const key = context.currentBehaviorManifestKey ?? 'settingsSync';
+    const opts = context.currentBehaviorOptionsForManifest;
+    context.registerContentToMmaappssSyncManifest(
+      context.agentName,
+      key,
+      opts && Object.keys(opts).length > 0 ? { options: opts } : true
+    );
+    return ok(undefined);
   }
 
   /** Sync-phase disabled hook that removes settings integration fields. */

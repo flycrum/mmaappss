@@ -90,6 +90,11 @@ interface GenericManifestShape {
   paths: string[];
 }
 
+/** Custom data registered by this behavior (generic strategy: paths for teardown). */
+export interface LocalPluginsContentSyncCustomData {
+  paths: string[];
+}
+
 /** Returns whether a discovered plugin satisfies the required manifest filter. */
 function hasRequiredManifest(
   requiredManifestKey: LocalPluginsContentSyncBehaviorOptions['requiredManifestKey'],
@@ -114,8 +119,16 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     super(options);
   }
 
-  /** Clears generic strategy outputs from manifest and removes manifest file. */
+  /** Clears generic strategy outputs from stored entry (unified manifest) or legacy manifest file. */
   private clearGeneric(context: SyncBehaviorContext): Result<void, Error> {
+    const entry = context.manifestContent;
+    if (entry && typeof entry === 'object' && entry.customData) {
+      const data = entry.customData as LocalPluginsContentSyncCustomData;
+      if (Array.isArray(data.paths)) {
+        syncFs.unlinkPaths(context.repoRoot, data.paths);
+        return ok(undefined);
+      }
+    }
     const options = this.options;
     if (!options) return ok(undefined);
     const manifestPath = path.join(context.repoRoot, options.manifestPath);
@@ -200,12 +213,11 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
       }
     }
 
-    const manifestPath = path.join(context.repoRoot, options.manifestPath);
-    if (created.length > 0) {
-      syncFs.writeJsonManifest(manifestPath, { paths: created } satisfies GenericManifestShape);
-    } else {
-      syncFs.unlinkIfExists(manifestPath);
-    }
+    const key = context.currentBehaviorManifestKey ?? 'localPluginsContentSync';
+    context.registerContentToMmaappssSyncManifest(context.agentName, key, {
+      options: context.currentBehaviorOptionsForManifest,
+      customData: { paths: created } satisfies LocalPluginsContentSyncCustomData,
+    });
     return ok(undefined);
   }
 

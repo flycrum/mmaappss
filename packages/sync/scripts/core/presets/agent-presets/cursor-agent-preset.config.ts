@@ -63,7 +63,34 @@ function stripFrontmatter(content: string): string {
  */
 export const cursorAgentPresetConfig = {
   /**
-   * Remove all synced Cursor content using the manifest. Idempotent.
+   * Remove all synced Cursor content using stored manifest content (e.g. from unified sync manifest).
+   */
+  clearCursorContentFromContents(
+    repoRoot: string,
+    contents: CursorContentSyncManifest
+  ): Result<void, Error> {
+    try {
+      const manifest = normalizeCursorContentSyncManifest(contents);
+      const allPaths = [
+        ...manifest.rules,
+        ...manifest.commands,
+        ...manifest.skills,
+        ...manifest.agents,
+      ];
+      syncFs.unlinkPaths(repoRoot, allPaths);
+      const cursorDir = path.join(repoRoot, '.cursor');
+      for (const sub of CURSOR_CONTENT_DIRS) {
+        syncFs.pruneEmptySubdirsThenParent(path.join(cursorDir, sub));
+      }
+      return ok(undefined);
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
+  },
+
+  /**
+   * Remove all synced Cursor content using the manifest file. Idempotent.
+   * @deprecated Prefer unified sync manifest and clearCursorContentFromContents.
    */
   clearCursorContent(repoRoot: string, manifestPath: string): Result<void, Error> {
     try {
@@ -73,22 +100,8 @@ export const cursorAgentPresetConfig = {
         if (e.code === 'ENOENT') return ok(undefined);
         return err(manifestResult.error);
       }
-      const manifest = normalizeCursorContentSyncManifest(manifestResult.value);
-
-      const allPaths = [
-        ...manifest.rules,
-        ...manifest.commands,
-        ...manifest.skills,
-        ...manifest.agents,
-      ];
-
-      syncFs.unlinkPaths(repoRoot, allPaths);
-
-      const cursorDir = path.join(repoRoot, '.cursor');
-      for (const sub of CURSOR_CONTENT_DIRS) {
-        syncFs.pruneEmptySubdirsThenParent(path.join(cursorDir, sub));
-      }
-
+      const result = this.clearCursorContentFromContents(repoRoot, manifestResult.value);
+      if (result.isErr()) return result;
       syncFs.unlinkIfExists(manifestPath);
       return ok(undefined);
     } catch (e) {
@@ -99,17 +112,24 @@ export const cursorAgentPresetConfig = {
   /**
    * Sync all Cursor plugin content (rules as .mdc with frontmatter, commands/skills/agents as symlinks)
    * into .cursor/rules, .cursor/commands, .cursor/skills, .cursor/agents.
-   * Writes manifest at manifestPath for teardown.
+   * When skipManifestWrite is true, does not write manifestPath; caller registers to unified manifest.
+   * When clearFromContents is provided, clears from that instead of reading manifestPath.
    * Respects config.excluded (glob patterns for destination paths to skip).
    */
   syncCursorContent(
     repoRoot: string,
     marketplaces: DiscoveredMarketplace[],
     manifestPath: string,
-    config?: Pick<MmaappssConfig, 'excluded'> | null
+    config?: Pick<MmaappssConfig, 'excluded'> | null,
+    options?: { clearFromContents?: CursorContentSyncManifest; skipManifestWrite?: boolean }
   ): Result<CursorContentSyncManifest, Error> {
-    const clearResult = this.clearCursorContent(repoRoot, manifestPath);
-    if (clearResult.isErr()) return err(clearResult.error);
+    if (options?.clearFromContents) {
+      const clearResult = this.clearCursorContentFromContents(repoRoot, options.clearFromContents);
+      if (clearResult.isErr()) return err(clearResult.error);
+    } else {
+      const clearResult = this.clearCursorContent(repoRoot, manifestPath);
+      if (clearResult.isErr()) return err(clearResult.error);
+    }
 
     const allowedPluginNames = new Set(
       marketplaces.flatMap((m) =>
@@ -231,9 +251,9 @@ export const cursorAgentPresetConfig = {
         created.skills.length > 0 ||
         created.agents.length > 0;
 
-      if (hasAny) {
+      if (hasAny && !options?.skipManifestWrite) {
         syncFs.writeJsonManifest(manifestPath, created satisfies CursorContentSyncManifest);
-      } else {
+      } else if (!options?.skipManifestWrite) {
         syncFs.unlinkIfExists(manifestPath);
       }
 

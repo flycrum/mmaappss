@@ -3,7 +3,10 @@ import type { PresetAgentName } from '../common/preset-agents.js';
 import { presetAgents } from '../common/preset-agents.js';
 import { agentPresets } from './presets/agent-presets.js';
 import { syncBehaviorPresets } from './presets/sync-behavior-presets.js';
-import type { SyncBehaviorClassRef, SyncBehaviorDefinition } from './sync-behaviors/sync-behavior-base.js';
+import type {
+  SyncBehaviorClassRef,
+  SyncBehaviorDefinition,
+} from './sync-behaviors/sync-behavior-base.js';
 
 /** Preset sync-behavior names available in `syncBehaviorPresets`. */
 export type SyncBehaviorPresetName = keyof typeof syncBehaviorPresets;
@@ -37,7 +40,11 @@ interface SyncBehaviorHelpers {
 /** Factory callback that returns a sync behavior definition, class ref, or disable signal. */
 type SyncBehaviorFactory = (
   helpers: SyncBehaviorHelpers
-) => false | SyncBehaviorClassRef | SyncBehaviorDefinition | (SyncBehaviorDefinition & { enabled?: boolean });
+) =>
+  | false
+  | SyncBehaviorClassRef
+  | SyncBehaviorDefinition
+  | (SyncBehaviorDefinition & { enabled?: boolean });
 
 /** Accepted value types for one sync behavior preset override entry. */
 type SyncBehaviorPresetValue =
@@ -78,7 +85,9 @@ export interface DefineAgentInput<TName extends string = string> {
   /** Additional custom sync behaviors appended after preset sync behaviors. */
   syncBehaviorCustom?: Array<SyncBehaviorCustomEntry | SyncBehaviorClassRef | SyncBehaviorFactory>;
   /** Optional per-preset sync-behavior values for enable, replace, or partial override. */
-  syncBehaviorPresets?: Partial<{ [K in SyncBehaviorPresetName]: SyncBehaviorPresetValueForKey<K> }>;
+  syncBehaviorPresets?: Partial<{
+    [K in SyncBehaviorPresetName]: SyncBehaviorPresetValueForKey<K>;
+  }>;
 }
 
 /** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
@@ -125,6 +134,8 @@ export interface MarketplacesConfig {
   postMergeSyncEnabled?: boolean;
   /** Agent names to run during post-merge sync. */
   postMergeSyncMarketplaces?: string[];
+  /** Optional path for unified sync manifest (default `.mmaappss/sync-manifest.json`). */
+  syncManifestPath?: string;
 }
 
 /** Exact config input: only keys from MarketplacesConfig allowed (type-fest Exact). */
@@ -159,19 +170,26 @@ function resolveSyncBehaviorEntry(
   if (value === false) return null;
   if (value === true) {
     return {
-      behaviorClass: helpers.syncBehaviorPresets[presetName].behaviorClass as unknown as SyncBehaviorClassRef,
+      behaviorClass: helpers.syncBehaviorPresets[presetName]
+        .behaviorClass as unknown as SyncBehaviorClassRef,
+      manifestKey: presetName,
     };
   }
-  if (isClassRef(value)) return { behaviorClass: value };
+  if (isClassRef(value)) return { behaviorClass: value, manifestKey: presetName };
   if (isObject(value) && 'behaviorClass' in value && isClassRef(value.behaviorClass)) {
     if (value.enabled === false) return null;
-    return value as unknown as SyncBehaviorDefinition;
+    return {
+      ...(value as SyncBehaviorDefinition),
+      manifestKey: presetName,
+    } as SyncBehaviorDefinition;
   }
   if (isObject(value)) {
     if (value.enabled === false) return null;
     return {
       ...value,
-      behaviorClass: helpers.syncBehaviorPresets[presetName].behaviorClass as unknown as SyncBehaviorClassRef,
+      behaviorClass: helpers.syncBehaviorPresets[presetName]
+        .behaviorClass as unknown as SyncBehaviorClassRef,
+      manifestKey: presetName,
     } as unknown as SyncBehaviorDefinition;
   }
   return null;
@@ -179,7 +197,11 @@ function resolveSyncBehaviorEntry(
 
 /** Resolves one custom sync-behavior entry into a normalized sync behavior definition. */
 function resolveCustomSyncBehaviorEntry(
-  rawValue: SyncBehaviorCustomEntry | SyncBehaviorClassRef | SyncBehaviorDefinition | SyncBehaviorFactory,
+  rawValue:
+    | SyncBehaviorCustomEntry
+    | SyncBehaviorClassRef
+    | SyncBehaviorDefinition
+    | SyncBehaviorFactory,
   helpers: SyncBehaviorHelpers
 ): SyncBehaviorDefinition | null {
   const value =
@@ -249,9 +271,16 @@ export const marketplacesConfig = {
       if (resolved) syncBehaviors.push(resolved);
     }
 
+    let customIndex = 0;
     for (const customSyncBehavior of resolvedInput.syncBehaviorCustom ?? []) {
       const resolved = resolveCustomSyncBehaviorEntry(customSyncBehavior, syncBehaviorHelpers);
-      if (resolved) syncBehaviors.push(resolved);
+      if (resolved) {
+        syncBehaviors.push({
+          ...resolved,
+          manifestKey: resolved.manifestKey ?? `custom_${customIndex}`,
+        });
+        customIndex += 1;
+      }
     }
 
     return {

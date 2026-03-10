@@ -8,7 +8,7 @@ import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/type
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Marketplace plugin entry written into `marketplace.json`. */
-interface MarketplacePluginEntry {
+export interface MarketplacePluginEntry {
   description?: string;
   name: string;
   source: string;
@@ -32,6 +32,11 @@ export interface MarketplaceJsonSyncBehaviorOptions {
   marketplaceName?: string;
   /** Source path formatting strategy for marketplace plugin entries. */
   sourceFormat?: 'prefixed' | 'relative';
+}
+
+/** Custom data registered by this behavior (plugins list for manifest). */
+export interface MarketplaceJsonCustomData {
+  plugins: MarketplacePluginEntry[];
 }
 
 const MARKETPLACE_OWNER = 'mmaappss';
@@ -129,10 +134,10 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     return jsonPatch.writeJson(filePath, patched.value);
   }
 
-  /** Writes or patches marketplace JSON with canonical managed fields. */
-  private syncMarketplaceJson(context: SyncBehaviorContext): Result<void, Error> {
+  /** Writes or patches marketplace JSON with canonical managed fields; returns canonical for registration. */
+  private syncMarketplaceJson(context: SyncBehaviorContext): Result<MarketplaceJson, Error> {
     const options = this.options;
-    if (!options) return ok(undefined);
+    if (!options) return ok({ name: '', owner: { name: MARKETPLACE_OWNER }, plugins: [] });
 
     const manifestKey = options.manifestKey ?? context.agentName;
     const filePath = path.join(context.repoRoot, options.marketplaceFile);
@@ -143,7 +148,8 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
       if (res.error.message.includes('ENOENT')) {
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        return jsonPatch.writeJson(filePath, canonical);
+        const writeRes = jsonPatch.writeJson(filePath, canonical);
+        return writeRes.isErr() ? err(writeRes.error) : ok(canonical);
       }
       return err(res.error);
     }
@@ -155,12 +161,20 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     ];
     const patched = jsonPatch.applyPatch(res.value, ops);
     if (patched.isErr()) return err(patched.error);
-    return jsonPatch.writeJson(filePath, patched.value);
+    const writeRes = jsonPatch.writeJson(filePath, patched.value);
+    return writeRes.isErr() ? err(writeRes.error) : ok(canonical);
   }
 
   /** Sync-phase enabled hook that writes marketplace json content. */
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
-    return this.syncMarketplaceJson(context);
+    const result = this.syncMarketplaceJson(context);
+    if (result.isErr()) return err(result.error);
+    const key = context.currentBehaviorManifestKey ?? 'localMarketplaceSync';
+    context.registerContentToMmaappssSyncManifest(context.agentName, key, {
+      options: context.currentBehaviorOptionsForManifest,
+      customData: { plugins: result.value.plugins } satisfies MarketplaceJsonCustomData,
+    });
+    return ok(undefined);
   }
 
   /** Sync-phase disabled hook that removes managed marketplace json content. */

@@ -3,13 +3,37 @@ import type { MmaappssConfig } from '../common/config-helpers.js';
 import { configHelpers } from '../common/config-helpers.js';
 import { discoverMarketplaces } from '../common/discovery.js';
 import { getLogger } from '../common/logger.js';
+import type { SyncManifestEntry } from '../common/sync-manifest.js';
 import type { SyncOutcome } from '../common/types.js';
 import type { DefinedAgent } from './marketplaces-config.js';
 import {
   SyncBehaviorBase,
+  type RegisterContentToSyncManifestFn,
   type SyncBehaviorContext,
   type SyncBehaviorDefinition,
 } from './sync-behaviors/sync-behavior-base.js';
+
+export interface RunOptions {
+  /** Stored entry per behavior for this agent (used when enabled is false for syncRunDisabled). */
+  manifestByBehavior?: Record<string, SyncManifestEntry>;
+  registerContentToMmaappssSyncManifest?: RegisterContentToSyncManifestFn;
+}
+
+export interface ClearOptions {
+  /** Per–sync-behavior stored entry from unified manifest for this agent. */
+  manifestByBehavior?: Record<string, SyncManifestEntry>;
+}
+
+/** JSON-serializable clone of behavior options for manifest (drops functions and non-JSON values). */
+function serializeOptionsForManifest(options: unknown): Record<string, unknown> {
+  if (options == null) return {};
+  try {
+    const cloned = JSON.parse(JSON.stringify(options));
+    return typeof cloned === 'object' && cloned !== null && !Array.isArray(cloned) ? cloned : {};
+  } catch {
+    return {};
+  }
+}
 
 /** Fluent, fail-fast Result pipeline for adapter and behavior lifecycle steps. */
 class LifecycleChain {
@@ -26,7 +50,10 @@ class LifecycleChain {
   }
 
   /** Creates a new lifecycle chain bound to an adapter and sync behavior instances. */
-  static start(adapter: AgentAdapterBase, syncBehaviorInstances: SyncBehaviorBase[]): LifecycleChain {
+  static start(
+    adapter: AgentAdapterBase,
+    syncBehaviorInstances: SyncBehaviorBase[]
+  ): LifecycleChain {
     return new LifecycleChain(adapter, syncBehaviorInstances);
   }
 
@@ -38,13 +65,14 @@ class LifecycleChain {
     return this;
   }
 
-  /** Runs one sync-behavior step once per sync behavior instance in order. */
+  /** Runs one sync-behavior step once per sync behavior instance in order; step receives (instance, index). */
   runSyncBehaviorHook(
-    stepForSyncBehavior: (syncBehavior: SyncBehaviorBase) => Result<void, Error>
+    stepForSyncBehavior: (syncBehavior: SyncBehaviorBase, index: number) => Result<void, Error>
   ): LifecycleChain {
     this.current = this.current.andThen(() =>
       this.syncBehaviorInstances.reduce(
-        (result, syncBehavior) => result.andThen(() => stepForSyncBehavior(syncBehavior)),
+        (result, syncBehavior, index) =>
+          result.andThen(() => stepForSyncBehavior(syncBehavior, index)),
         ok(undefined) as Result<void, Error>
       )
     );
@@ -73,7 +101,10 @@ export class AgentAdapterBase {
     this.agentConfig = agentConfig;
     this.syncBehaviorInstances = agentConfig.syncBehaviors
       .filter((syncBehavior) => syncBehavior.enabled !== false)
-      .map((syncBehavior: SyncBehaviorDefinition) => new syncBehavior.behaviorClass(syncBehavior.options));
+      .map(
+        (syncBehavior: SyncBehaviorDefinition) =>
+          new syncBehavior.behaviorClass(syncBehavior.options)
+      );
     this.syncBehaviorsToClearInstances = (agentConfig.syncBehaviorsToClear ?? []).map(
       (def: SyncBehaviorDefinition) => new def.behaviorClass(def.options)
     );
@@ -151,18 +182,25 @@ export class AgentAdapterBase {
   }
 
   /** Executes the full sync lifecycle for this adapter and its behaviors. */
-  run(repoRoot: string, tsConfig: MmaappssConfig | null): Result<SyncOutcome, Error> {
+  run(
+    repoRoot: string,
+    tsConfig: MmaappssConfig | null,
+    options?: RunOptions
+  ): Result<SyncOutcome, Error> {
     const enabled = configHelpers.general.getMarketplaceEnabled(
       repoRoot,
       tsConfig,
       this.agentConfig
     );
     const marketplaces = enabled ? discoverMarketplaces(repoRoot, tsConfig) : [];
+    const noopRegister: RegisterContentToSyncManifestFn = () => {};
     const context: SyncBehaviorContext = {
       agentConfig: this.agentConfig,
       agentName: this.agentConfig.name,
       enabled,
       marketplaces,
+      registerContentToMmaappssSyncManifest:
+        options?.registerContentToMmaappssSyncManifest ?? noopRegister,
       repoRoot,
       sharedState: this.sharedState,
       tsConfig,
@@ -181,24 +219,59 @@ export class AgentAdapterBase {
       }
     }
 
+    const manifestByBehavior = options?.manifestByBehavior ?? {};
+    const setBehaviorContext = (index: number): void => {
+      const def = this.agentConfig.syncBehaviors[index];
+      const key = def?.manifestKey ?? `custom_${index}`;
+      (
+        context as SyncBehaviorContext & { currentBehaviorManifestKey?: string }
+      ).currentBehaviorManifestKey = key;
+      (
+        context as SyncBehaviorContext & {
+          currentBehaviorOptionsForManifest?: Record<string, unknown>;
+        }
+      ).currentBehaviorOptionsForManifest = serializeOptionsForManifest(def?.options);
+      (context as SyncBehaviorContext & { manifestContent?: unknown }).manifestContent =
+        manifestByBehavior[key];
+    };
+
     const syncResult = LifecycleChain.start(this, this.syncBehaviorInstances)
       .runAdapterHook((adapter) => adapter.syncSetupBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncSetupBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncSetupAfter(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.syncSetupBefore(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.syncSetupAfter(context);
+      })
       .runAdapterHook((adapter) => adapter.syncSetupAfter(context))
       .runAdapterHook((adapter) => adapter.syncRunBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncRunBefore(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.syncRunBefore(context);
+      })
       .runAdapterHook((adapter) =>
         enabled ? adapter.syncRunEnabled(context) : adapter.syncRunDisabled(context)
       )
-      .runSyncBehaviorHook((syncBehavior) =>
-        enabled ? syncBehavior.syncRunEnabled(context) : syncBehavior.syncRunDisabled(context)
-      )
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncRunAfter(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return enabled ? sb.syncRunEnabled(context) : sb.syncRunDisabled(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.syncRunAfter(context);
+      })
       .runAdapterHook((adapter) => adapter.syncRunAfter(context))
       .runAdapterHook((adapter) => adapter.syncTeardownBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncTeardownBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncTeardownAfter(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.syncTeardownBefore(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.syncTeardownAfter(context);
+      })
       .runAdapterHook((adapter) => adapter.syncTeardownAfter(context))
       .toResult();
 
@@ -207,30 +280,73 @@ export class AgentAdapterBase {
   }
 
   /** Executes the full clear lifecycle for this adapter and its behaviors. */
-  clear(repoRoot: string, tsConfig: MmaappssConfig | null): Result<SyncOutcome, Error> {
+  clear(
+    repoRoot: string,
+    tsConfig: MmaappssConfig | null,
+    options?: ClearOptions
+  ): Result<SyncOutcome, Error> {
+    const manifestByBehavior = options?.manifestByBehavior ?? {};
+    const noopRegister: RegisterContentToSyncManifestFn = () => {};
     const context: SyncBehaviorContext = {
       agentConfig: this.agentConfig,
       agentName: this.agentConfig.name,
       enabled: false,
       marketplaces: [],
+      registerContentToMmaappssSyncManifest: noopRegister,
       repoRoot,
       sharedState: this.sharedState,
       tsConfig,
     };
 
+    const setBehaviorContext = (index: number): void => {
+      const def = this.agentConfig.syncBehaviors[index];
+      const key = def?.manifestKey ?? `custom_${index}`;
+      (
+        context as SyncBehaviorContext & { currentBehaviorManifestKey?: string }
+      ).currentBehaviorManifestKey = key;
+      (
+        context as SyncBehaviorContext & {
+          currentBehaviorOptionsForManifest?: Record<string, unknown>;
+        }
+      ).currentBehaviorOptionsForManifest = serializeOptionsForManifest(def?.options);
+      (context as SyncBehaviorContext & { manifestContent?: unknown }).manifestContent =
+        manifestByBehavior[key];
+    };
+
     const clearResult = LifecycleChain.start(this, this.syncBehaviorInstances)
       .runAdapterHook((adapter) => adapter.clearSetupBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearSetupBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearSetupAfter(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearSetupBefore(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearSetupAfter(context);
+      })
       .runAdapterHook((adapter) => adapter.clearSetupAfter(context))
       .runAdapterHook((adapter) => adapter.clearRunBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearRunBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearRun(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearRunAfter(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearRunBefore(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearRun(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearRunAfter(context);
+      })
       .runAdapterHook((adapter) => adapter.clearRunAfter(context))
       .runAdapterHook((adapter) => adapter.clearTeardownBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearTeardownBefore(context))
-      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearTeardownAfter(context))
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearTeardownBefore(context);
+      })
+      .runSyncBehaviorHook((sb, i) => {
+        setBehaviorContext(i);
+        return sb.clearTeardownAfter(context);
+      })
       .runAdapterHook((adapter) => adapter.clearTeardownAfter(context))
       .toResult();
 
