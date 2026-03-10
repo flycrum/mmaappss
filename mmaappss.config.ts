@@ -53,7 +53,6 @@ if (configMode === 'basic') {
               ...agentPresets.cursor.syncBehaviorPresets,
               localPluginsContentSync: {
                 options: {
-                  manifestPath: '.cursor/.mmaappss-cursor-sync.json',
                   requiredManifestKey: 'cursor',
                   targetRoot: '.cursor',
                   folderSelection: {
@@ -109,9 +108,7 @@ if (configMode === 'basic') {
                   {
                     behaviorClass: LocalPluginsContentSyncBehavior,
                     options: {
-                      manifestPath: '.superagent/.mmaappss-superagent-sync.json',
                       requiredManifestKey: 'claude',
-                      strategy: 'generic',
                       targetRoot: '.superagent',
                       folderSelection: { mode: 'blacklist', folders: ['.claude-plugin'] },
                       processPluginFolderOrFile(localContent) {

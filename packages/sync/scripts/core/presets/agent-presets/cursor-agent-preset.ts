@@ -1,9 +1,6 @@
 import { err, ok } from 'neverthrow';
-import path from 'node:path';
 import type { DefineAgentInput } from '../../marketplaces-config.js';
 import { cursorAgentPresetConfig } from './cursor-agent-preset.config.js';
-
-const CURSOR_MANIFEST_PATH = '.cursor/.mmaappss-cursor-sync.json';
 
 /** Cursor preset: all Cursor-specific config and sync logic live here or in cursor-agent-preset.config. */
 export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
@@ -47,9 +44,8 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
             const result = cursorAgentPresetConfig.syncCursorContent(
               context.repoRoot,
               context.marketplaces,
-              path.join(context.repoRoot, CURSOR_MANIFEST_PATH),
               context.tsConfig,
-              { clearFromContents, skipManifestWrite: true }
+              { clearFromContents }
             );
             if (result.isErr()) return err(result.error);
             const key = context.currentBehaviorManifestKey ?? 'localPluginsContentSync';
@@ -60,7 +56,6 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
             return ok(undefined);
           },
         },
-        manifestPath: CURSOR_MANIFEST_PATH,
         requiredManifestKey: 'cursor',
         targetRoot: '.cursor',
       },

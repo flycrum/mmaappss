@@ -91,16 +91,15 @@ export const cursorAgentPresetConfig = {
   /**
    * Sync all Cursor plugin content (rules as .mdc with frontmatter, commands/skills/agents as symlinks)
    * into .cursor/rules, .cursor/commands, .cursor/skills, .cursor/agents.
-   * When skipManifestWrite is true, does not write manifestPath; caller registers to unified manifest.
-   * When clearFromContents is provided, clears from that instead of reading manifestPath.
+   * Caller registers result to unified manifest; no per-agent manifest file is written.
+   * When clearFromContents is provided, clears from that before syncing.
    * Respects config.excluded (glob patterns for destination paths to skip).
    */
   syncCursorContent(
     repoRoot: string,
     marketplaces: DiscoveredMarketplace[],
-    manifestPath: string,
     config?: Pick<MmaappssConfig, 'excluded'> | null,
-    options?: { clearFromContents?: CursorContentSyncManifest; skipManifestWrite?: boolean }
+    options?: { clearFromContents?: CursorContentSyncManifest }
   ): Result<CursorContentSyncManifest, Error> {
     if (options?.clearFromContents) {
       const clearResult = this.clearCursorContentFromContents(repoRoot, options.clearFromContents);
@@ -219,18 +218,6 @@ export const cursorAgentPresetConfig = {
             }
           }
         }
-      }
-
-      const hasAny =
-        created.rules.length > 0 ||
-        created.commands.length > 0 ||
-        created.skills.length > 0 ||
-        created.agents.length > 0;
-
-      if (hasAny && !options?.skipManifestWrite) {
-        syncFs.writeJsonManifest(manifestPath, created satisfies CursorContentSyncManifest);
-      } else if (!options?.skipManifestWrite) {
-        syncFs.unlinkIfExists(manifestPath);
       }
 
       return ok(created);

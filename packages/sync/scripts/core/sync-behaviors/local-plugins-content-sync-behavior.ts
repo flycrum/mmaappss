@@ -1,4 +1,4 @@
-import { err, ok, Result } from 'neverthrow';
+import { ok, Result } from 'neverthrow';
 import path from 'node:path';
 import { isExcluded } from '../../common/excluded-patterns.js';
 import { syncFs } from '../../common/sync-fs.js';
@@ -75,19 +75,12 @@ export interface LocalPluginsContentSyncBehaviorOptions {
   folderSelection?: FolderSelectionConfig;
   /** Optional per-folder transform map for filename/content transforms. */
   folderTransforms?: Record<string, FolderTransformOptions | true>;
-  /** Manifest path used to track outputs for teardown. */
-  manifestPath: string;
   /** Optional callback to inspect/override each plugin top-level entry before processing. */
   processPluginFolderOrFile?: (content: LocalPluginContent) => LocalPluginContentOverride | false;
   /** Manifest capability key for plugin eligibility (generic path only). Defaults to context.agentName when omitted. */
   requiredManifestKey?: PluginManifestKey | 'none';
   /** Root output directory for synced content (generic path only). */
   targetRoot: string;
-}
-
-/** Manifest shape used by generic strategy to track managed output paths. */
-interface GenericManifestShape {
-  paths: string[];
 }
 
 /** Custom data registered by this behavior (generic strategy: paths for teardown). */
@@ -119,7 +112,7 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     super(options);
   }
 
-  /** Clears generic strategy outputs from stored entry (unified manifest) or legacy manifest file. */
+  /** Clears generic strategy outputs from unified manifest entry only. */
   private clearGeneric(context: SyncBehaviorContext): Result<void, Error> {
     const entry = context.manifestContent;
     if (entry && typeof entry === 'object' && entry.customData) {
@@ -129,18 +122,6 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
         return ok(undefined);
       }
     }
-    const options = this.options;
-    if (!options) return ok(undefined);
-    const manifestPath = path.join(context.repoRoot, options.manifestPath);
-    const manifestResult = syncFs.readJsonManifest<GenericManifestShape>(manifestPath);
-    if (manifestResult.isErr()) {
-      const e = manifestResult.error as Error & { code?: string };
-      if (e.code === 'ENOENT') return ok(undefined);
-      return err(manifestResult.error);
-    }
-    const paths = manifestResult.value.paths ?? [];
-    syncFs.unlinkPaths(context.repoRoot, paths);
-    syncFs.unlinkIfExists(manifestPath);
     return ok(undefined);
   }
 
