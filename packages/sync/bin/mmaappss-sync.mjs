@@ -7,13 +7,15 @@
  *   the package is symlinked (pnpm link); otherwise repo root would resolve to the link source.
  */
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
 const scriptPath = path.join(packageRoot, 'scripts/mmaappss-sync-all.ts');
-const tsxLoader = path.join(packageRoot, 'node_modules/tsx/dist/loader.mjs');
+const require = createRequire(import.meta.url);
+const tsxLoader = require.resolve('tsx');
 
 const result = spawnSync(process.execPath, ['--import', `file://${tsxLoader}`, scriptPath], {
   stdio: 'inherit',

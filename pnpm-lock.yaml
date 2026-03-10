@@ -83,6 +83,12 @@ importers:
 
   packages/sync:
     dependencies:
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      fast-json-patch:
+        specifier: ^3.1.1
+        version: 3.1.1
       fs-extra:
         specifier: ^11.2.0
         version: 11.3.4
@@ -98,6 +104,9 @@ importers:
       pino:
         specifier: ^9.6.0
         version: 9.14.0
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
     devDependencies:
       '@mmaappss/eslint-config':
         specifier: workspace:*
@@ -117,21 +126,12 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.13
-      dotenv:
-        specifier: ^17.3.1
-        version: 17.3.1
       eslint:
         specifier: ^9.15.0
         version: 9.39.3
-      fast-json-patch:
-        specifier: ^3.1.1
-        version: 3.1.1
       globals:
         specifier: ^15.12.0
         version: 15.15.0
-      tsx:
-        specifier: ^4.19.0
-        version: 4.21.0
       type-fest:
         specifier: ^5.4.4
         version: 5.4.4
