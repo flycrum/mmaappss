@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
 import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
+import { presetConstants } from '../presets/agent-presets/preset-constants.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Marketplace plugin entry written into `marketplace.json`. */
@@ -28,7 +29,7 @@ export interface MarketplaceJsonSyncBehaviorOptions {
   manifestKey?: PluginManifestKey;
   /** Relative file path to the target marketplace json file. */
   marketplaceFile: string;
-  /** Optional marketplace name override (defaults to `mmaappss-plugins`). */
+  /** Optional marketplace name override (defaults to presetConstants.DEFAULT_MARKETPLACE_NAME). */
   marketplaceName?: string;
   /** Source path formatting strategy for marketplace plugin entries. */
   sourceFormat?: 'prefixed' | 'relative';
@@ -38,9 +39,6 @@ export interface MarketplaceJsonSyncBehaviorOptions {
 export interface MarketplaceJsonCustomData {
   plugins: MarketplacePluginEntry[];
 }
-
-const MARKETPLACE_OWNER = 'mmaappss';
-const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
 export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJsonSyncBehaviorOptions> {
   constructor(options?: MarketplaceJsonSyncBehaviorOptions) {
@@ -84,10 +82,10 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     manifestKey?: PluginManifestKey
   ): MarketplaceJson {
     const options = this.options;
-    const name = options?.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
+    const name = options?.marketplaceName ?? presetConstants.DEFAULT_MARKETPLACE_NAME;
     return {
       name,
-      owner: { name: MARKETPLACE_OWNER },
+      owner: { name: presetConstants.MARKETPLACE_OWNER },
       plugins: this.buildMarketplacePluginEntries(marketplaces, manifestKey),
     };
   }
@@ -105,7 +103,7 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     }
 
     const manifest = res.value;
-    const marketplaceName = options.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
+    const marketplaceName = options.marketplaceName ?? presetConstants.DEFAULT_MARKETPLACE_NAME;
     const managedKeys = new Set(['name', 'owner', 'plugins']);
     const keys = Object.keys(manifest);
     const onlyManagedKeys =
@@ -137,7 +135,8 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
   /** Writes or patches marketplace JSON with canonical managed fields; returns canonical for registration. */
   private syncMarketplaceJson(context: SyncBehaviorContext): Result<MarketplaceJson, Error> {
     const options = this.options;
-    if (!options) return ok({ name: '', owner: { name: MARKETPLACE_OWNER }, plugins: [] });
+    if (!options)
+      return ok({ name: '', owner: { name: presetConstants.MARKETPLACE_OWNER }, plugins: [] });
 
     const manifestKey = options.manifestKey ?? context.agentName;
     const filePath = path.join(context.repoRoot, options.marketplaceFile);

@@ -4,10 +4,10 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { agentsMdSymlinkSync, type AgentsMdSymlinkOptions } from './agents-md-symlink-sync.js';
 
+/** Options matching Claude-style agents-md symlink (unified manifest; no per-agent manifest path). */
 const CLAUDE_STYLE_OPTIONS: AgentsMdSymlinkOptions = {
   sourceFile: 'AGENTS.md',
   targetFile: 'CLAUDE.md',
-  manifestPath: '.claude/.mmaappss-claude-md-sync.json',
   gitignoreComment: '\n# mmaappss: symlinked from AGENTS.md for Claude\n',
   gitignoreEntry: 'CLAUDE.md',
 };

@@ -5,23 +5,14 @@
  * All Cursor-specific logic lives here; only the Cursor preset imports this.
  */
 
-import { err, ok, Result } from 'neverthrow';
+import { Result, err, ok } from 'neverthrow';
 import path from 'node:path';
 import type { MmaappssConfig } from '../../../common/config-helpers.js';
 import { isExcluded } from '../../../common/excluded-patterns.js';
 import { getLogger } from '../../../common/logger.js';
 import { syncFs } from '../../../common/sync-fs.js';
 import type { DiscoveredMarketplace } from '../../../common/types.js';
-
-const RULES_SUBDIR = 'rules';
-const COMMANDS_SUBDIR = 'commands';
-const SKILLS_SUBDIR = 'skills';
-const AGENTS_SUBDIR = 'agents';
-const CURSOR_RULES_FRONTMATTER = '---\nalwaysApply: true\n---\n\n';
-const RULE_EXT = /\.(md|mdc|markdown)$/i;
-const COMMAND_EXT = /\.(md|mdc|markdown|txt)$/i;
-const AGENT_EXT = /\.(md|mdc|markdown)$/i;
-const CURSOR_CONTENT_DIRS = ['rules', 'commands', 'skills', 'agents'] as const;
+import { presetConstants } from './preset-constants.js';
 
 export interface CursorContentSyncManifest {
   rules: string[];
@@ -57,11 +48,28 @@ function stripFrontmatter(content: string): string {
   return body || '';
 }
 
+/** Cursor-specific constants; single source of truth for preset and config. */
+const CURSOR_RULES_FRONTMATTER = '---\nalwaysApply: true\n---\n\n';
+
 /**
  * Cursor preset config: content sync helpers and manifest type.
  * Single exported object for convenience and consistent access.
  */
 export const cursorAgentPresetConfig = {
+  /** Cursor-only constants; for shared subdirs/extensions use presetConstants. */
+  CONSTANTS: {
+    /** Runtime agent identifier for cursor. */
+    AGENT_NAME: 'cursor',
+    /** Frontmatter prepended to synced rule .mdc files. */
+    CURSOR_RULES_FRONTMATTER,
+    /** Env var that enables/disables cursor marketplace sync. */
+    ENV_VAR: 'MMAAPPSS_MARKETPLACE_CURSOR',
+    /** Plugin manifest key used to filter cursor-enabled plugins. */
+    REQUIRED_MANIFEST_KEY: 'cursor' as const,
+    /** Root output dir for cursor content (rules, commands, skills, agents). */
+    TARGET_ROOT: '.cursor',
+  } as const,
+
   /**
    * Remove all synced Cursor content using stored manifest content (e.g. from unified sync manifest).
    */
@@ -78,8 +86,8 @@ export const cursorAgentPresetConfig = {
         ...manifest.agents,
       ];
       syncFs.unlinkPaths(repoRoot, allPaths);
-      const cursorDir = path.join(repoRoot, '.cursor');
-      for (const sub of CURSOR_CONTENT_DIRS) {
+      const cursorDir = path.join(repoRoot, this.CONSTANTS.TARGET_ROOT);
+      for (const sub of presetConstants.PLUGIN_CONTENT_DIRS) {
         syncFs.pruneEmptySubdirsThenParent(path.join(cursorDir, sub));
       }
       return ok(undefined);
@@ -108,11 +116,13 @@ export const cursorAgentPresetConfig = {
 
     const allowedPluginNames = new Set(
       marketplaces.flatMap((m) =>
-        m.plugins.filter((p) => p.manifests.cursor === true).map((p) => p.name)
+        m.plugins
+          .filter((p) => p.manifests[this.CONSTANTS.AGENT_NAME as 'cursor'] === true)
+          .map((p) => p.name)
       )
     );
-    const cursorDir = path.join(repoRoot, '.cursor');
-    for (const sub of CURSOR_CONTENT_DIRS) {
+    const cursorDir = path.join(repoRoot, this.CONSTANTS.TARGET_ROOT);
+    for (const sub of presetConstants.PLUGIN_CONTENT_DIRS) {
       const parent = path.join(cursorDir, sub);
       if (!syncFs.pathExists(parent)) continue;
       const entries = syncFs.readdirWithTypes(parent);
@@ -139,21 +149,21 @@ export const cursorAgentPresetConfig = {
     };
 
     try {
-      const rulesTarget = path.join(cursorDir, 'rules');
-      const commandsTarget = path.join(cursorDir, 'commands');
-      const skillsTarget = path.join(cursorDir, 'skills');
-      const agentsTarget = path.join(cursorDir, 'agents');
+      const rulesTarget = path.join(cursorDir, presetConstants.RULES_SUBDIR);
+      const commandsTarget = path.join(cursorDir, presetConstants.COMMANDS_SUBDIR);
+      const skillsTarget = path.join(cursorDir, presetConstants.SKILLS_SUBDIR);
+      const agentsTarget = path.join(cursorDir, presetConstants.AGENTS_SUBDIR);
       const processedPluginNames = new Set<string>();
 
       for (const m of marketplaces) {
         for (const plugin of m.plugins) {
-          if (plugin.manifests.cursor !== true) continue;
+          if (plugin.manifests[this.CONSTANTS.AGENT_NAME as 'cursor'] !== true) continue;
           if (processedPluginNames.has(plugin.name)) continue;
           processedPluginNames.add(plugin.name);
 
           // --- Rules: copy to .mdc with frontmatter ---
-          const rulesDir = path.join(plugin.path, RULES_SUBDIR);
-          const ruleFiles = syncFs.listFiles(rulesDir, RULE_EXT);
+          const rulesDir = path.join(plugin.path, presetConstants.RULES_SUBDIR);
+          const ruleFiles = syncFs.listFiles(rulesDir, presetConstants.RULE_EXT);
           if (ruleFiles.length > 0) {
             syncFs.ensureDir(path.join(rulesTarget, plugin.name));
             for (const file of ruleFiles) {
@@ -163,14 +173,14 @@ export const cursorAgentPresetConfig = {
               const rel = path.relative(repoRoot, destPath);
               if (isExcluded(rel, excluded)) continue;
               const body = stripFrontmatter(syncFs.readFileUtf8(srcPath));
-              syncFs.writeFileUtf8(destPath, CURSOR_RULES_FRONTMATTER + body);
+              syncFs.writeFileUtf8(destPath, this.CONSTANTS.CURSOR_RULES_FRONTMATTER + body);
               created.rules.push(rel);
             }
           }
 
           // --- Commands: symlink each file ---
-          const commandsDir = path.join(plugin.path, COMMANDS_SUBDIR);
-          const commandFiles = syncFs.listFiles(commandsDir, COMMAND_EXT);
+          const commandsDir = path.join(plugin.path, presetConstants.COMMANDS_SUBDIR);
+          const commandFiles = syncFs.listFiles(commandsDir, presetConstants.COMMAND_EXT);
           if (commandFiles.length > 0) {
             const pluginCommandsDir = path.join(commandsTarget, plugin.name);
             syncFs.ensureDir(pluginCommandsDir);
@@ -185,7 +195,7 @@ export const cursorAgentPresetConfig = {
           }
 
           // --- Skills: symlink each skill dir (skills/<name>/SKILL.md) ---
-          const skillsDir = path.join(plugin.path, SKILLS_SUBDIR);
+          const skillsDir = path.join(plugin.path, presetConstants.SKILLS_SUBDIR);
           const skillDirs = syncFs.listSubdirsWhere(skillsDir, (subPath) =>
             syncFs.isFile(path.join(subPath, 'SKILL.md'))
           );
@@ -203,8 +213,8 @@ export const cursorAgentPresetConfig = {
           }
 
           // --- Agents: symlink each agent .md ---
-          const agentsDir = path.join(plugin.path, AGENTS_SUBDIR);
-          const agentFiles = syncFs.listFiles(agentsDir, AGENT_EXT);
+          const agentsDir = path.join(plugin.path, presetConstants.AGENTS_SUBDIR);
+          const agentFiles = syncFs.listFiles(agentsDir, presetConstants.AGENT_EXT);
           if (agentFiles.length > 0) {
             const pluginAgentsDir = path.join(agentsTarget, plugin.name);
             syncFs.ensureDir(pluginAgentsDir);

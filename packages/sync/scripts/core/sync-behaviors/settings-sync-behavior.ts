@@ -4,20 +4,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
 import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
+import { presetConstants } from '../presets/agent-presets/preset-constants.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Options for syncing and tearing down agent settings files. */
 export interface SettingsSyncBehaviorOptions {
   /** Manifest capability key to include. Defaults to context.agentName when omitted. */
   manifestKey?: PluginManifestKey;
-  /** Optional marketplace name override (defaults to `mmaappss-plugins`). */
+  /** Optional marketplace name override (defaults to presetConstants.DEFAULT_MARKETPLACE_NAME). */
   marketplaceName?: string;
   /** Relative path to the target settings file. */
   settingsFile: string;
 }
 
 const SOURCE_TYPE = 'directory';
-const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
 /**
  * Sync behavior for agent settings files. Options.settingsFile is required for real work.
@@ -56,7 +56,7 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     if (res.isErr()) return err(res.error);
     const parsed = res.value;
-    const marketplaceName = options.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
+    const marketplaceName = options.marketplaceName ?? presetConstants.DEFAULT_MARKETPLACE_NAME;
 
     const extraKnown = parsed.extraKnownMarketplaces as Record<string, unknown> | undefined;
     if (extraKnown?.[marketplaceName]) {
@@ -80,7 +80,7 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const marketplaceName = options.marketplaceName ?? DEFAULT_MARKETPLACE_NAME;
+    const marketplaceName = options.marketplaceName ?? presetConstants.DEFAULT_MARKETPLACE_NAME;
     const manifestKey = options.manifestKey ?? context.agentName;
     const pluginIds = this.buildPluginIds(context.marketplaces, manifestKey);
     const enabledPlugins: Record<string, boolean> = {};

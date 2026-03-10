@@ -1,11 +1,16 @@
 import { err, ok } from 'neverthrow';
 import type { DefineAgentInput } from '../../marketplaces-config.js';
-import { cursorAgentPresetConfig } from './cursor-agent-preset.config.js';
+import {
+  cursorAgentPresetConfig,
+  type CursorContentSyncManifest,
+} from './cursor-agent-preset.config.js';
+
+const C = cursorAgentPresetConfig.CONSTANTS;
 
 /** Cursor preset: all Cursor-specific config and sync logic live here or in cursor-agent-preset.config. */
 export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
-  envVar: 'MMAAPPSS_MARKETPLACE_CURSOR',
-  name: 'cursor',
+  envVar: C.ENV_VAR,
+  name: C.AGENT_NAME,
   syncBehaviorPresets: {
     localPluginsContentSync: {
       options: {
@@ -20,26 +25,16 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
             ) {
               return cursorAgentPresetConfig.clearCursorContentFromContents(
                 context.repoRoot,
-                entry.customData as {
-                  rules: string[];
-                  commands: string[];
-                  skills: string[];
-                  agents: string[];
-                }
+                entry.customData as CursorContentSyncManifest
               );
             }
             return ok(undefined);
           },
           sync(context) {
             const entry = context.manifestContent;
-            const clearFromContents =
+            const clearFromContents: CursorContentSyncManifest | undefined =
               entry && typeof entry === 'object' && entry.customData
-                ? (entry.customData as {
-                    rules: string[];
-                    commands: string[];
-                    skills: string[];
-                    agents: string[];
-                  })
+                ? (entry.customData as CursorContentSyncManifest)
                 : undefined;
             const result = cursorAgentPresetConfig.syncCursorContent(
               context.repoRoot,
@@ -56,8 +51,8 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
             return ok(undefined);
           },
         },
-        requiredManifestKey: 'cursor',
-        targetRoot: '.cursor',
+        requiredManifestKey: C.REQUIRED_MANIFEST_KEY,
+        targetRoot: C.TARGET_ROOT,
       },
     },
   },

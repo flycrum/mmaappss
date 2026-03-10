@@ -7,11 +7,9 @@
 
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
+import { presetConstants } from '../core/presets/agent-presets/preset-constants.js';
 import { syncFs } from './sync-fs.js';
 import type { DiscoveredMarketplace } from './types.js';
-
-const RULES_SUBDIR = 'rules';
-const RULE_EXT = /\.(md|mdc|markdown)$/i;
 
 export interface RulesSyncManifest {
   rules: string[];
@@ -57,8 +55,8 @@ export const rulesSync = {
 
       for (const m of marketplaces) {
         for (const plugin of m.plugins) {
-          const rulesDir = path.join(plugin.path, RULES_SUBDIR);
-          const files = syncFs.listFiles(rulesDir, RULE_EXT);
+          const rulesDir = path.join(plugin.path, presetConstants.RULES_SUBDIR);
+          const files = syncFs.listFiles(rulesDir, presetConstants.RULE_EXT);
           if (files.length === 0) continue;
 
           const pluginRulesDir = path.join(rulesTargetDir, plugin.name);

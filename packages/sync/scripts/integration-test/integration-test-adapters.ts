@@ -15,7 +15,7 @@ import { runSync } from '../core/sync-runner.js';
 /** Suffix for temporary backup paths used during integration tests. */
 const BACKUP_SUFFIX = '-testing-123';
 
-/** Path constants for integration test backup dirs and assertions (relative to repo root). */
+/** Path constants for integration test backup dirs and assertions (relative to repo root). Kept as literals so tests fail when shared preset constants change (breaking-change signal). */
 const PATHS = {
   CLAUDE_DIR: '.claude',
   CLAUDE_PLUGIN_DIR: '.claude-plugin',
@@ -30,6 +30,9 @@ const PATHS = {
   MMAAPPSS_PLUGINS_NAME: 'mmaappss-plugins',
   SETTINGS_JSON: 'settings.json',
 } as const;
+
+/** Cursor content subdirs; literal copy so integration test fails if preset layout changes. */
+const CURSOR_CONTENT_SUBDIRS = ['rules', 'commands', 'skills', 'agents'] as const;
 
 export type IntegrationTestMode = 'enabled' | 'disabled';
 
@@ -504,8 +507,6 @@ export class ClaudeIntegrationAdapter extends IntegrationTestAdapterBase {
     return errors;
   }
 }
-
-const CURSOR_CONTENT_SUBDIRS = ['rules', 'commands', 'skills', 'agents'] as const;
 
 export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
   readonly agent = 'cursor' as const;

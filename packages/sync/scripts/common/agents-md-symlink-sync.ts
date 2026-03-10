@@ -25,8 +25,6 @@ export interface AgentsMdSymlinkOptions {
   sourceFile: string;
   /** Target file name to create as symlink (e.g. CLAUDE.md). */
   targetFile: string;
-  /** Relative path to manifest JSON that tracks created symlinks. */
-  manifestPath: string;
   /** Extra exclude dir names for walk (merged with config.excluded). Omit to use default. */
   defaultExclude?: string[];
   /** Comment line(s) to add above gitignoreEntry when ensuring .gitignore. Omit to skip .gitignore. */
