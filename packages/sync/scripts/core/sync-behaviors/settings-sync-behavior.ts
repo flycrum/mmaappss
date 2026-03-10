@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
 import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
-import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
+import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Options for syncing and tearing down agent settings files. */
-export interface SettingsSyncModeOptions {
+export interface SettingsSyncBehaviorOptions {
   /** Manifest capability key to include. Defaults to context.agentName when omitted. */
   manifestKey?: PluginManifestKey;
   /** Optional marketplace name override (defaults to `mmaappss-plugins`). */
@@ -20,12 +20,12 @@ const SOURCE_TYPE = 'directory';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
 /**
- * Sync mode for agent settings files. Options.settingsFile is required for real work.
+ * Sync behavior for agent settings files. Options.settingsFile is required for real work.
  * Omitting options (or passing undefined) intentionally creates a no-op instance; methods guard for missing options and return early.
  */
-export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
+export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorOptions> {
   /** @param options - When omitted, instance is no-op; methods check this.options and skip when undefined. */
-  constructor(options?: SettingsSyncModeOptions) {
+  constructor(options?: SettingsSyncBehaviorOptions) {
     super(options);
   }
 
@@ -76,7 +76,7 @@ export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
   }
 
   /** Merges mmaappss-managed marketplace and enabled plugin settings into the target file. */
-  private syncSettings(context: SyncModeContext): Result<void, Error> {
+  private syncSettings(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
 
@@ -124,17 +124,17 @@ export class SettingsSyncMode extends SyncModeBase<SettingsSyncModeOptions> {
   }
 
   /** Sync-phase enabled hook that writes settings integration fields. */
-  override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     return this.syncSettings(context);
   }
 
   /** Sync-phase disabled hook that removes settings integration fields. */
-  override syncRunDisabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     return this.teardownSettings(context.repoRoot);
   }
 
   /** Clear hook that removes settings integration fields. */
-  override clearRun(context: SyncModeContext): Result<void, Error> {
+  override clearRun(context: SyncBehaviorContext): Result<void, Error> {
     return this.teardownSettings(context.repoRoot);
   }
 }

@@ -4,7 +4,7 @@
  */
 
 import { marketplacesConfig } from './scripts/core/marketplaces-config.js';
-import { LocalPluginsContentSyncMode } from './scripts/core/sync-modes/local-plugins-content-sync-mode.js';
+import { LocalPluginsContentSyncBehavior } from './scripts/core/sync-behaviors/local-plugins-content-sync-behavior.js';
 
 type ExampleConfigMode =
   | 'basic'
@@ -60,8 +60,8 @@ switch (exampleConfigMode) {
             claude: defineAgent({
               ...agentPresets.claude,
               name: 'claude',
-              syncModePresets: {
-                ...agentPresets.claude.syncModePresets,
+              syncBehaviorPresets: {
+                ...agentPresets.claude.syncBehaviorPresets,
                 // disable rules symlink for claude
                 rulesSymlink: false,
               },
@@ -82,8 +82,8 @@ switch (exampleConfigMode) {
             cursor: defineAgent({
               ...agentPresets.cursor,
               name: 'cursor',
-              syncModePresets: {
-                ...agentPresets.cursor.syncModePresets,
+              syncBehaviorPresets: {
+                ...agentPresets.cursor.syncBehaviorPresets,
                 localPluginsContentSync: {
                   options: {
                     manifestPath: '.cursor/.mmaappss-cursor-sync.json',
@@ -124,11 +124,11 @@ switch (exampleConfigMode) {
             codex: true,
             custom: {
               superagent: defineAgent(
-                ({ agentPresets: presets, syncModePresets: _syncModePresets }) => ({
+                ({ agentPresets: presets, syncBehaviorPresets: _syncBehaviorPresets }) => ({
                   ...presets.codex,
                   name: 'superagent',
-                  syncModePresets: {
-                    ...presets.codex.syncModePresets,
+                  syncBehaviorPresets: {
+                    ...presets.codex.syncBehaviorPresets,
                     localMarketplaceSync: {
                       options: {
                         manifestKey: 'claude',
@@ -138,9 +138,9 @@ switch (exampleConfigMode) {
                       },
                     },
                   },
-                  syncModeCustom: [
+                  syncBehaviorCustom: [
                     {
-                      modeClass: LocalPluginsContentSyncMode,
+                      behaviorClass: LocalPluginsContentSyncBehavior,
                       options: {
                         manifestPath: '.superagent/.mmaappss-superagent-sync.json',
                         requiredManifestKey: 'claude',
@@ -163,7 +163,7 @@ switch (exampleConfigMode) {
                       },
                     },
                     (helpers) => ({
-                      modeClass: helpers.syncModePresets.rulesSymlink.modeClass,
+                      behaviorClass: helpers.syncBehaviorPresets.rulesSymlink.behaviorClass,
                       options: {
                         rulesDir: '.superagent/rules-symlinked',
                         syncManifest: '.superagent/.mmaappss-superagent-rules.json',
@@ -181,13 +181,13 @@ switch (exampleConfigMode) {
 
   case 'custom-only':
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig(
-      ({ config, defineAgent, syncModePresets }) =>
+      ({ config, defineAgent, syncBehaviorPresets }) =>
         config({
           marketplacesEnabled: {
             custom: {
               acme: defineAgent({
                 name: 'acme',
-                syncModePresets: {
+                syncBehaviorPresets: {
                   markdownSectionSync: {
                     options: {
                       agentsFile: 'ACME_AGENTS.override.md',
@@ -202,9 +202,9 @@ switch (exampleConfigMode) {
                     },
                   },
                 },
-                syncModeCustom: [
+                syncBehaviorCustom: [
                   {
-                    modeClass: syncModePresets.agentsMdSymlink.modeClass,
+                    behaviorClass: syncBehaviorPresets.agentsMdSymlink.behaviorClass,
                   },
                 ],
               }),

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { pathHelpers } from '../common/path-helpers.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
 import type { DefinedAgent } from './marketplaces-config.js';
-import { SyncModeBase, type SyncModeContext } from './sync-modes/sync-mode-base.js';
+import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behaviors/sync-behavior-base.js';
 
-class RecordingSyncMode extends SyncModeBase {
+class RecordingSyncBehavior extends SyncBehaviorBase {
   constructor(
     options?: unknown,
     private readonly calls: string[] = []
@@ -14,22 +14,22 @@ class RecordingSyncMode extends SyncModeBase {
   }
 
   override syncSetupBefore(): Result<void, Error> {
-    this.calls.push('syncMode.syncSetupBefore');
+    this.calls.push('syncBehavior.syncSetupBefore');
     return ok(undefined);
   }
 
   override syncRunEnabled(): Result<void, Error> {
-    this.calls.push('syncMode.syncRunEnabled');
+    this.calls.push('syncBehavior.syncRunEnabled');
     return ok(undefined);
   }
 
   override syncRunDisabled(): Result<void, Error> {
-    this.calls.push('syncMode.syncRunDisabled');
+    this.calls.push('syncBehavior.syncRunDisabled');
     return ok(undefined);
   }
 
   override clearRun(): Result<void, Error> {
-    this.calls.push('syncMode.clearRun');
+    this.calls.push('syncBehavior.clearRun');
     return ok(undefined);
   }
 }
@@ -42,31 +42,31 @@ class HookedAdapter extends AgentAdapterBase {
     super(agentConfig);
   }
 
-  override syncSetupBefore(_context: SyncModeContext): Result<void, Error> {
+  override syncSetupBefore(_context: SyncBehaviorContext): Result<void, Error> {
     this.calls.push('adapter.syncSetupBefore');
     return ok(undefined);
   }
 
-  override syncRunEnabled(_context: SyncModeContext): Result<void, Error> {
+  override syncRunEnabled(_context: SyncBehaviorContext): Result<void, Error> {
     this.calls.push('adapter.syncRunEnabled');
     return ok(undefined);
   }
 
-  override syncRunDisabled(_context: SyncModeContext): Result<void, Error> {
+  override syncRunDisabled(_context: SyncBehaviorContext): Result<void, Error> {
     this.calls.push('adapter.syncRunDisabled');
     return ok(undefined);
   }
 
-  override clearRunBefore(_context: SyncModeContext): Result<void, Error> {
+  override clearRunBefore(_context: SyncBehaviorContext): Result<void, Error> {
     this.calls.push('adapter.clearRunBefore');
     return ok(undefined);
   }
 }
 
 describe('AgentAdapterBase lifecycle orchestration', () => {
-  it('runs enabled sync hook chain and sync mode enabled hook', () => {
+  it('runs enabled sync hook chain and sync behavior enabled hook', () => {
     const calls: string[] = [];
-    class RecordingSyncModeClass extends RecordingSyncMode {
+    class RecordingSyncBehaviorClass extends RecordingSyncBehavior {
       constructor(options?: unknown) {
         super(options, calls);
       }
@@ -74,7 +74,7 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     const adapter = new HookedAdapter(
       {
         name: 'claude',
-        syncModes: [{ modeClass: RecordingSyncModeClass }],
+        syncBehaviors: [{ behaviorClass: RecordingSyncBehaviorClass }],
       },
       calls
     );
@@ -87,14 +87,14 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     expect(result.isOk()).toBe(true);
     expect(calls).toContain('adapter.syncSetupBefore');
     expect(calls).toContain('adapter.syncRunEnabled');
-    expect(calls).toContain('syncMode.syncSetupBefore');
-    expect(calls).toContain('syncMode.syncRunEnabled');
-    expect(calls).not.toContain('syncMode.syncRunDisabled');
+    expect(calls).toContain('syncBehavior.syncSetupBefore');
+    expect(calls).toContain('syncBehavior.syncRunEnabled');
+    expect(calls).not.toContain('syncBehavior.syncRunDisabled');
   });
 
-  it('runs disabled sync hook chain and sync mode disabled hook', () => {
+  it('runs disabled sync hook chain and sync behavior disabled hook', () => {
     const calls: string[] = [];
-    class RecordingSyncModeClass extends RecordingSyncMode {
+    class RecordingSyncBehaviorClass extends RecordingSyncBehavior {
       constructor(options?: unknown) {
         super(options, calls);
       }
@@ -102,7 +102,7 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     const adapter = new HookedAdapter(
       {
         name: 'claude',
-        syncModes: [{ modeClass: RecordingSyncModeClass }],
+        syncBehaviors: [{ behaviorClass: RecordingSyncBehaviorClass }],
       },
       calls
     );
@@ -114,13 +114,13 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     });
     expect(result.isOk()).toBe(true);
     expect(calls).toContain('adapter.syncRunDisabled');
-    expect(calls).toContain('syncMode.syncRunDisabled');
-    expect(calls).not.toContain('syncMode.syncRunEnabled');
+    expect(calls).toContain('syncBehavior.syncRunDisabled');
+    expect(calls).not.toContain('syncBehavior.syncRunEnabled');
   });
 
-  it('runs clear lifecycle hooks and sync mode clear hook', () => {
+  it('runs clear lifecycle hooks and sync behavior clear hook', () => {
     const calls: string[] = [];
-    class RecordingSyncModeClass extends RecordingSyncMode {
+    class RecordingSyncBehaviorClass extends RecordingSyncBehavior {
       constructor(options?: unknown) {
         super(options, calls);
       }
@@ -128,13 +128,13 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     const adapter = new HookedAdapter(
       {
         name: 'cursor',
-        syncModes: [{ modeClass: RecordingSyncModeClass }],
+        syncBehaviors: [{ behaviorClass: RecordingSyncBehaviorClass }],
       },
       calls
     );
     const result = adapter.clear(pathHelpers.repoRoot, null);
     expect(result.isOk()).toBe(true);
     expect(calls).toContain('adapter.clearRunBefore');
-    expect(calls).toContain('syncMode.clearRun');
+    expect(calls).toContain('syncBehavior.clearRun');
   });
 });

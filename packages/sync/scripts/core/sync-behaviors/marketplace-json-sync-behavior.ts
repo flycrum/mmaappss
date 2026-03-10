@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
 import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
-import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
+import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Marketplace plugin entry written into `marketplace.json`. */
 interface MarketplacePluginEntry {
@@ -15,7 +15,7 @@ interface MarketplacePluginEntry {
   version?: string;
 }
 
-/** Canonical marketplace JSON shape managed by this sync mode. */
+/** Canonical marketplace JSON shape managed by this sync behavior. */
 interface MarketplaceJson {
   name: string;
   owner: { name: string };
@@ -23,7 +23,7 @@ interface MarketplaceJson {
 }
 
 /** Options for syncing and tearing down marketplace JSON files. */
-export interface MarketplaceJsonSyncModeOptions {
+export interface MarketplaceJsonSyncBehaviorOptions {
   /** Manifest capability key used for plugin eligibility. Defaults to context.agentName when omitted. */
   manifestKey?: PluginManifestKey;
   /** Relative file path to the target marketplace json file. */
@@ -37,8 +37,8 @@ export interface MarketplaceJsonSyncModeOptions {
 const MARKETPLACE_OWNER = 'mmaappss';
 const DEFAULT_MARKETPLACE_NAME = 'mmaappss-plugins';
 
-export class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncModeOptions> {
-  constructor(options?: MarketplaceJsonSyncModeOptions) {
+export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJsonSyncBehaviorOptions> {
+  constructor(options?: MarketplaceJsonSyncBehaviorOptions) {
     super(options);
   }
 
@@ -130,7 +130,7 @@ export class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncMod
   }
 
   /** Writes or patches marketplace JSON with canonical managed fields. */
-  private syncMarketplaceJson(context: SyncModeContext): Result<void, Error> {
+  private syncMarketplaceJson(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
 
@@ -159,17 +159,17 @@ export class MarketplaceJsonSyncMode extends SyncModeBase<MarketplaceJsonSyncMod
   }
 
   /** Sync-phase enabled hook that writes marketplace json content. */
-  override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     return this.syncMarketplaceJson(context);
   }
 
   /** Sync-phase disabled hook that removes managed marketplace json content. */
-  override syncRunDisabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     return this.teardownMarketplaceJson(context.repoRoot);
   }
 
   /** Clear hook that removes managed marketplace json content. */
-  override clearRun(context: SyncModeContext): Result<void, Error> {
+  override clearRun(context: SyncBehaviorContext): Result<void, Error> {
     return this.teardownMarketplaceJson(context.repoRoot);
   }
 }

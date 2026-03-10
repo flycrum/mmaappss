@@ -4,7 +4,7 @@ import type { DefineAgentInput } from '../../marketplaces-config.js';
 export const claudeAgentPreset: DefineAgentInput<'claude'> = {
   envVar: 'MMAAPPSS_MARKETPLACE_CLAUDE',
   name: 'claude',
-  syncModePresets: {
+  syncBehaviorPresets: {
     agentsMdSymlink: {
       options: {
         sourceFile: 'AGENTS.md',

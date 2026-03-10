@@ -3,7 +3,7 @@
  */
 
 import { marketplacesConfig } from './packages/sync/scripts/core/marketplaces-config.js';
-import { LocalPluginsContentSyncMode } from './packages/sync/scripts/core/sync-modes/local-plugins-content-sync-mode.js';
+import { LocalPluginsContentSyncBehavior } from './packages/sync/scripts/core/sync-behaviors/local-plugins-content-sync-behavior.js';
 
 let mmaappssConfig: ReturnType<typeof marketplacesConfig.defineMarketplacesConfig>;
 
@@ -29,8 +29,8 @@ if (configMode === 'basic') {
           claude: defineAgent({
             ...agentPresets.claude,
             name: 'claude',
-            syncModePresets: {
-              ...agentPresets.claude.syncModePresets,
+            syncBehaviorPresets: {
+              ...agentPresets.claude.syncBehaviorPresets,
               // disable rules symlink for claude
               rulesSymlink: false,
             },
@@ -49,8 +49,8 @@ if (configMode === 'basic') {
           cursor: defineAgent({
             ...agentPresets.cursor,
             name: 'cursor',
-            syncModePresets: {
-              ...agentPresets.cursor.syncModePresets,
+            syncBehaviorPresets: {
+              ...agentPresets.cursor.syncBehaviorPresets,
               localPluginsContentSync: {
                 options: {
                   manifestPath: '.cursor/.mmaappss-cursor-sync.json',
@@ -91,11 +91,11 @@ if (configMode === 'basic') {
           codex: true,
           custom: {
             superagent: defineAgent(
-              ({ agentPresets: presets, syncModePresets: _syncModePresets }) => ({
+              ({ agentPresets: presets, syncBehaviorPresets: _syncBehaviorPresets }) => ({
                 ...presets.codex,
                 name: 'superagent',
-                syncModePresets: {
-                  ...presets.codex.syncModePresets,
+                syncBehaviorPresets: {
+                  ...presets.codex.syncBehaviorPresets,
                   localMarketplaceSync: {
                     options: {
                       manifestKey: 'claude',
@@ -105,9 +105,9 @@ if (configMode === 'basic') {
                     },
                   },
                 },
-                syncModeCustom: [
+                syncBehaviorCustom: [
                   {
-                    modeClass: LocalPluginsContentSyncMode,
+                    behaviorClass: LocalPluginsContentSyncBehavior,
                     options: {
                       manifestPath: '.superagent/.mmaappss-superagent-sync.json',
                       requiredManifestKey: 'claude',
@@ -130,7 +130,7 @@ if (configMode === 'basic') {
                     },
                   },
                   (helpers) => ({
-                    modeClass: helpers.syncModePresets.rulesSymlink.modeClass,
+                    behaviorClass: helpers.syncBehaviorPresets.rulesSymlink.behaviorClass,
                     options: {
                       rulesDir: '.superagent/rules-symlinked',
                       syncManifest: '.superagent/.mmaappss-superagent-rules.json',

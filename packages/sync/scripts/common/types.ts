@@ -19,7 +19,7 @@ export type Agent = PresetAgent | (string & {});
  * - Examples: `claude`, `cursor`, `codex`, or custom keys for new agents
  *
  * Why it matters:
- * - Sync modes use this key to decide which plugins are eligible for a given
+ * - Sync behaviors use this key to decide which plugins are eligible for a given
  *   agent run without hardcoding agent-specific branches.
  */
 export type PluginManifestKey = string & {};

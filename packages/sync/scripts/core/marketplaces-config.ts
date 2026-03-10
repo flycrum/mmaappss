@@ -2,15 +2,15 @@ import type { Exact } from 'type-fest';
 import type { PresetAgentName } from '../common/preset-agents.js';
 import { presetAgents } from '../common/preset-agents.js';
 import { agentPresets } from './presets/agent-presets.js';
-import { syncModePresets } from './presets/sync-mode-presets.js';
-import type { SyncModeClassRef, SyncModeDefinition } from './sync-modes/sync-mode-base.js';
+import { syncBehaviorPresets } from './presets/sync-behavior-presets.js';
+import type { SyncBehaviorClassRef, SyncBehaviorDefinition } from './sync-behaviors/sync-behavior-base.js';
 
-/** Preset sync-mode names available in `syncModePresets`. */
-export type SyncModePresetName = keyof typeof syncModePresets;
+/** Preset sync-behavior names available in `syncBehaviorPresets`. */
+export type SyncBehaviorPresetName = keyof typeof syncBehaviorPresets;
 
-/** Options type for a sync mode preset (from its modeClass constructor first parameter). */
-export type SyncModePresetOptions<K extends SyncModePresetName> = ConstructorParameters<
-  (typeof syncModePresets)[K]['modeClass']
+/** Options type for a sync behavior preset (from its behaviorClass constructor first parameter). */
+export type SyncBehaviorPresetOptions<K extends SyncBehaviorPresetName> = ConstructorParameters<
+  (typeof syncBehaviorPresets)[K]['behaviorClass']
 >[0];
 
 /** Fully resolved agent definition used at runtime by the adapter runner. */
@@ -19,55 +19,55 @@ export interface DefinedAgent<TName extends string = string> {
   envVar?: string;
   /** Runtime agent identifier. */
   name: TName;
-  /** Ordered sync mode definitions used to construct sync mode instances. */
-  syncModes: SyncModeDefinition[];
+  /** Ordered sync behavior definitions used to construct sync behavior instances. */
+  syncBehaviors: SyncBehaviorDefinition[];
   /**
-   * Modes to clear (tear down) at the start of sync when they were disabled in config.
-   * Used so toggling e.g. rulesSymlink to false removes that mode's artifacts on the next sync.
+   * Behaviors to clear (tear down) at the start of sync when they were disabled in config.
+   * Used so toggling e.g. rulesSymlink to false removes that behavior's artifacts on the next sync.
    */
-  syncModesToClear?: SyncModeDefinition[];
+  syncBehaviorsToClear?: SyncBehaviorDefinition[];
 }
 
-/** Helper shape passed to sync mode factory callbacks. */
-interface SyncModeHelpers {
-  /** Named sync mode presets that can be reused or extended in factories. */
-  syncModePresets: typeof syncModePresets;
+/** Helper shape passed to sync behavior factory callbacks. */
+interface SyncBehaviorHelpers {
+  /** Named sync behavior presets that can be reused or extended in factories. */
+  syncBehaviorPresets: typeof syncBehaviorPresets;
 }
 
-/** Factory callback that returns a sync mode definition, class ref, or disable signal. */
-type SyncModeFactory = (
-  helpers: SyncModeHelpers
-) => false | SyncModeClassRef | SyncModeDefinition | (SyncModeDefinition & { enabled?: boolean });
+/** Factory callback that returns a sync behavior definition, class ref, or disable signal. */
+type SyncBehaviorFactory = (
+  helpers: SyncBehaviorHelpers
+) => false | SyncBehaviorClassRef | SyncBehaviorDefinition | (SyncBehaviorDefinition & { enabled?: boolean });
 
-/** Accepted value types for one sync mode preset override entry. */
-type SyncModePresetValue =
+/** Accepted value types for one sync behavior preset override entry. */
+type SyncBehaviorPresetValue =
   | boolean
-  | SyncModeClassRef
-  | SyncModeDefinition
-  | (Partial<SyncModeDefinition> & { enabled?: boolean })
-  | SyncModeFactory;
+  | SyncBehaviorClassRef
+  | SyncBehaviorDefinition
+  | (Partial<SyncBehaviorDefinition> & { enabled?: boolean })
+  | SyncBehaviorFactory;
 
 /** Per-preset value type so config object literals get options inference (e.g. folderTransforms callbacks). */
-type SyncModePresetValueForKey<K extends SyncModePresetName> =
-  | SyncModeDefinition<SyncModePresetOptions<K>>
-  | (Partial<SyncModeDefinition<SyncModePresetOptions<K>>> & { enabled?: boolean })
+type SyncBehaviorPresetValueForKey<K extends SyncBehaviorPresetName> =
+  | SyncBehaviorDefinition<SyncBehaviorPresetOptions<K>>
+  | (Partial<SyncBehaviorDefinition<SyncBehaviorPresetOptions<K>>> & { enabled?: boolean })
   | boolean
-  | SyncModeClassRef
-  | SyncModeFactory;
+  | SyncBehaviorClassRef
+  | SyncBehaviorFactory;
 
-/** Union of all per-preset value types (for resolveSyncModeEntry when receiving config values). */
-type SyncModePresetValueFromConfig = {
-  [K in SyncModePresetName]: SyncModePresetValueForKey<K>;
-}[SyncModePresetName];
+/** Union of all per-preset value types (for resolveSyncBehaviorEntry when receiving config values). */
+type SyncBehaviorPresetValueFromConfig = {
+  [K in SyncBehaviorPresetName]: SyncBehaviorPresetValueForKey<K>;
+}[SyncBehaviorPresetName];
 
-/** Discriminated union for syncModeCustom entries so options (e.g. processPluginFolderOrFile) get inferred from modeClass. */
-type SyncModeCustomEntry = {
-  [K in SyncModePresetName]: {
-    modeClass: (typeof syncModePresets)[K]['modeClass'];
-    options?: SyncModePresetOptions<K>;
+/** Discriminated union for syncBehaviorCustom entries so options (e.g. processPluginFolderOrFile) get inferred from behaviorClass. */
+type SyncBehaviorCustomEntry = {
+  [K in SyncBehaviorPresetName]: {
+    behaviorClass: (typeof syncBehaviorPresets)[K]['behaviorClass'];
+    options?: SyncBehaviorPresetOptions<K>;
     enabled?: boolean;
   };
-}[SyncModePresetName];
+}[SyncBehaviorPresetName];
 
 /** Input accepted by `defineAgent` before the config is normalized. */
 export interface DefineAgentInput<TName extends string = string> {
@@ -75,10 +75,10 @@ export interface DefineAgentInput<TName extends string = string> {
   envVar?: string;
   /** Agent name for lookup, logs, and outcomes. */
   name: TName;
-  /** Additional custom sync modes appended after preset sync modes. */
-  syncModeCustom?: Array<SyncModeCustomEntry | SyncModeClassRef | SyncModeFactory>;
-  /** Optional per-preset sync-mode values for enable, replace, or partial override. */
-  syncModePresets?: Partial<{ [K in SyncModePresetName]: SyncModePresetValueForKey<K> }>;
+  /** Additional custom sync behaviors appended after preset sync behaviors. */
+  syncBehaviorCustom?: Array<SyncBehaviorCustomEntry | SyncBehaviorClassRef | SyncBehaviorFactory>;
+  /** Optional per-preset sync-behavior values for enable, replace, or partial override. */
+  syncBehaviorPresets?: Partial<{ [K in SyncBehaviorPresetName]: SyncBehaviorPresetValueForKey<K> }>;
 }
 
 /** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
@@ -91,8 +91,8 @@ export interface DefineAgentHelpers {
   defineAgent: <const TName extends string>(
     input: DefineAgentInput<TName> | ((helpers: DefineAgentHelpers) => DefineAgentInput<TName>)
   ) => DefinedAgent<TName>;
-  /** Built-in sync mode presets available for composition and override. */
-  syncModePresets: typeof syncModePresets;
+  /** Built-in sync behavior presets available for composition and override. */
+  syncBehaviorPresets: typeof syncBehaviorPresets;
 }
 
 /** Supported config input shape for each marketplacesEnabled agent entry. */
@@ -115,7 +115,7 @@ export interface MarketplacesEnabledConfig {
 
 /** Full mmaappss config shape used by `defineMarketplacesConfig`. */
 export interface MarketplacesConfig {
-  /** Excluded path patterns used by discovery and sync modes. */
+  /** Excluded path patterns used by discovery and sync behaviors. */
   excluded?: string[];
   /** Enables structured file logging when true. */
   loggingEnabled?: boolean;
@@ -133,8 +133,8 @@ export type ExactMarketplacesConfigInput<T extends MarketplacesConfig> = Exact<
   T
 >;
 
-/** Type guard for sync mode class references (not factory callbacks). */
-function isClassRef(value: unknown): value is SyncModeClassRef {
+/** Type guard for sync behavior class references (not factory callbacks). */
+function isClassRef(value: unknown): value is SyncBehaviorClassRef {
   return (
     typeof value === 'function' &&
     typeof (value as { prototype?: unknown }).prototype === 'object' &&
@@ -148,54 +148,54 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-/** Resolves one preset sync-mode entry into a normalized sync mode definition. */
-function resolveSyncModeEntry(
-  presetName: SyncModePresetName,
-  rawValue: SyncModePresetValue | SyncModePresetValueFromConfig,
-  helpers: SyncModeHelpers
-): SyncModeDefinition | null {
+/** Resolves one preset sync-behavior entry into a normalized sync behavior definition. */
+function resolveSyncBehaviorEntry(
+  presetName: SyncBehaviorPresetName,
+  rawValue: SyncBehaviorPresetValue | SyncBehaviorPresetValueFromConfig,
+  helpers: SyncBehaviorHelpers
+): SyncBehaviorDefinition | null {
   const value =
     typeof rawValue === 'function' && !isClassRef(rawValue) ? rawValue(helpers) : rawValue;
   if (value === false) return null;
   if (value === true) {
     return {
-      modeClass: helpers.syncModePresets[presetName].modeClass as unknown as SyncModeClassRef,
+      behaviorClass: helpers.syncBehaviorPresets[presetName].behaviorClass as unknown as SyncBehaviorClassRef,
     };
   }
-  if (isClassRef(value)) return { modeClass: value };
-  if (isObject(value) && 'modeClass' in value && isClassRef(value.modeClass)) {
+  if (isClassRef(value)) return { behaviorClass: value };
+  if (isObject(value) && 'behaviorClass' in value && isClassRef(value.behaviorClass)) {
     if (value.enabled === false) return null;
-    return value as unknown as SyncModeDefinition;
+    return value as unknown as SyncBehaviorDefinition;
   }
   if (isObject(value)) {
     if (value.enabled === false) return null;
     return {
       ...value,
-      modeClass: helpers.syncModePresets[presetName].modeClass as unknown as SyncModeClassRef,
-    } as unknown as SyncModeDefinition;
+      behaviorClass: helpers.syncBehaviorPresets[presetName].behaviorClass as unknown as SyncBehaviorClassRef,
+    } as unknown as SyncBehaviorDefinition;
   }
   return null;
 }
 
-/** Resolves one custom sync-mode entry into a normalized sync mode definition. */
-function resolveCustomSyncModeEntry(
-  rawValue: SyncModeCustomEntry | SyncModeClassRef | SyncModeDefinition | SyncModeFactory,
-  helpers: SyncModeHelpers
-): SyncModeDefinition | null {
+/** Resolves one custom sync-behavior entry into a normalized sync behavior definition. */
+function resolveCustomSyncBehaviorEntry(
+  rawValue: SyncBehaviorCustomEntry | SyncBehaviorClassRef | SyncBehaviorDefinition | SyncBehaviorFactory,
+  helpers: SyncBehaviorHelpers
+): SyncBehaviorDefinition | null {
   const value =
     typeof rawValue === 'function' && !isClassRef(rawValue) ? rawValue(helpers) : rawValue;
   if (value === false) return null;
-  if (isClassRef(value)) return { modeClass: value };
-  if (isObject(value) && 'modeClass' in value && isClassRef(value.modeClass)) {
+  if (isClassRef(value)) return { behaviorClass: value };
+  if (isObject(value) && 'behaviorClass' in value && isClassRef(value.behaviorClass)) {
     if (value.enabled === false) return null;
-    return value as unknown as SyncModeDefinition;
+    return value as unknown as SyncBehaviorDefinition;
   }
   return null;
 }
 
 /** Type guard for already-resolved agent definitions. */
 function isDefinedAgent(value: unknown): value is DefinedAgent {
-  return isObject(value) && typeof value.name === 'string' && Array.isArray(value.syncModes);
+  return isObject(value) && typeof value.name === 'string' && Array.isArray(value.syncBehaviors);
 }
 
 /**
@@ -214,51 +214,51 @@ function buildHelpers(): DefineAgentHelpers {
     agentPresets,
     config: exactMarketplacesConfig,
     defineAgent: marketplacesConfig.defineAgent,
-    syncModePresets,
+    syncBehaviorPresets,
   };
 }
 
 /** Config factory and resolver APIs for marketplaces and agent definitions. */
 export const marketplacesConfig = {
-  /** Defines one agent with preset and custom sync mode composition. */
+  /** Defines one agent with preset and custom sync behavior composition. */
   defineAgent<const TName extends string>(
     input: DefineAgentInput<TName> | ((helpers: DefineAgentHelpers) => DefineAgentInput<TName>)
   ): DefinedAgent<TName> {
     const helpers = buildHelpers();
     const resolvedInput = typeof input === 'function' ? input(helpers) : input;
-    const syncModes: SyncModeDefinition[] = [];
+    const syncBehaviors: SyncBehaviorDefinition[] = [];
 
-    const presetConfig = resolvedInput.syncModePresets ?? {};
-    const syncModeHelpers: SyncModeHelpers = { syncModePresets };
-    const syncModesToClear: SyncModeDefinition[] = [];
+    const presetConfig = resolvedInput.syncBehaviorPresets ?? {};
+    const syncBehaviorHelpers: SyncBehaviorHelpers = { syncBehaviorPresets };
+    const syncBehaviorsToClear: SyncBehaviorDefinition[] = [];
 
-    for (const presetName of Object.keys(presetConfig) as SyncModePresetName[]) {
+    for (const presetName of Object.keys(presetConfig) as SyncBehaviorPresetName[]) {
       const presetValue = presetConfig[presetName];
       if (presetValue === undefined) continue;
       if (presetValue === false) {
-        // Only preset agents support default clearing; custom agents have no presetEntry so syncModesToClear is not populated for them.
+        // Only preset agents support default clearing; custom agents have no presetEntry so syncBehaviorsToClear is not populated for them.
         const presetAgent = agentPresets[resolvedInput.name as PresetAgentName];
-        const presetEntry = presetAgent?.syncModePresets?.[presetName];
+        const presetEntry = presetAgent?.syncBehaviorPresets?.[presetName];
         if (presetEntry !== undefined && presetEntry !== false) {
-          const cleared = resolveSyncModeEntry(presetName, presetEntry, syncModeHelpers);
-          if (cleared) syncModesToClear.push(cleared);
+          const cleared = resolveSyncBehaviorEntry(presetName, presetEntry, syncBehaviorHelpers);
+          if (cleared) syncBehaviorsToClear.push(cleared);
         }
         continue;
       }
-      const resolved = resolveSyncModeEntry(presetName, presetValue, syncModeHelpers);
-      if (resolved) syncModes.push(resolved);
+      const resolved = resolveSyncBehaviorEntry(presetName, presetValue, syncBehaviorHelpers);
+      if (resolved) syncBehaviors.push(resolved);
     }
 
-    for (const customSyncMode of resolvedInput.syncModeCustom ?? []) {
-      const resolved = resolveCustomSyncModeEntry(customSyncMode, syncModeHelpers);
-      if (resolved) syncModes.push(resolved);
+    for (const customSyncBehavior of resolvedInput.syncBehaviorCustom ?? []) {
+      const resolved = resolveCustomSyncBehaviorEntry(customSyncBehavior, syncBehaviorHelpers);
+      if (resolved) syncBehaviors.push(resolved);
     }
 
     return {
       envVar: resolvedInput.envVar,
       name: resolvedInput.name,
-      syncModes,
-      ...(syncModesToClear.length > 0 ? { syncModesToClear } : {}),
+      syncBehaviors,
+      ...(syncBehaviorsToClear.length > 0 ? { syncBehaviorsToClear } : {}),
     };
   },
 

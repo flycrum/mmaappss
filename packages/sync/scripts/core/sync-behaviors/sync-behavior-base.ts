@@ -6,8 +6,8 @@ import type {
   PluginManifestKey,
 } from '../../common/types.js';
 
-/** Shared runtime context passed to every sync mode hook invocation. */
-export interface SyncModeContext {
+/** Shared runtime context passed to every sync behavior hook invocation. */
+export interface SyncBehaviorContext {
   /** Resolved agent configuration currently being executed. */
   agentConfig: {
     name: string;
@@ -20,33 +20,33 @@ export interface SyncModeContext {
   marketplaces: DiscoveredMarketplace[];
   /** Repository root absolute path. */
   repoRoot: string;
-  /** Mutable state bag shared across adapter and sync modes during one adapter lifetime. */
+  /** Mutable state bag shared across adapter and sync behaviors during one adapter lifetime. */
   sharedState: Map<string, unknown>;
   /** Loaded mmaappss config object when present. */
   tsConfig: MmaappssConfig | null;
 }
 
-/** Constructor signature for sync mode classes instantiated by the adapter runtime. */
-export interface SyncModeClassRef<TOptions = unknown> {
-  new (options: TOptions | undefined, ...args: unknown[]): SyncModeBase<TOptions>;
+/** Constructor signature for sync behavior classes instantiated by the adapter runtime. */
+export interface SyncBehaviorClassRef<TOptions = unknown> {
+  new (options: TOptions | undefined, ...args: unknown[]): SyncBehaviorBase<TOptions>;
 }
 
-/** Normalized sync mode definition that binds a class to optional options and enabled flag. */
-export interface SyncModeDefinition<TOptions = unknown> {
-  /** Disables this mode definition when explicitly set to `false`. */
+/** Normalized sync behavior definition that binds a class to optional options and enabled flag. */
+export interface SyncBehaviorDefinition<TOptions = unknown> {
+  /** Disables this behavior definition when explicitly set to `false`. */
   enabled?: boolean;
-  /** Mode class constructor invoked by the adapter runtime. */
-  modeClass: SyncModeClassRef<TOptions>;
-  /** Optional mode-specific options passed to the mode constructor. */
+  /** Behavior class constructor invoked by the adapter runtime. */
+  behaviorClass: SyncBehaviorClassRef<TOptions>;
+  /** Optional behavior-specific options passed to the behavior constructor. */
   options?: TOptions;
 }
 
-/** Base class for sync modes with no-op lifecycle hooks that subclasses can override. */
-export abstract class SyncModeBase<TOptions = unknown> {
-  /** Mode options passed from config; undefined when no options were provided. */
+/** Base class for sync behaviors with no-op lifecycle hooks that subclasses can override. */
+export abstract class SyncBehaviorBase<TOptions = unknown> {
+  /** Behavior options passed from config; undefined when no options were provided. */
   protected readonly options: TOptions | undefined;
 
-  /** Creates a sync mode instance with optional mode options. */
+  /** Creates a sync behavior instance with optional behavior options. */
   constructor(options?: TOptions) {
     this.options = options;
   }
@@ -58,77 +58,77 @@ export abstract class SyncModeBase<TOptions = unknown> {
   }
 
   /** Hook before sync setup begins. */
-  syncSetupBefore(_context: SyncModeContext): Result<void, Error> {
+  syncSetupBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after sync setup completes. */
-  syncSetupAfter(_context: SyncModeContext): Result<void, Error> {
+  syncSetupAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before sync run phase starts. */
-  syncRunBefore(_context: SyncModeContext): Result<void, Error> {
+  syncRunBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook for enabled sync run behavior. */
-  syncRunEnabled(_context: SyncModeContext): Result<void, Error> {
+  syncRunEnabled(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook for disabled sync run behavior. */
-  syncRunDisabled(_context: SyncModeContext): Result<void, Error> {
+  syncRunDisabled(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after sync run phase completes. */
-  syncRunAfter(_context: SyncModeContext): Result<void, Error> {
+  syncRunAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before sync teardown begins. */
-  syncTeardownBefore(_context: SyncModeContext): Result<void, Error> {
+  syncTeardownBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after sync teardown completes. */
-  syncTeardownAfter(_context: SyncModeContext): Result<void, Error> {
+  syncTeardownAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before clear setup begins. */
-  clearSetupBefore(_context: SyncModeContext): Result<void, Error> {
+  clearSetupBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after clear setup completes. */
-  clearSetupAfter(_context: SyncModeContext): Result<void, Error> {
+  clearSetupAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before clear run phase starts. */
-  clearRunBefore(_context: SyncModeContext): Result<void, Error> {
+  clearRunBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook for clear run behavior. */
-  clearRun(_context: SyncModeContext): Result<void, Error> {
+  clearRun(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after clear run phase completes. */
-  clearRunAfter(_context: SyncModeContext): Result<void, Error> {
+  clearRunAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before clear teardown begins. */
-  clearTeardownBefore(_context: SyncModeContext): Result<void, Error> {
+  clearTeardownBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after clear teardown completes. */
-  clearTeardownAfter(_context: SyncModeContext): Result<void, Error> {
+  clearTeardownAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 }

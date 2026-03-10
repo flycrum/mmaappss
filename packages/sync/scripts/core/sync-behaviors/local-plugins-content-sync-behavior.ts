@@ -3,7 +3,7 @@ import path from 'node:path';
 import { isExcluded } from '../../common/excluded-patterns.js';
 import { syncFs } from '../../common/sync-fs.js';
 import type { PluginManifestKey } from '../../common/types.js';
-import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
+import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Rich metadata about one plugin top-level entry offered to transform callbacks. */
 export interface LocalPluginContent {
@@ -23,7 +23,7 @@ export interface LocalPluginContent {
   pluginName: string;
   /** Plugin path relative to repo root. */
   relativePluginPath: string;
-  /** Default target path derived by the sync mode before overrides. */
+  /** Default target path derived by the sync behavior before overrides. */
   targetPath: string;
   /** Original top-level entry name. */
   topLevelEntryName: string;
@@ -59,17 +59,17 @@ export interface FolderSelectionConfig {
   mode: 'blacklist' | 'whitelist';
 }
 
-/** Optional custom sync/clear handler; when set, the mode delegates to it instead of generic logic. */
+/** Optional custom sync/clear handler; when set, the behavior delegates to it instead of generic logic. */
 export interface LocalPluginsContentSyncCustomHandler {
-  clear(context: SyncModeContext): Result<void, Error>;
-  sync(context: SyncModeContext): Result<void, Error>;
+  clear(context: SyncBehaviorContext): Result<void, Error>;
+  sync(context: SyncBehaviorContext): Result<void, Error>;
 }
 
-/** Options for generic or custom-handler local plugins content sync mode. */
-export interface LocalPluginsContentSyncModeOptions {
+/** Options for generic or custom-handler local plugins content sync behavior. */
+export interface LocalPluginsContentSyncBehaviorOptions {
   /** Optional custom handler; when set, sync/clear delegate to it instead of built-in generic logic. */
   customHandler?: LocalPluginsContentSyncCustomHandler;
-  /** Optional excluded patterns overriding config-level `excluded` for this mode. */
+  /** Optional excluded patterns overriding config-level `excluded` for this behavior. */
   excluded?: string[];
   /** Optional whitelist/blacklist control over top-level plugin entries. */
   folderSelection?: FolderSelectionConfig;
@@ -92,7 +92,7 @@ interface GenericManifestShape {
 
 /** Returns whether a discovered plugin satisfies the required manifest filter. */
 function hasRequiredManifest(
-  requiredManifestKey: LocalPluginsContentSyncModeOptions['requiredManifestKey'],
+  requiredManifestKey: LocalPluginsContentSyncBehaviorOptions['requiredManifestKey'],
   plugin: { manifests: Record<string, boolean> }
 ): boolean {
   if (!requiredManifestKey || requiredManifestKey === 'none') return true;
@@ -109,13 +109,13 @@ function isIncludedFolder(
   return folderSelection.mode === 'whitelist' ? selected : !selected;
 }
 
-export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsContentSyncModeOptions> {
-  constructor(options?: LocalPluginsContentSyncModeOptions) {
+export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPluginsContentSyncBehaviorOptions> {
+  constructor(options?: LocalPluginsContentSyncBehaviorOptions) {
     super(options);
   }
 
   /** Clears generic strategy outputs from manifest and removes manifest file. */
-  private clearGeneric(context: SyncModeContext): Result<void, Error> {
+  private clearGeneric(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     const manifestPath = path.join(context.repoRoot, options.manifestPath);
@@ -132,7 +132,7 @@ export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsConten
   }
 
   /** Syncs plugin entries for generic strategy with optional transforms and overrides. */
-  private syncGeneric(context: SyncModeContext): Result<void, Error> {
+  private syncGeneric(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     const created: string[] = [];
@@ -210,7 +210,7 @@ export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsConten
   }
 
   /** Sync-phase enabled hook: custom handler or generic sync. */
-  override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     if (options.customHandler) return options.customHandler.sync(context);
@@ -220,7 +220,7 @@ export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsConten
   }
 
   /** Sync-phase disabled hook: custom handler or generic clear. */
-  override syncRunDisabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     if (options.customHandler) return options.customHandler.clear(context);
@@ -228,7 +228,7 @@ export class LocalPluginsContentSyncMode extends SyncModeBase<LocalPluginsConten
   }
 
   /** Clear hook that delegates to disabled behavior. */
-  override clearRun(context: SyncModeContext): Result<void, Error> {
+  override clearRun(context: SyncBehaviorContext): Result<void, Error> {
     return this.syncRunDisabled(context);
   }
 }

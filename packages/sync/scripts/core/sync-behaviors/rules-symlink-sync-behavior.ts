@@ -1,23 +1,23 @@
 import { ok, Result } from 'neverthrow';
 import path from 'node:path';
 import { rulesSync } from '../../common/rules-sync.js';
-import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
+import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Options for symlinking rules and tracking their manifest file. */
-export interface RulesSymlinkSyncModeOptions {
+export interface RulesSymlinkSyncBehaviorOptions {
   /** Target rules directory where plugin rules are linked. */
   rulesDir: string;
   /** Manifest file storing created link paths for teardown. */
   syncManifest: string;
 }
 
-export class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptions> {
-  constructor(options?: RulesSymlinkSyncModeOptions) {
+export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncBehaviorOptions> {
+  constructor(options?: RulesSymlinkSyncBehaviorOptions) {
     super(options);
   }
 
-  /** Clears all previously managed rules links for this mode. */
-  private clearRules(context: SyncModeContext): Result<void, Error> {
+  /** Clears all previously managed rules links for this behavior. */
+  private clearRules(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     return rulesSync.clearRules(
@@ -28,7 +28,7 @@ export class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptio
   }
 
   /** Sync-phase enabled hook that recreates and records rules symlinks. */
-  override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     const clearResult = this.clearRules(context);
@@ -44,12 +44,12 @@ export class RulesSymlinkSyncMode extends SyncModeBase<RulesSymlinkSyncModeOptio
   }
 
   /** Sync-phase disabled hook that tears down rules symlinks. */
-  override syncRunDisabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     return this.clearRules(context);
   }
 
   /** Clear hook that tears down rules symlinks. */
-  override clearRun(context: SyncModeContext): Result<void, Error> {
+  override clearRun(context: SyncBehaviorContext): Result<void, Error> {
     return this.clearRules(context);
   }
 }

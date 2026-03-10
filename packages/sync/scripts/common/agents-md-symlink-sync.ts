@@ -19,7 +19,7 @@ export interface AgentsMdSymlinkManifest {
   paths: string[];
 }
 
-/** Options for generic agents-md symlink sync (supplied by sync mode / agent preset). */
+/** Options for generic agents-md symlink sync (supplied by sync behavior / agent preset). */
 export interface AgentsMdSymlinkOptions {
   /** Source file name to symlink from (e.g. AGENTS.md). */
   sourceFile: string;

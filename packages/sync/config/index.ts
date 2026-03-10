@@ -4,4 +4,4 @@
  */
 
 export { marketplacesConfig } from '../scripts/core/marketplaces-config.js';
-export { LocalPluginsContentSyncMode } from '../scripts/core/sync-modes/local-plugins-content-sync-mode.js';
+export { LocalPluginsContentSyncBehavior } from '../scripts/core/sync-behaviors/local-plugins-content-sync-behavior.js';

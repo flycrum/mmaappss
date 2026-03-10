@@ -8,7 +8,7 @@ const CURSOR_MANIFEST_PATH = '.cursor/.mmaappss-cursor-sync.json';
 export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
   envVar: 'MMAAPPSS_MARKETPLACE_CURSOR',
   name: 'cursor',
-  syncModePresets: {
+  syncBehaviorPresets: {
     localPluginsContentSync: {
       options: {
         customHandler: {

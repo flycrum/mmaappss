@@ -6,31 +6,31 @@ import { getLogger } from '../common/logger.js';
 import type { SyncOutcome } from '../common/types.js';
 import type { DefinedAgent } from './marketplaces-config.js';
 import {
-  SyncModeBase,
-  type SyncModeContext,
-  type SyncModeDefinition,
-} from './sync-modes/sync-mode-base.js';
+  SyncBehaviorBase,
+  type SyncBehaviorContext,
+  type SyncBehaviorDefinition,
+} from './sync-behaviors/sync-behavior-base.js';
 
-/** Fluent, fail-fast Result pipeline for adapter and mode lifecycle steps. */
+/** Fluent, fail-fast Result pipeline for adapter and behavior lifecycle steps. */
 class LifecycleChain {
   /** Accumulated lifecycle result that short-circuits on first error. */
   private current: Result<void, Error> = ok(undefined);
   /** Adapter instance whose lifecycle hooks are executed by adapter callbacks. */
   private readonly adapter: AgentAdapterBase;
-  /** Sync mode instances executed sequentially for each sync-mode step. */
-  private readonly syncModeInstances: SyncModeBase[];
+  /** Sync behavior instances executed sequentially for each sync-behavior step. */
+  private readonly syncBehaviorInstances: SyncBehaviorBase[];
 
-  private constructor(adapter: AgentAdapterBase, syncModeInstances: SyncModeBase[]) {
+  private constructor(adapter: AgentAdapterBase, syncBehaviorInstances: SyncBehaviorBase[]) {
     this.adapter = adapter;
-    this.syncModeInstances = syncModeInstances;
+    this.syncBehaviorInstances = syncBehaviorInstances;
   }
 
-  /** Creates a new lifecycle chain bound to an adapter and sync mode instances. */
-  static start(adapter: AgentAdapterBase, syncModeInstances: SyncModeBase[]): LifecycleChain {
-    return new LifecycleChain(adapter, syncModeInstances);
+  /** Creates a new lifecycle chain bound to an adapter and sync behavior instances. */
+  static start(adapter: AgentAdapterBase, syncBehaviorInstances: SyncBehaviorBase[]): LifecycleChain {
+    return new LifecycleChain(adapter, syncBehaviorInstances);
   }
 
-  /** Runs one adapter-level hook by passing the adapter instance to the callback (for api consistency with `runSyncModeHook`). */
+  /** Runs one adapter-level hook by passing the adapter instance to the callback (for api consistency with `runSyncBehaviorHook`). */
   runAdapterHook(
     stepForAdapter: (adapter: AgentAdapterBase) => Result<void, Error>
   ): LifecycleChain {
@@ -38,13 +38,13 @@ class LifecycleChain {
     return this;
   }
 
-  /** Runs one sync-mode step once per sync mode instance in order. */
-  runSyncModeHook(
-    stepForSyncMode: (syncMode: SyncModeBase) => Result<void, Error>
+  /** Runs one sync-behavior step once per sync behavior instance in order. */
+  runSyncBehaviorHook(
+    stepForSyncBehavior: (syncBehavior: SyncBehaviorBase) => Result<void, Error>
   ): LifecycleChain {
     this.current = this.current.andThen(() =>
-      this.syncModeInstances.reduce(
-        (result, syncMode) => result.andThen(() => stepForSyncMode(syncMode)),
+      this.syncBehaviorInstances.reduce(
+        (result, syncBehavior) => result.andThen(() => stepForSyncBehavior(syncBehavior)),
         ok(undefined) as Result<void, Error>
       )
     );
@@ -61,96 +61,96 @@ class LifecycleChain {
 export class AgentAdapterBase {
   /** Static agent definition resolved from marketplace configuration. */
   protected readonly agentConfig: DefinedAgent;
-  /** Enabled sync mode instances for this adapter run. */
-  private readonly syncModeInstances: SyncModeBase[];
-  /** Instances for modes that are disabled in config; we run their clearRun at start of sync to tear down artifacts. */
-  private readonly syncModesToClearInstances: SyncModeBase[];
-  /** Mutable state shared across adapter and mode lifecycle steps. */
+  /** Enabled sync behavior instances for this adapter run. */
+  private readonly syncBehaviorInstances: SyncBehaviorBase[];
+  /** Instances for behaviors that are disabled in config; we run their clearRun at start of sync to tear down artifacts. */
+  private readonly syncBehaviorsToClearInstances: SyncBehaviorBase[];
+  /** Mutable state shared across adapter and behavior lifecycle steps. */
   private readonly sharedState: Map<string, unknown>;
 
   /** Creates one adapter instance for a resolved agent configuration. */
   constructor(agentConfig: DefinedAgent) {
     this.agentConfig = agentConfig;
-    this.syncModeInstances = agentConfig.syncModes
-      .filter((syncMode) => syncMode.enabled !== false)
-      .map((syncMode: SyncModeDefinition) => new syncMode.modeClass(syncMode.options));
-    this.syncModesToClearInstances = (agentConfig.syncModesToClear ?? []).map(
-      (def: SyncModeDefinition) => new def.modeClass(def.options)
+    this.syncBehaviorInstances = agentConfig.syncBehaviors
+      .filter((syncBehavior) => syncBehavior.enabled !== false)
+      .map((syncBehavior: SyncBehaviorDefinition) => new syncBehavior.behaviorClass(syncBehavior.options));
+    this.syncBehaviorsToClearInstances = (agentConfig.syncBehaviorsToClear ?? []).map(
+      (def: SyncBehaviorDefinition) => new def.behaviorClass(def.options)
     );
     this.sharedState = new Map<string, unknown>();
   }
 
-  /** Hook before mode sync setup begins. */
-  syncSetupBefore(_context: SyncModeContext): Result<void, Error> {
+  /** Hook before behavior sync setup begins. */
+  syncSetupBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook after all mode sync setup steps complete. */
-  syncSetupAfter(_context: SyncModeContext): Result<void, Error> {
+  /** Hook after all behavior sync setup steps complete. */
+  syncSetupAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before sync run steps begin. */
-  syncRunBefore(_context: SyncModeContext): Result<void, Error> {
+  syncRunBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook when sync is enabled for this agent. */
-  syncRunEnabled(_context: SyncModeContext): Result<void, Error> {
+  syncRunEnabled(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook when sync is disabled for this agent. */
-  syncRunDisabled(_context: SyncModeContext): Result<void, Error> {
+  syncRunDisabled(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after sync run steps complete. */
-  syncRunAfter(_context: SyncModeContext): Result<void, Error> {
+  syncRunAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook before sync teardown mode steps begin. */
-  syncTeardownBefore(_context: SyncModeContext): Result<void, Error> {
+  /** Hook before sync teardown behavior steps begin. */
+  syncTeardownBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook after sync teardown mode steps complete. */
-  syncTeardownAfter(_context: SyncModeContext): Result<void, Error> {
+  /** Hook after sync teardown behavior steps complete. */
+  syncTeardownAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook before mode clear setup begins. */
-  clearSetupBefore(_context: SyncModeContext): Result<void, Error> {
+  /** Hook before behavior clear setup begins. */
+  clearSetupBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook after all mode clear setup steps complete. */
-  clearSetupAfter(_context: SyncModeContext): Result<void, Error> {
+  /** Hook after all behavior clear setup steps complete. */
+  clearSetupAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook before clear run steps begin. */
-  clearRunBefore(_context: SyncModeContext): Result<void, Error> {
+  clearRunBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
   /** Hook after clear run steps complete. */
-  clearRunAfter(_context: SyncModeContext): Result<void, Error> {
+  clearRunAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook before clear teardown mode steps begin. */
-  clearTeardownBefore(_context: SyncModeContext): Result<void, Error> {
+  /** Hook before clear teardown behavior steps begin. */
+  clearTeardownBefore(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Hook after clear teardown mode steps complete. */
-  clearTeardownAfter(_context: SyncModeContext): Result<void, Error> {
+  /** Hook after clear teardown behavior steps complete. */
+  clearTeardownAfter(_context: SyncBehaviorContext): Result<void, Error> {
     return ok(undefined);
   }
 
-  /** Executes the full sync lifecycle for this adapter and its modes. */
+  /** Executes the full sync lifecycle for this adapter and its behaviors. */
   run(repoRoot: string, tsConfig: MmaappssConfig | null): Result<SyncOutcome, Error> {
     const enabled = configHelpers.general.getMarketplaceEnabled(
       repoRoot,
@@ -158,7 +158,7 @@ export class AgentAdapterBase {
       this.agentConfig
     );
     const marketplaces = enabled ? discoverMarketplaces(repoRoot, tsConfig) : [];
-    const context: SyncModeContext = {
+    const context: SyncBehaviorContext = {
       agentConfig: this.agentConfig,
       agentName: this.agentConfig.name,
       enabled,
@@ -169,36 +169,36 @@ export class AgentAdapterBase {
     };
     getLogger().info({ agent: this.agentConfig.name, enabled }, 'adapter lifecycle run');
 
-    if (enabled && this.syncModesToClearInstances.length > 0) {
-      const clearContext: SyncModeContext = {
+    if (enabled && this.syncBehaviorsToClearInstances.length > 0) {
+      const clearContext: SyncBehaviorContext = {
         ...context,
         enabled: false,
         marketplaces: [],
       };
-      for (const mode of this.syncModesToClearInstances) {
-        const clearResult = mode.clearRun(clearContext);
+      for (const behavior of this.syncBehaviorsToClearInstances) {
+        const clearResult = behavior.clearRun(clearContext);
         if (clearResult.isErr()) return err(clearResult.error);
       }
     }
 
-    const syncResult = LifecycleChain.start(this, this.syncModeInstances)
+    const syncResult = LifecycleChain.start(this, this.syncBehaviorInstances)
       .runAdapterHook((adapter) => adapter.syncSetupBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.syncSetupBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.syncSetupAfter(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncSetupBefore(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncSetupAfter(context))
       .runAdapterHook((adapter) => adapter.syncSetupAfter(context))
       .runAdapterHook((adapter) => adapter.syncRunBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.syncRunBefore(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncRunBefore(context))
       .runAdapterHook((adapter) =>
         enabled ? adapter.syncRunEnabled(context) : adapter.syncRunDisabled(context)
       )
-      .runSyncModeHook((syncMode) =>
-        enabled ? syncMode.syncRunEnabled(context) : syncMode.syncRunDisabled(context)
+      .runSyncBehaviorHook((syncBehavior) =>
+        enabled ? syncBehavior.syncRunEnabled(context) : syncBehavior.syncRunDisabled(context)
       )
-      .runSyncModeHook((syncMode) => syncMode.syncRunAfter(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncRunAfter(context))
       .runAdapterHook((adapter) => adapter.syncRunAfter(context))
       .runAdapterHook((adapter) => adapter.syncTeardownBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.syncTeardownBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.syncTeardownAfter(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncTeardownBefore(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.syncTeardownAfter(context))
       .runAdapterHook((adapter) => adapter.syncTeardownAfter(context))
       .toResult();
 
@@ -206,9 +206,9 @@ export class AgentAdapterBase {
     return ok({ agent: this.agentConfig.name, success: true });
   }
 
-  /** Executes the full clear lifecycle for this adapter and its modes. */
+  /** Executes the full clear lifecycle for this adapter and its behaviors. */
   clear(repoRoot: string, tsConfig: MmaappssConfig | null): Result<SyncOutcome, Error> {
-    const context: SyncModeContext = {
+    const context: SyncBehaviorContext = {
       agentConfig: this.agentConfig,
       agentName: this.agentConfig.name,
       enabled: false,
@@ -218,19 +218,19 @@ export class AgentAdapterBase {
       tsConfig,
     };
 
-    const clearResult = LifecycleChain.start(this, this.syncModeInstances)
+    const clearResult = LifecycleChain.start(this, this.syncBehaviorInstances)
       .runAdapterHook((adapter) => adapter.clearSetupBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.clearSetupBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.clearSetupAfter(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearSetupBefore(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearSetupAfter(context))
       .runAdapterHook((adapter) => adapter.clearSetupAfter(context))
       .runAdapterHook((adapter) => adapter.clearRunBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.clearRunBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.clearRun(context))
-      .runSyncModeHook((syncMode) => syncMode.clearRunAfter(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearRunBefore(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearRun(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearRunAfter(context))
       .runAdapterHook((adapter) => adapter.clearRunAfter(context))
       .runAdapterHook((adapter) => adapter.clearTeardownBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.clearTeardownBefore(context))
-      .runSyncModeHook((syncMode) => syncMode.clearTeardownAfter(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearTeardownBefore(context))
+      .runSyncBehaviorHook((syncBehavior) => syncBehavior.clearTeardownAfter(context))
       .runAdapterHook((adapter) => adapter.clearTeardownAfter(context))
       .toResult();
 

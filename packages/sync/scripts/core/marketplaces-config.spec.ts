@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { marketplacesConfig } from './marketplaces-config.js';
 
 describe('marketplacesConfig', () => {
-  it('defineAgent resolves preset and custom sync modes', () => {
-    const agent = marketplacesConfig.defineAgent(({ syncModePresets }) => ({
+  it('defineAgent resolves preset and custom sync behaviors', () => {
+    const agent = marketplacesConfig.defineAgent(({ syncBehaviorPresets }) => ({
       name: 'cursor',
-      syncModePresets: {
+      syncBehaviorPresets: {
         localPluginsContentSync: true,
       },
-      syncModeCustom: [
+      syncBehaviorCustom: [
         {
-          modeClass: syncModePresets.rulesSymlink.modeClass,
+          behaviorClass: syncBehaviorPresets.rulesSymlink.behaviorClass,
           options: {
             rulesDir: '.cursor/rules',
             syncManifest: '.cursor/.manifest.json',
@@ -19,7 +19,7 @@ describe('marketplacesConfig', () => {
       ],
     }));
 
-    expect(agent.syncModes.length).toBe(2);
+    expect(agent.syncBehaviors.length).toBe(2);
   });
 
   it('resolveEnabledAgents supports custom agent records', () => {
@@ -29,7 +29,7 @@ describe('marketplacesConfig', () => {
           custom: {
             acme: defineAgent({
               name: 'acme',
-              syncModePresets: {
+              syncBehaviorPresets: {
                 markdownSectionSync: {
                   options: {
                     agentsFile: 'AGENTS.override.md',

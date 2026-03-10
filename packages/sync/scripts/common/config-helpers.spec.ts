@@ -94,7 +94,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
           marketplacesEnabled: {
             claude: {
               name: 'claude',
-              syncModePresets: {},
+              syncBehaviorPresets: {},
             },
           },
         },
@@ -112,7 +112,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
             custom: {
               acme: {
                 name: 'acme',
-                syncModePresets: {},
+                syncBehaviorPresets: {},
               },
             },
           },
@@ -191,7 +191,7 @@ describe('configHelpers.general.getPostMergeSyncMarketplaces', () => {
       configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
         marketplacesEnabled: {
           custom: {
-            acme: { name: 'acme', syncModePresets: {} },
+            acme: { name: 'acme', syncBehaviorPresets: {} },
           },
         },
         postMergeSyncMarketplaces: ['claude', 'acme'],

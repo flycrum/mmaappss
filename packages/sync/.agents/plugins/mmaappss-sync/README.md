@@ -68,11 +68,11 @@ flowchart TB
   end
   subgraph lifecycle [Sync lifecycle]
     SetupBefore["syncSetupBefore"]
-    RunEnabled["syncRunEnabled: each sync mode"]
+    RunEnabled["syncRunEnabled: each sync behavior"]
     Teardown["syncTeardownBefore/After"]
   end
   subgraph clearLifecycle [Clear lifecycle]
-    ClearRun["clearRun: each sync mode"]
+    ClearRun["clearRun: each sync behavior"]
   end
   subgraph out [Output]
     OutFiles[".claude-plugin/marketplace.json, .claude/rules, .claude/settings.json, CLAUDE.md"]
@@ -92,8 +92,8 @@ flowchart TB
   ClearRun --> OutFiles
 ```
 
-- **Sync:** Config is loaded, enabled agents resolved, then for each requested agent an `AgentAdapterBase` is created and `adapter.run()` runs the sync lifecycle (setup → syncRunEnabled for each mode → teardown). Sync modes (e.g. rulesSymlink, localMarketplaceSync) receive context and write artifacts.
-- **Clear:** Same config resolution; `adapter.clear()` runs the clear lifecycle (clearRun for each mode). Modes remove or strip the same artifacts.
+- **Sync:** Config is loaded, enabled agents resolved, then for each requested agent an `AgentAdapterBase` is created and `adapter.run()` runs the sync lifecycle (setup → syncRunEnabled for each behavior → teardown). Sync behaviors (e.g. rulesSymlink, localMarketplaceSync) receive context and write artifacts.
+- **Clear:** Same config resolution; `adapter.clear()` runs the clear lifecycle (clearRun for each behavior). Behaviors remove or strip the same artifacts.
 
 ---
 

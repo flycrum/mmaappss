@@ -1,16 +1,16 @@
 import { ok, Result } from 'neverthrow';
 import path from 'node:path';
 import { markdownSection } from '../../common/markdown-section.js';
-import { SyncModeBase, type SyncModeContext } from './sync-mode-base.js';
+import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Options for syncing and removing a managed markdown section. */
-export interface MarkdownSectionSyncModeOptions {
+export interface MarkdownSectionSyncBehaviorOptions {
   /** Relative path to markdown file that owns the managed section. */
   agentsFile: string;
   /** Optional hook called before sync setup when custom pre-sync behavior is needed. */
-  beforeSyncFn?: (context: SyncModeContext) => Result<void, Error>;
+  beforeSyncFn?: (context: SyncBehaviorContext) => Result<void, Error>;
   /** Optional builder for section body content; defaults to marketplace/plugin list markdown. */
-  buildSectionContentFn?: (context: SyncModeContext) => string;
+  buildSectionContentFn?: (context: SyncBehaviorContext) => string;
   /** Optional list of section headings to remove before writing (when removeExistingSectionBlocks is true). */
   legacyHeadingsToRemove?: string[];
   /** When true, runs legacy cleanup: removes legacyHeadingsToRemove sections then removeOrphanBlocksFn if set. */
@@ -26,13 +26,13 @@ function normalizeSectionHeading(heading: string): string {
   return heading.replace(/^#+\s*/, '');
 }
 
-export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncModeOptions> {
-  constructor(options?: MarkdownSectionSyncModeOptions) {
+export class MarkdownSectionSyncBehavior extends SyncBehaviorBase<MarkdownSectionSyncBehaviorOptions> {
+  constructor(options?: MarkdownSectionSyncBehaviorOptions) {
     super(options);
   }
 
   /** Removes the managed markdown section from target file. */
-  private teardownMarkdownSection(context: SyncModeContext): Result<void, Error> {
+  private teardownMarkdownSection(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     const filePath = path.join(context.repoRoot, options.agentsFile);
@@ -41,7 +41,7 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
   }
 
   /** Builds section markdown content using custom builder or default marketplace listing. */
-  private buildMarkdownSectionContent(context: SyncModeContext): string {
+  private buildMarkdownSectionContent(context: SyncBehaviorContext): string {
     const options = this.options;
     if (!options) return '';
     if (options.buildSectionContentFn) return options.buildSectionContentFn(context);
@@ -59,7 +59,7 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
   }
 
   /** Sync setup hook that runs custom pre-sync logic or legacy cleanup. */
-  override syncSetupBefore(context: SyncModeContext): Result<void, Error> {
+  override syncSetupBefore(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     if (options.beforeSyncFn) return options.beforeSyncFn(context);
@@ -79,7 +79,7 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
   }
 
   /** Sync-phase enabled hook that writes or replaces the managed section content. */
-  override syncRunEnabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
     const filePath = path.join(context.repoRoot, options.agentsFile);
@@ -89,12 +89,12 @@ export class MarkdownSectionSyncMode extends SyncModeBase<MarkdownSectionSyncMod
   }
 
   /** Sync-phase disabled hook that removes the managed section. */
-  override syncRunDisabled(context: SyncModeContext): Result<void, Error> {
+  override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     return this.teardownMarkdownSection(context);
   }
 
   /** Clear hook that removes the managed section. */
-  override clearRun(context: SyncModeContext): Result<void, Error> {
+  override clearRun(context: SyncBehaviorContext): Result<void, Error> {
     return this.teardownMarkdownSection(context);
   }
 }
