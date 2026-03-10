@@ -16,18 +16,18 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
           clear(context) {
             const entry = context.manifestContent;
             if (entry && typeof entry === 'object')
-              syncManifest.teardownEntry(context.repoRoot, entry);
-            cursorAgentPresetConfig.pruneCursorContentDirs(context.repoRoot);
+              syncManifest.teardownEntry(context.outputRoot, entry);
+            cursorAgentPresetConfig.pruneCursorContentDirs(context.outputRoot);
             return ok(undefined);
           },
           sync(context) {
             const entry = context.manifestContent;
             if (entry && typeof entry === 'object') {
-              syncManifest.teardownEntry(context.repoRoot, entry);
+              syncManifest.teardownEntry(context.outputRoot, entry);
             }
-            cursorAgentPresetConfig.pruneCursorContentDirs(context.repoRoot);
+            cursorAgentPresetConfig.pruneCursorContentDirs(context.outputRoot);
             const result = cursorAgentPresetConfig.syncCursorContent(
-              context.repoRoot,
+              context.outputRoot,
               context.marketplaces,
               context.tsConfig
             );

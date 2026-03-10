@@ -16,11 +16,11 @@
     "mmaappss-sync": "./bin/mmaappss-sync.mjs"
   },
   "exports": {
-    "./config": "./config/index.ts"
+    "./config": "./config/index.ts",
+    "./sync-manifest": "./scripts/common/sync-manifest.ts"
   },
   "files": [
     "scripts",
-    "scripts-integration-tests",
     ".agents",
     "bin",
     "getting-started",
@@ -30,11 +30,8 @@
     "lint": "eslint .",
     "mmaappss:post-merge": "tsx scripts/mmaappss-post-merge.ts",
     "mmaappss:sync": "tsx scripts/mmaappss-sync-all.ts",
-    "mmaappss:sync:test": "tsx scripts-integration-tests/integration-test-harness.ts",
     "mmaappss:sync:clear": "tsx scripts/mmaappss-sync-clear-all.ts",
-    "mmaappss:sync:clear:test": "tsx scripts-integration-tests/integration-test-harness.ts",
     "test": "vitest run",
-    "test:integrations": "tsx scripts-integration-tests/integration-test-harness.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

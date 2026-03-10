@@ -36,8 +36,13 @@ const noopLogger: MmaappssLogger = pino({ level: 'silent' });
 /**
  * Set logging context from repo root and config. Call once at process start (e.g. in sync-runner).
  * When logging is disabled, getLogger() returns a no-op logger.
+ * When outputRoot is provided (e.g. integration tests), log file is written under outputRoot.
  */
-export function setLoggerContext(repoRoot: string, tsConfig: MmaappssConfig | null): void {
+export function setLoggerContext(
+  repoRoot: string,
+  tsConfig: MmaappssConfig | null,
+  outputRoot?: string
+): void {
   const enabled = configHelpers.general.getLoggingEnabled(repoRoot, tsConfig);
   const hasExistingResources =
     instance !== noopLogger && (previousDestination != null || previousLogFd != null);
@@ -50,7 +55,8 @@ export function setLoggerContext(repoRoot: string, tsConfig: MmaappssConfig | nu
 
   let fd: number | null = null;
   try {
-    const logDir = path.join(repoRoot, LOG_DIR);
+    const rootForLogs = outputRoot ?? repoRoot;
+    const logDir = path.join(rootForLogs, LOG_DIR);
     fs.mkdirSync(logDir, { recursive: true });
     const logPath = path.join(logDir, LOG_FILE);
     fd = fs.openSync(logPath, 'a');

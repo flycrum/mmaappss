@@ -41,10 +41,12 @@ export const syncManifest = {
   /**
    * Resolve the absolute path for the unified sync manifest.
    * Uses config.syncManifestPath when set, otherwise default under repo root.
+   * When outputRoot is provided, the manifest file is written under outputRoot instead of repoRoot.
    */
-  getManifestPath(repoRoot: string, config: MmaappssConfig | null): string {
+  getManifestPath(repoRoot: string, config: MmaappssConfig | null, outputRoot?: string): string {
     const rel = config?.syncManifestPath ?? DEFAULT_SYNC_MANIFEST_REL;
-    return path.join(repoRoot, rel);
+    const root = outputRoot ?? repoRoot;
+    return path.join(root, rel);
   },
 
   /**

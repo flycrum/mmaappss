@@ -136,6 +136,8 @@ export interface MarketplacesConfig {
   postMergeSyncMarketplaces?: string[];
   /** Optional path for unified sync manifest (default `.mmaappss/sync-manifest.json`). */
   syncManifestPath?: string;
+  /** Optional output root for all sync writes (manifest, agent dirs, symlinks). When set, discovery and config still use repo root. */
+  syncOutputRoot?: string;
 }
 
 /** Exact config input: only keys from MarketplacesConfig allowed (type-fest Exact). */

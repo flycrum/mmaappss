@@ -32,9 +32,11 @@ export interface SyncBehaviorContext {
   manifestContent?: SyncManifestEntry;
   /** Marketplaces discovered for this run (empty during disabled/clear runs). */
   marketplaces: DiscoveredMarketplace[];
+  /** Output root for all file writes (manifest, agent dirs, symlinks). Defaults to repoRoot when not set (e.g. MMAAPPSS_OUTPUT_ROOT or config.syncOutputRoot). */
+  outputRoot: string;
   /** Register into the unified sync manifest (sync only; no-op when clearing). */
   registerContentToMmaappssSyncManifest: RegisterContentToSyncManifestFn;
-  /** Repository root absolute path. */
+  /** Repository root absolute path (config and discovery). */
   repoRoot: string;
   /** Mutable state bag shared across adapter and sync behaviors during one adapter lifetime. */
   sharedState: Map<string, unknown>;

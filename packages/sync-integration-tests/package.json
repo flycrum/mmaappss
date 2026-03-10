@@ -1,0 +1,28 @@
+{
+  "name": "@mmaappss/sync-integration-tests",
+  "private": true,
+  "description": "Integration tests for @mmaappss/sync (sandbox, manifest and filesystem assertions). Not published.",
+  "type": "module",
+  "license": "Unlicense",
+  "scripts": {
+    "test": "tsx scripts/integration-test-harness.ts",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@mmaappss/sync": "workspace:*",
+    "chalk": "^5.3.0",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@mmaappss/eslint-config": "workspace:*",
+    "@mmaappss/typescript-config": "workspace:*",
+    "@mmaappss/vitest-config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.15.0",
+    "typescript": "5.9.3",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

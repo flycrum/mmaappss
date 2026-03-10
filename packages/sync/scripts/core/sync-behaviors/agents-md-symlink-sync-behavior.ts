@@ -15,7 +15,12 @@ export class AgentsMdSymlinkSyncBehavior extends SyncBehaviorBase<AgentsMdSymlin
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const result = agentsMdSymlinkSync.sync(context.repoRoot, context.tsConfig, options);
+    const result = agentsMdSymlinkSync.sync(
+      context.repoRoot,
+      context.tsConfig,
+      options,
+      context.outputRoot
+    );
     if (result.isErr()) return err(result.error);
     const key = context.currentBehaviorManifestKey ?? 'agentsMdSymlink';
     context.registerContentToMmaappssSyncManifest(context.agentName, key, {
@@ -28,7 +33,7 @@ export class AgentsMdSymlinkSyncBehavior extends SyncBehaviorBase<AgentsMdSymlin
   /** When behavior is disabled during sync, teardown this entry (unlink symlinks). */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     const entry = context.manifestContent;
-    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.outputRoot, entry);
     return ok(undefined);
   }
 

@@ -92,11 +92,11 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
   }
 
   /** Removes managed marketplace fields or deletes the file when it is fully managed. */
-  private teardownMarketplaceJson(repoRoot: string): Result<void, Error> {
+  private teardownMarketplaceJson(outputRoot: string): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const filePath = pathHelpers.joinRepo(repoRoot, options.marketplaceFile);
+    const filePath = pathHelpers.joinRepo(outputRoot, options.marketplaceFile);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
     if (res.isErr()) {
       if (res.error.message.includes('ENOENT')) return ok(undefined);
@@ -140,7 +140,7 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
       return ok({ name: '', owner: { name: presetConstants.MARKETPLACE_OWNER }, plugins: [] });
 
     const manifestKey = options.manifestKey ?? context.agentName;
-    const filePath = pathHelpers.joinRepo(context.repoRoot, options.marketplaceFile);
+    const filePath = pathHelpers.joinRepo(context.outputRoot, options.marketplaceFile);
     const canonical = this.buildMarketplaceJson(context.marketplaces, manifestKey);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
 
@@ -179,11 +179,11 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
 
   /** Sync-phase disabled hook that removes managed marketplace json content. */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
-    return this.teardownMarketplaceJson(context.repoRoot);
+    return this.teardownMarketplaceJson(context.outputRoot);
   }
 
   /** Clear hook that removes managed marketplace json content. */
   override clearRun(context: SyncBehaviorContext): Result<void, Error> {
-    return this.teardownMarketplaceJson(context.repoRoot);
+    return this.teardownMarketplaceJson(context.outputRoot);
   }
 }

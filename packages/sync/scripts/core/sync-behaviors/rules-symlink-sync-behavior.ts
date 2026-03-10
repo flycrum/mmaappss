@@ -22,18 +22,19 @@ export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncB
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const rulesTargetDir = pathHelpers.joinRepo(context.repoRoot, options.rulesDir);
+    const rulesTargetDir = pathHelpers.joinRepo(context.outputRoot, options.rulesDir);
     const entry = context.manifestContent;
     if (entry && typeof entry === 'object') {
-      syncManifest.teardownEntry(context.repoRoot, entry);
+      syncManifest.teardownEntry(context.outputRoot, entry);
     }
     syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
     const result = rulesSync.syncRules(
       context.repoRoot,
       context.marketplaces,
       rulesTargetDir,
-      pathHelpers.joinRepo(context.repoRoot, options.syncManifest),
-      true
+      pathHelpers.joinRepo(context.outputRoot, options.syncManifest),
+      true,
+      context.outputRoot
     );
     if (result.isErr()) return err(result.error);
     const key = context.currentBehaviorManifestKey ?? 'rulesSymlink';
@@ -47,10 +48,10 @@ export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncB
   /** When behavior is disabled during sync, teardown this entry then prune so .claude/rules is cleared. */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     const entry = context.manifestContent;
-    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.outputRoot, entry);
     const options = this.options;
     if (options) {
-      const rulesTargetDir = pathHelpers.joinRepo(context.repoRoot, options.rulesDir);
+      const rulesTargetDir = pathHelpers.joinRepo(context.outputRoot, options.rulesDir);
       syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
     }
     return ok(undefined);
@@ -61,8 +62,8 @@ export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncB
     const options = this.options;
     if (!options) return ok(undefined);
     const entry = context.manifestContent;
-    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
-    const rulesTargetDir = pathHelpers.joinRepo(context.repoRoot, options.rulesDir);
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.outputRoot, entry);
+    const rulesTargetDir = pathHelpers.joinRepo(context.outputRoot, options.rulesDir);
     syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
     return ok(undefined);
   }

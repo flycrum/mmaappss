@@ -99,7 +99,7 @@ flowchart TB
 
 ## Integration tests
 
-Integration tests live under **scripts-integration-tests/** and are **not part of vitest**. They use config-driven test cases (clear, inject config, sync, assert manifest and paths). See [scripts-integration-tests/README.md](../../scripts-integration-tests/README.md).
+Integration tests live in **packages/sync-integration-tests** (separate package, sandbox-based). They use config-driven test cases and output root so all writes go to a sandbox. See [packages/sync-integration-tests/README.md](../../../sync-integration-tests/README.md).
 
 ---
 

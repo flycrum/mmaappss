@@ -1,8 +1,8 @@
 /**
- * Basic test case: all three preset agents enabled plus one minimal custom agent (codex-like).
+ * Excluded path test case: one excluded path; all presets plus one custom agent enabled.
  */
 
-import { marketplacesConfig } from '../../scripts/core/marketplaces-config.js';
+import { marketplacesConfig } from '@mmaappss/sync/config';
 import { defineIntegrationTestCase } from '../define-integration-test-case.js';
 
 const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
@@ -16,14 +16,16 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
           testagent: defineAgent({
             ...agentPresets.codex,
             name: 'testagent',
+            syncBehaviorPresets: { ...agentPresets.codex.syncBehaviorPresets },
           }),
         },
       },
+      excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
     })
 );
 
 export const testCase = defineIntegrationTestCase({
   config: mmaappssConfig,
-  description: 'All three preset agents enabled plus one minimal custom agent (codex-like).',
-  jsonPath: 'test-cases/basic.json',
+  description: 'One excluded path; all presets plus one custom agent enabled.',
+  jsonPath: 'test-cases/excluded-one-file.json',
 });

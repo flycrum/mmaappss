@@ -1,6 +1,6 @@
 # Integration tests (old / deprecated)
 
-**Deprecated.** This folder holds the previous adapter-based integration tests. Use the new config-driven tests in **scripts-integration-tests/** instead (`pnpm -F @mmaappss/sync run test:integrations`).
+**Deprecated.** This folder holds the previous adapter-based integration tests. Use the config-driven tests in **packages/sync-integration-tests** instead (`pnpm run test:integrations` from repo root).
 
 ---
 

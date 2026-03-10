@@ -2,7 +2,7 @@
  * Disable Claude rules test case: claude only with rulesSymlink disabled; cursor and codex disabled.
  */
 
-import { marketplacesConfig } from '../../scripts/core/marketplaces-config.js';
+import { marketplacesConfig } from '@mmaappss/sync/config';
 import { defineIntegrationTestCase } from '../define-integration-test-case.js';
 
 const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(

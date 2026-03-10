@@ -15,4 +15,8 @@ export default [
     files: ['scripts/**/*.ts', 'packages/sync/scripts/**/*.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    files: ['**/*.mjs'],
+    languageOptions: { globals: { ...globals.node } },
+  },
 ];

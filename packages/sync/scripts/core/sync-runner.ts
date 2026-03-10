@@ -62,6 +62,12 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
   if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
   const enabledAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
+  const outputRoot =
+    tsConfig?.syncOutputRoot != null
+      ? path.resolve(repoRoot, tsConfig.syncOutputRoot)
+      : process.env.MMAAPPSS_OUTPUT_ROOT
+        ? path.resolve(process.env.MMAAPPSS_OUTPUT_ROOT)
+        : repoRoot;
 
   const enabledAgentList = Object.values(enabledAgents);
   if (enabledAgentList.length === 0) {
@@ -70,10 +76,10 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
     console.log('[mmaappss] 🤖 enabled agents:', enabledAgentList.map((a) => a.name).join(', '));
   }
 
-  setLoggerContext(repoRoot, tsConfig);
+  setLoggerContext(repoRoot, tsConfig, outputRoot);
   const log = getLogger();
 
-  const manifestPath = syncManifest.getManifestPath(repoRoot, tsConfig);
+  const manifestPath = syncManifest.getManifestPath(repoRoot, tsConfig, outputRoot);
   const manifest = syncManifest.load(manifestPath);
   const agentsToProcess = agents ?? getAgentsToProcess(enabledAgents, manifest);
   log.info(
@@ -100,6 +106,7 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
     if (isEnabled) {
       const result = adapter.run(repoRoot, tsConfig, {
         manifestByBehavior: manifest[agent] ?? {},
+        outputRoot,
         registerContentToMmaappssSyncManifest: register,
       });
       if (result.isErr()) {
@@ -110,9 +117,10 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
       outcomes.push(result.value);
     } else {
       const manifestByBehavior = manifest[agent] ?? {};
-      syncManifest.teardownAgentEntries(repoRoot, manifestByBehavior);
+      syncManifest.teardownAgentEntries(outputRoot, manifestByBehavior);
       const result = adapter.clear(repoRoot, tsConfig, {
         manifestByBehavior,
+        outputRoot,
       });
       if (result.isErr()) {
         log.error({ err: result.error, agent }, 'clear agent failed');
@@ -144,11 +152,17 @@ export async function runClear(agents?: Agent[]): Promise<Result<SyncOutcome[], 
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
   if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
   const enabledAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
+  const outputRoot =
+    tsConfig?.syncOutputRoot != null
+      ? path.resolve(repoRoot, tsConfig.syncOutputRoot)
+      : process.env.MMAAPPSS_OUTPUT_ROOT
+        ? path.resolve(process.env.MMAAPPSS_OUTPUT_ROOT)
+        : repoRoot;
 
-  setLoggerContext(repoRoot, tsConfig);
+  setLoggerContext(repoRoot, tsConfig, outputRoot);
   const log = getLogger();
 
-  const manifestPath = syncManifest.getManifestPath(repoRoot, tsConfig);
+  const manifestPath = syncManifest.getManifestPath(repoRoot, tsConfig, outputRoot);
   const manifest = syncManifest.load(manifestPath);
   const agentsToProcess = agents ?? getAgentsToProcess(enabledAgents, manifest);
   log.info({ agents: agentsToProcess }, 'clear started');
@@ -165,10 +179,11 @@ export async function runClear(agents?: Agent[]): Promise<Result<SyncOutcome[], 
     }
     const adapter = new AgentAdapterBase(agentConfig);
     const manifestByBehavior = manifest[agent] ?? {};
-    syncManifest.teardownAgentEntries(repoRoot, manifestByBehavior);
+    syncManifest.teardownAgentEntries(outputRoot, manifestByBehavior);
 
     const result = adapter.clear(repoRoot, tsConfig, {
       manifestByBehavior,
+      outputRoot,
     });
     if (result.isErr()) {
       log.error({ err: result.error, agent }, 'clear agent failed');

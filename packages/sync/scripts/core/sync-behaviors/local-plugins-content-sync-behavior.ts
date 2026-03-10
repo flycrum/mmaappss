@@ -116,12 +116,12 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     const symlinkPaths: string[] = [];
     const fsAutoRemovalPaths: string[] = [];
     const excluded = options.excluded ?? context.tsConfig?.excluded;
-    const targetRoot = pathHelpers.joinRepo(context.repoRoot, options.targetRoot);
+    const targetRoot = pathHelpers.joinRepo(context.outputRoot, options.targetRoot);
     syncFs.ensureDir(targetRoot);
 
     const entry = context.manifestContent;
     if (entry && typeof entry === 'object') {
-      syncManifest.teardownEntry(context.repoRoot, entry);
+      syncManifest.teardownEntry(context.outputRoot, entry);
     }
 
     for (const marketplace of context.marketplaces) {
@@ -152,7 +152,7 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
 
           const fileName = override?.filename ?? dirEntry.name;
           const targetPath = override?.targetPath ?? path.join(targetRoot, plugin.name, fileName);
-          const relativeTarget = path.relative(context.repoRoot, targetPath).replace(/\\/g, '/');
+          const relativeTarget = path.relative(context.outputRoot, targetPath).replace(/\\/g, '/');
           if (isExcluded(relativeTarget, excluded)) continue;
 
           syncFs.ensureDir(path.dirname(targetPath));
@@ -179,7 +179,7 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
             contents = transformConfig.transformFileMarkdownFn(contents, localContent);
           }
           syncFs.writeFileUtf8(writePath, contents);
-          fsAutoRemovalPaths.push(path.relative(context.repoRoot, writePath).replace(/\\/g, '/'));
+          fsAutoRemovalPaths.push(path.relative(context.outputRoot, writePath).replace(/\\/g, '/'));
         }
       }
     }
@@ -206,7 +206,7 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     const options = this.options;
     if (options?.customHandler) return options.customHandler.clear(context);
     const entry = context.manifestContent;
-    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.outputRoot, entry);
     return ok(undefined);
   }
 

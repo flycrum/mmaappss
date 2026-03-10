@@ -34,9 +34,9 @@ pnpm run <script>
 | `mmaappss:sync` | Sync all enabled agents and clear disabled ones (union of preset, config-enabled, and manifest agents) |
 | `mmaappss:sync:clear` | Clear all agents in the same union set |
 | `mmaappss:post-merge` | Sync all only if `postMergeSyncEnabled` (for git hooks) |
-| `test:integrations` | Run all integration test cases (config-driven harness in `scripts-integration-tests/`) |
+| `test:integrations` | Run all integration test cases (in `packages/sync-integration-tests`) |
 
-**Legacy test scripts:** `mmaappss:sync:test` and `mmaappss:sync:clear:test` also run the same harness as `test:integrations`.
+**Legacy test scripts:** Removed. Use `pnpm run test:integrations` (runs `packages/sync-integration-tests`).
 
 ## Config
 

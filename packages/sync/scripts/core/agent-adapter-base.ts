@@ -16,12 +16,17 @@ import {
 export interface RunOptions {
   /** Stored entry per behavior for this agent (used when enabled is false for syncRunDisabled). */
   manifestByBehavior?: Record<string, SyncManifestEntry>;
+  /** Output root for all file writes (defaults to repoRoot when not set). */
+  outputRoot?: string;
+  /** Register into the unified sync manifest (sync only; no-op when clearing). */
   registerContentToMmaappssSyncManifest?: RegisterContentToSyncManifestFn;
 }
 
 export interface ClearOptions {
   /** Per–sync-behavior stored entry from unified manifest for this agent. */
   manifestByBehavior?: Record<string, SyncManifestEntry>;
+  /** Output root for teardown paths (defaults to repoRoot when not set). */
+  outputRoot?: string;
 }
 
 /** JSON-serializable clone of behavior options for manifest (drops functions and non-JSON values). */
@@ -199,6 +204,7 @@ export class AgentAdapterBase {
       agentName: this.agentConfig.name,
       enabled,
       marketplaces,
+      outputRoot: options?.outputRoot ?? repoRoot,
       registerContentToMmaappssSyncManifest:
         options?.registerContentToMmaappssSyncManifest ?? noopRegister,
       repoRoot,
@@ -297,6 +303,7 @@ export class AgentAdapterBase {
       agentName: this.agentConfig.name,
       enabled: false,
       marketplaces: [],
+      outputRoot: options?.outputRoot ?? repoRoot,
       registerContentToMmaappssSyncManifest: noopRegister,
       repoRoot,
       sharedState: this.sharedState,

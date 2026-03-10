@@ -101,12 +101,18 @@ export const agentsMdSymlinkSync = {
   /**
    * Remove managed target symlinks using stored manifest content (e.g. from unified sync manifest).
    * Only removes paths that are symlinks; does not touch regular files.
+   * When outputRoot is set, paths are resolved under outputRoot.
    */
-  clearFromContents(repoRoot: string, contents: { paths?: string[] }): Result<void, Error> {
+  clearFromContents(
+    repoRoot: string,
+    contents: { paths?: string[] },
+    outputRoot?: string
+  ): Result<void, Error> {
+    const root = outputRoot ?? repoRoot;
     const paths = contents.paths ?? [];
     try {
       for (const rel of paths) {
-        const full = path.join(repoRoot, rel);
+        const full = path.join(root, rel);
         try {
           if (syncFs.pathExists(full) && syncFs.isSymlink(full)) {
             syncFs.unlinkIfExists(full);
@@ -125,20 +131,23 @@ export const agentsMdSymlinkSync = {
    * Create targetFile symlinks for every directory that has sourceFile.
    * Skips directories where targetFile already exists as a regular file.
    * Returns created paths for caller to register to unified manifest.
+   * When outputRoot is set, walk and writes are under outputRoot (paths returned relative to outputRoot).
    */
   sync(
     repoRoot: string,
     config: MmaappssConfig | null,
-    options: AgentsMdSymlinkOptions
+    options: AgentsMdSymlinkOptions,
+    outputRoot?: string
   ): Result<string[], Error> {
+    const root = outputRoot ?? repoRoot;
     const created: string[] = [];
     try {
-      const ensureGit = ensureGitignore(repoRoot, options);
+      const ensureGit = ensureGitignore(root, options);
       if (ensureGit.isErr()) return err(ensureGit.error);
 
-      const dirs = agentsMdSymlinkSync.findAgentsMdDirs(repoRoot, config, options);
+      const dirs = agentsMdSymlinkSync.findAgentsMdDirs(root, config, options);
       for (const relDir of dirs) {
-        const dir = path.join(repoRoot, relDir);
+        const dir = path.join(root, relDir);
         const sourcePath = path.join(dir, options.sourceFile);
         const targetPath = path.join(dir, options.targetFile);
         const relTarget = path.join(relDir, options.targetFile).replace(/\\/g, '/');

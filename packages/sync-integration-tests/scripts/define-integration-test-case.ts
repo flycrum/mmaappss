@@ -3,7 +3,7 @@
  * Each test case file in test-cases/ exports testCase (config is available as testCase.config for stub injection).
  */
 
-import type { MarketplacesConfig } from '../scripts/core/marketplaces-config.js';
+import type { MarketplacesConfig } from '@mmaappss/sync/config';
 
 export interface IntegrationTestCaseDefinition {
   /** Config object to inject as mmaappss.config.ts (result of defineMarketplacesConfig). */

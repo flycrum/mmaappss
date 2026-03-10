@@ -11,16 +11,23 @@ type ConfigMode = 'basic' | 'crazy' | 'disable-claude-rules';
 const configMode = 'basic' as ConfigMode;
 
 if (configMode === 'basic') {
-  mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
-    agentsConfig: {
-      claude: true,
-      cursor: true,
-      codex: true,
-    },
-    // excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
-    // loggingEnabled: true,
-    // postMergeSyncEnabled: true,
-  }));
+  mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(({ config, defineAgent }) =>
+    config({
+      agentsConfig: {
+        claude: false,
+        cursor: true,
+        codex: true,
+        custom: {
+          superagent: defineAgent({
+            name: 'superagent',
+            syncBehaviorPresets: {
+              localMarketplaceSync: true,
+            },
+          }),
+        },
+      },
+    })
+  );
 } else if (configMode === 'disable-claude-rules') {
   mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
     ({ config, defineAgent, agentPresets }) =>
@@ -38,6 +45,9 @@ if (configMode === 'basic') {
           cursor: true,
           codex: true,
         },
+        // excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
+        // loggingEnabled: true,
+        // postMergeSyncEnabled: true,
       })
   );
 } else {

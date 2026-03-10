@@ -47,11 +47,11 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
   }
 
   /** Removes mmaappss-managed settings keys from the target settings file. */
-  private teardownSettings(repoRoot: string): Result<void, Error> {
+  private teardownSettings(outputRoot: string): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const filePath = pathHelpers.joinRepo(repoRoot, options.settingsFile);
+    const filePath = pathHelpers.joinRepo(outputRoot, options.settingsFile);
     if (!fs.existsSync(filePath)) return ok(undefined);
 
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
@@ -96,7 +96,7 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
       enabledPlugins,
     };
 
-    const filePath = pathHelpers.joinRepo(context.repoRoot, options.settingsFile);
+    const filePath = pathHelpers.joinRepo(context.outputRoot, options.settingsFile);
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     let existing: Record<string, unknown>;
     if (res.isErr()) {
@@ -140,11 +140,11 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
 
   /** Sync-phase disabled hook that removes settings integration fields. */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
-    return this.teardownSettings(context.repoRoot);
+    return this.teardownSettings(context.outputRoot);
   }
 
   /** Clear hook that removes settings integration fields. */
   override clearRun(context: SyncBehaviorContext): Result<void, Error> {
-    return this.teardownSettings(context.repoRoot);
+    return this.teardownSettings(context.outputRoot);
   }
 }

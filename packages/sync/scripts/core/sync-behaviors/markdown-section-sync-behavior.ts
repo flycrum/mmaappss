@@ -35,7 +35,7 @@ export class MarkdownSectionSyncBehavior extends SyncBehaviorBase<MarkdownSectio
   private teardownMarkdownSection(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const filePath = pathHelpers.joinRepo(context.repoRoot, options.agentsFile);
+    const filePath = pathHelpers.joinRepo(context.outputRoot, options.agentsFile);
     const heading = normalizeSectionHeading(options.sectionHeading);
     return markdownSection.removeSection(filePath, heading);
   }
@@ -64,7 +64,7 @@ export class MarkdownSectionSyncBehavior extends SyncBehaviorBase<MarkdownSectio
     if (!options) return ok(undefined);
     if (options.beforeSyncFn) return options.beforeSyncFn(context);
     if (!options.removeExistingSectionBlocks) return ok(undefined);
-    const filePath = pathHelpers.joinRepo(context.repoRoot, options.agentsFile);
+    const filePath = pathHelpers.joinRepo(context.outputRoot, options.agentsFile);
     let result: Result<void, Error> = ok(undefined);
     for (const heading of options.legacyHeadingsToRemove ?? []) {
       result = result.andThen(() =>
@@ -82,7 +82,7 @@ export class MarkdownSectionSyncBehavior extends SyncBehaviorBase<MarkdownSectio
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const filePath = pathHelpers.joinRepo(context.repoRoot, options.agentsFile);
+    const filePath = pathHelpers.joinRepo(context.outputRoot, options.agentsFile);
     const heading = normalizeSectionHeading(options.sectionHeading);
     const content = this.buildMarkdownSectionContent(context);
     const result = markdownSection.replaceOrAddSection(filePath, heading, content);

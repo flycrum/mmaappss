@@ -46,10 +46,11 @@ export const rulesSync = {
     marketplaces: DiscoveredMarketplace[],
     rulesTargetDir: string,
     manifestPath: string,
-    skipManifestWrite?: boolean
+    skipManifestWrite?: boolean,
+    rootForRelativePaths?: string
   ): Result<string[], Error> {
     const created: string[] = [];
-
+    const rootForRel = rootForRelativePaths ?? repoRoot;
     try {
       syncFs.ensureDir(rulesTargetDir);
 
@@ -66,7 +67,7 @@ export const rulesSync = {
             const targetPath = path.join(rulesDir, file);
             const linkPath = path.join(pluginRulesDir, file);
             syncFs.symlinkRelative(targetPath, linkPath);
-            created.push(path.relative(repoRoot, linkPath));
+            created.push(path.relative(rootForRel, linkPath));
           }
         }
       }
