@@ -40,31 +40,6 @@ export const rulesSync = {
   },
 
   /**
-   * Remove rules symlinks and empty dirs using manifest file. Idempotent.
-   * @deprecated Prefer unified sync manifest and clearRulesFromContents.
-   */
-  clearRules(repoRoot: string, rulesTargetDir: string, manifestPath: string): Result<void, Error> {
-    try {
-      const manifestResult = syncFs.readJsonManifest<RulesSyncManifest>(manifestPath);
-      if (manifestResult.isErr()) {
-        const e = manifestResult.error as Error & { code?: string };
-        if (e.code === 'ENOENT') return ok(undefined);
-        return err(manifestResult.error);
-      }
-      const result = rulesSync.clearRulesFromContents(
-        repoRoot,
-        rulesTargetDir,
-        manifestResult.value
-      );
-      if (result.isErr()) return result;
-      syncFs.unlinkIfExists(manifestPath);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
-  },
-
-  /**
    * Symlink each plugin's rules/*.md into rulesTargetDir/<pluginName>/.
    * Returns paths relative to repoRoot. When skipManifestWrite is true, does not write manifestPath.
    */

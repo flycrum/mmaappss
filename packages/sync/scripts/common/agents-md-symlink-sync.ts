@@ -124,29 +124,6 @@ export const agentsMdSymlinkSync = {
   },
 
   /**
-   * Remove managed target symlinks using manifest file. Idempotent.
-   * Only removes paths that are symlinks; does not touch regular files.
-   * @deprecated Prefer unified sync manifest and clearFromContents.
-   */
-  clear(repoRoot: string, options: AgentsMdSymlinkOptions): Result<void, Error> {
-    const manifestPath = path.join(repoRoot, options.manifestPath);
-    try {
-      const manifestResult = syncFs.readJsonManifest<AgentsMdSymlinkManifest>(manifestPath);
-      if (manifestResult.isErr()) {
-        const e = manifestResult.error as Error & { code?: string };
-        if (e.code === 'ENOENT') return ok(undefined);
-        return err(manifestResult.error);
-      }
-      const result = agentsMdSymlinkSync.clearFromContents(repoRoot, manifestResult.value);
-      if (result.isErr()) return result;
-      syncFs.unlinkIfExists(manifestPath);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
-  },
-
-  /**
    * Create targetFile symlinks for every directory that has sourceFile.
    * Skips directories where targetFile already exists as a regular file.
    * Returns created paths for caller to register to unified manifest.

@@ -89,27 +89,6 @@ export const cursorAgentPresetConfig = {
   },
 
   /**
-   * Remove all synced Cursor content using the manifest file. Idempotent.
-   * @deprecated Prefer unified sync manifest and clearCursorContentFromContents.
-   */
-  clearCursorContent(repoRoot: string, manifestPath: string): Result<void, Error> {
-    try {
-      const manifestResult = syncFs.readJsonManifest<CursorContentSyncManifest>(manifestPath);
-      if (manifestResult.isErr()) {
-        const e = manifestResult.error as Error & { code?: string };
-        if (e.code === 'ENOENT') return ok(undefined);
-        return err(manifestResult.error);
-      }
-      const result = this.clearCursorContentFromContents(repoRoot, manifestResult.value);
-      if (result.isErr()) return result;
-      syncFs.unlinkIfExists(manifestPath);
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
-    }
-  },
-
-  /**
    * Sync all Cursor plugin content (rules as .mdc with frontmatter, commands/skills/agents as symlinks)
    * into .cursor/rules, .cursor/commands, .cursor/skills, .cursor/agents.
    * When skipManifestWrite is true, does not write manifestPath; caller registers to unified manifest.
@@ -125,9 +104,6 @@ export const cursorAgentPresetConfig = {
   ): Result<CursorContentSyncManifest, Error> {
     if (options?.clearFromContents) {
       const clearResult = this.clearCursorContentFromContents(repoRoot, options.clearFromContents);
-      if (clearResult.isErr()) return err(clearResult.error);
-    } else {
-      const clearResult = this.clearCursorContent(repoRoot, manifestPath);
       if (clearResult.isErr()) return err(clearResult.error);
     }
 

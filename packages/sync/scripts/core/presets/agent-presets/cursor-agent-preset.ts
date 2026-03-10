@@ -31,10 +31,7 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
                 }
               );
             }
-            return cursorAgentPresetConfig.clearCursorContent(
-              context.repoRoot,
-              path.join(context.repoRoot, CURSOR_MANIFEST_PATH)
-            );
+            return ok(undefined);
           },
           sync(context) {
             const entry = context.manifestContent;

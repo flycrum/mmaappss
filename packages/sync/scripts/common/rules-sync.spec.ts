@@ -199,8 +199,8 @@ describe('rulesSync', () => {
     });
   });
 
-  describe('clearRules', () => {
-    it('removes symlinks and manifest', () => {
+  describe('clearRulesFromContents', () => {
+    it('removes symlinks and prunes empty dirs', () => {
       const plugin = createPlugin(repoRoot, 'myplugin');
       const marketplaces: DiscoveredMarketplace[] = [
         {
@@ -211,18 +211,26 @@ describe('rulesSync', () => {
         },
       ];
 
-      rulesSync.syncRules(repoRoot, marketplaces, rulesTargetDir, manifestPath);
-      expect(fs.existsSync(manifestPath)).toBe(true);
+      const syncResult = rulesSync.syncRules(
+        repoRoot,
+        marketplaces,
+        rulesTargetDir,
+        manifestPath,
+        true
+      );
+      expect(syncResult.isOk()).toBe(true);
+      expect(fs.existsSync(path.join(rulesTargetDir, 'myplugin'))).toBe(true);
 
-      const result = rulesSync.clearRules(repoRoot, rulesTargetDir, manifestPath);
+      const result = rulesSync.clearRulesFromContents(repoRoot, rulesTargetDir, {
+        rules: syncResult.isOk() ? syncResult.value : [],
+      });
 
       expect(result.isOk()).toBe(true);
-      expect(fs.existsSync(manifestPath)).toBe(false);
       expect(fs.existsSync(path.join(rulesTargetDir, 'myplugin'))).toBe(false);
     });
 
-    it('is idempotent when manifest missing', () => {
-      const result = rulesSync.clearRules(repoRoot, rulesTargetDir, manifestPath);
+    it('is idempotent when contents.rules is empty', () => {
+      const result = rulesSync.clearRulesFromContents(repoRoot, rulesTargetDir, {});
 
       expect(result.isOk()).toBe(true);
     });

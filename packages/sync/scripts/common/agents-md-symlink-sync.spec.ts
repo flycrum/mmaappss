@@ -111,39 +111,28 @@ describe('agents-md-symlink-sync', () => {
     });
   });
 
-  describe('clearAgentsMdSymlinks', () => {
-    it('removes symlinks and manifest file when manifest exists', () => {
+  describe('clearFromContents', () => {
+    it('removes symlinks using stored contents', () => {
       fs.writeFileSync(path.join(repoRoot, 'AGENTS.md'), '# Root');
       const syncResult = agentsMdSymlinkSync.sync(repoRoot, null, CLAUDE_STYLE_OPTIONS);
       expect(syncResult.isOk()).toBe(true);
-      fs.mkdirSync(path.join(repoRoot, '.claude'), { recursive: true });
-      fs.writeFileSync(
-        path.join(repoRoot, '.claude', '.mmaappss-claude-md-sync.json'),
-        JSON.stringify({ paths: syncResult.isOk() ? syncResult.value : [] })
-      );
       expect(fs.existsSync(path.join(repoRoot, 'CLAUDE.md'))).toBe(true);
-      const result = agentsMdSymlinkSync.clear(repoRoot, CLAUDE_STYLE_OPTIONS);
+      const result = agentsMdSymlinkSync.clearFromContents(repoRoot, {
+        paths: syncResult.isOk() ? syncResult.value : [],
+      });
       expect(result.isOk()).toBe(true);
       expect(fs.existsSync(path.join(repoRoot, 'CLAUDE.md'))).toBe(false);
-      expect(fs.existsSync(path.join(repoRoot, '.claude', '.mmaappss-claude-md-sync.json'))).toBe(
-        false
-      );
     });
 
     it('does not remove regular CLAUDE.md files', () => {
       fs.writeFileSync(path.join(repoRoot, 'AGENTS.md'), '# Root');
       fs.writeFileSync(path.join(repoRoot, 'CLAUDE.md'), '# Custom');
-      fs.mkdirSync(path.join(repoRoot, '.claude'), { recursive: true });
-      fs.writeFileSync(
-        path.join(repoRoot, '.claude', '.mmaappss-claude-md-sync.json'),
-        JSON.stringify({ paths: ['CLAUDE.md'] })
-      );
-      agentsMdSymlinkSync.clear(repoRoot, CLAUDE_STYLE_OPTIONS);
+      agentsMdSymlinkSync.clearFromContents(repoRoot, { paths: ['CLAUDE.md'] });
       expect(fs.readFileSync(path.join(repoRoot, 'CLAUDE.md'), 'utf8')).toBe('# Custom');
     });
 
-    it('is idempotent when manifest is missing', () => {
-      const result = agentsMdSymlinkSync.clear(repoRoot, CLAUDE_STYLE_OPTIONS);
+    it('is idempotent when contents.paths is empty', () => {
+      const result = agentsMdSymlinkSync.clearFromContents(repoRoot, {});
       expect(result.isOk()).toBe(true);
     });
   });
