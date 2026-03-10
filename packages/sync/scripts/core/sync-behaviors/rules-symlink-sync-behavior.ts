@@ -1,6 +1,8 @@
 import { err, ok, Result } from 'neverthrow';
-import path from 'node:path';
+import { pathHelpers } from '../../common/path-helpers.js';
 import { rulesSync } from '../../common/rules-sync.js';
+import { syncFs } from '../../common/sync-fs.js';
+import { syncManifest } from '../../common/sync-manifest.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Options for symlinking rules and tracking their manifest file. */
@@ -11,58 +13,57 @@ export interface RulesSymlinkSyncBehaviorOptions {
   syncManifest: string;
 }
 
-/** Custom data registered by this behavior (rule paths for teardown). */
-export interface RulesSymlinkCustomData {
-  rules: string[];
-}
-
 export class RulesSymlinkSyncBehavior extends SyncBehaviorBase<RulesSymlinkSyncBehaviorOptions> {
   constructor(options?: RulesSymlinkSyncBehaviorOptions) {
     super(options);
   }
 
-  /** Clears rules from stored manifest entry (unified manifest). */
-  private clearFromContents(context: SyncBehaviorContext): Result<void, Error> {
-    const entry = context.manifestContent;
-    if (!entry || typeof entry !== 'object' || !entry.customData) return ok(undefined);
-    const options = this.options;
-    if (!options) return ok(undefined);
-    return rulesSync.clearRulesFromContents(
-      context.repoRoot,
-      path.join(context.repoRoot, options.rulesDir),
-      entry.customData as RulesSymlinkCustomData
-    );
-  }
-
-  /** Sync-phase enabled hook that recreates and records rules symlinks. */
+  /** Sync-phase enabled hook that recreates and records rules symlinks. Central teardown unlinks; clearRun prunes empty dirs. */
   override syncRunEnabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const clearResult = this.clearFromContents(context);
-    if (clearResult.isErr()) return clearResult;
+    const rulesTargetDir = pathHelpers.joinRepo(context.repoRoot, options.rulesDir);
+    const entry = context.manifestContent;
+    if (entry && typeof entry === 'object') {
+      syncManifest.teardownEntry(context.repoRoot, entry);
+    }
+    syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
     const result = rulesSync.syncRules(
       context.repoRoot,
       context.marketplaces,
-      path.join(context.repoRoot, options.rulesDir),
-      path.join(context.repoRoot, options.syncManifest),
+      rulesTargetDir,
+      pathHelpers.joinRepo(context.repoRoot, options.syncManifest),
       true
     );
     if (result.isErr()) return err(result.error);
     const key = context.currentBehaviorManifestKey ?? 'rulesSymlink';
     context.registerContentToMmaappssSyncManifest(context.agentName, key, {
       options: context.currentBehaviorOptionsForManifest,
-      customData: { rules: result.value } satisfies RulesSymlinkCustomData,
+      symlinks: result.value,
     });
     return ok(undefined);
   }
 
-  /** Sync-phase disabled hook that tears down rules symlinks. */
+  /** When behavior is disabled during sync, teardown this entry then prune so .claude/rules is cleared. */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
-    return this.clearFromContents(context);
+    const entry = context.manifestContent;
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
+    const options = this.options;
+    if (options) {
+      const rulesTargetDir = pathHelpers.joinRepo(context.repoRoot, options.rulesDir);
+      syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
+    }
+    return ok(undefined);
   }
 
-  /** Clear hook that tears down rules symlinks. */
+  /** Teardown entry (when called for disabled behavior) then prune. When called from full clear, central teardown already unlinked; this prunes. */
   override clearRun(context: SyncBehaviorContext): Result<void, Error> {
-    return this.clearFromContents(context);
+    const options = this.options;
+    if (!options) return ok(undefined);
+    const entry = context.manifestContent;
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
+    const rulesTargetDir = pathHelpers.joinRepo(context.repoRoot, options.rulesDir);
+    syncFs.pruneEmptySubdirsThenParent(rulesTargetDir);
+    return ok(undefined);
   }
 }

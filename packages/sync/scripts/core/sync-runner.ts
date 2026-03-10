@@ -109,8 +109,10 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
       }
       outcomes.push(result.value);
     } else {
+      const manifestByBehavior = manifest[agent] ?? {};
+      syncManifest.teardownAgentEntries(repoRoot, manifestByBehavior);
       const result = adapter.clear(repoRoot, tsConfig, {
-        manifestByBehavior: manifest[agent] ?? {},
+        manifestByBehavior,
       });
       if (result.isErr()) {
         log.error({ err: result.error, agent }, 'clear agent failed');
@@ -163,6 +165,7 @@ export async function runClear(agents?: Agent[]): Promise<Result<SyncOutcome[], 
     }
     const adapter = new AgentAdapterBase(agentConfig);
     const manifestByBehavior = manifest[agent] ?? {};
+    syncManifest.teardownAgentEntries(repoRoot, manifestByBehavior);
 
     const result = adapter.clear(repoRoot, tsConfig, {
       manifestByBehavior,

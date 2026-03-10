@@ -7,7 +7,7 @@
 
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
-import { presetConstants } from '../core/presets/agent-presets/preset-constants.js';
+import { presetConstants } from '../core/presets/agent-preset-constants.js';
 import { syncFs } from './sync-fs.js';
 import type { DiscoveredMarketplace } from './types.js';
 

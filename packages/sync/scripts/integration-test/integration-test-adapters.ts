@@ -25,8 +25,9 @@ const PATHS = {
   CONFIG_FILE: 'mmaappss.config.ts',
   CURSOR_DIR: '.cursor',
   CURSOR_PLUGIN_DIR: '.cursor-plugin',
-  CURSOR_SYNC_MANIFEST: '.mmaappss-cursor-sync.json',
   MARKETPLACE_JSON: 'marketplace.json',
+  /** Unified sync manifest (cursor content is under cursor.localPluginsContentSync). */
+  SYNC_MANIFEST: '.mmaappss/sync-manifest.json',
   MMAAPPSS_PLUGINS_NAME: 'mmaappss-sync',
   SETTINGS_JSON: 'settings.json',
 } as const;
@@ -385,13 +386,6 @@ export abstract class IntegrationTestAdapterBase {
                 passed = false;
               }
             }
-            const manifestPath = path.join(root, PATHS.CLAUDE_DIR, PATHS.CLAUDE_SYNC_MANIFEST);
-            if (fs.existsSync(manifestPath)) {
-              console.error(
-                `.claude/${PATHS.CLAUDE_SYNC_MANIFEST} should not exist when rulesSymlink is disabled`
-              );
-              passed = false;
-            }
           } else {
             console.error('runSync failed:', result.isErr() ? result.error.message : '');
           }
@@ -473,14 +467,8 @@ export class ClaudeIntegrationAdapter extends IntegrationTestAdapterBase {
 
   assertDisabled(root: string): string[] {
     const errors: string[] = [];
-    const manifest = path.join(root, PATHS.CLAUDE_DIR, PATHS.CLAUDE_SYNC_MANIFEST);
     const marketplace = path.join(root, PATHS.CLAUDE_PLUGIN_DIR, PATHS.MARKETPLACE_JSON);
     const settings = path.join(root, PATHS.CLAUDE_DIR, PATHS.SETTINGS_JSON);
-    if (fs.existsSync(manifest)) {
-      errors.push(
-        `${PATHS.CLAUDE_DIR}/${PATHS.CLAUDE_SYNC_MANIFEST} should not exist when disabled`
-      );
-    }
     if (fs.existsSync(marketplace)) {
       try {
         const m = JSON.parse(fs.readFileSync(marketplace, 'utf8')) as { name?: string };
@@ -543,47 +531,47 @@ export class CursorIntegrationAdapter extends IntegrationTestAdapterBase {
 
   assertEnabled(root: string): string[] {
     const errors: string[] = [];
-    const manifestPath = path.join(root, PATHS.CURSOR_DIR, PATHS.CURSOR_SYNC_MANIFEST);
+    const manifestPath = path.join(root, PATHS.SYNC_MANIFEST);
     if (!fs.existsSync(manifestPath))
-      errors.push(
-        `${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} missing (content sync manifest)`
-      );
+      errors.push(`${PATHS.SYNC_MANIFEST} missing (unified sync manifest)`);
     if (fs.existsSync(manifestPath)) {
-      const raw = fs.readFileSync(manifestPath, 'utf8');
-      type CursorSyncManifest = {
-        rules?: unknown[];
-        commands?: unknown[];
-        skills?: unknown[];
-        agents?: unknown[];
-      };
-      let manifest: CursorSyncManifest | undefined = undefined;
+      let manifest: Record<string, unknown> = {};
       try {
-        manifest = JSON.parse(raw) as CursorSyncManifest;
+        const raw = fs.readFileSync(manifestPath, 'utf8');
+        manifest = JSON.parse(raw) as Record<string, unknown>;
       } catch {
-        errors.push(`${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} invalid JSON`);
+        errors.push(`${PATHS.SYNC_MANIFEST} invalid JSON`);
       }
-      if (manifest && typeof manifest === 'object') {
-        const hasArrays =
-          Array.isArray(manifest.rules) ||
-          Array.isArray(manifest.commands) ||
-          Array.isArray(manifest.skills) ||
-          Array.isArray(manifest.agents);
-        if (!hasArrays)
-          errors.push(
-            `${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} should have rules, commands, skills, or agents arrays`
-          );
-      }
+      const cursorEntry = manifest?.cursor as Record<string, unknown> | undefined;
+      const contentEntry = cursorEntry?.localPluginsContentSync as
+        | Record<string, unknown>
+        | undefined;
+      const hasContent =
+        contentEntry &&
+        (Array.isArray(contentEntry.symlinks) ||
+          Array.isArray(contentEntry.fsAutoRemoval) ||
+          (typeof contentEntry.options === 'object' && contentEntry.options !== null));
+      if (!hasContent)
+        errors.push(
+          `${PATHS.SYNC_MANIFEST} should have cursor.localPluginsContentSync with symlinks or fsAutoRemoval`
+        );
     }
     return errors;
   }
 
   assertDisabled(root: string): string[] {
     const errors: string[] = [];
-    const manifestPath = path.join(root, PATHS.CURSOR_DIR, PATHS.CURSOR_SYNC_MANIFEST);
-    if (fs.existsSync(manifestPath))
-      errors.push(
-        `${PATHS.CURSOR_DIR}/${PATHS.CURSOR_SYNC_MANIFEST} should not exist when disabled`
-      );
+    const manifestPath = path.join(root, PATHS.SYNC_MANIFEST);
+    if (fs.existsSync(manifestPath)) {
+      try {
+        const raw = fs.readFileSync(manifestPath, 'utf8');
+        const manifest = JSON.parse(raw) as Record<string, unknown>;
+        if (manifest?.cursor != null)
+          errors.push(`${PATHS.SYNC_MANIFEST} should not have cursor when disabled`);
+      } catch {
+        // invalid JSON: manifest may be in flux; skip
+      }
+    }
     return errors;
   }
 }

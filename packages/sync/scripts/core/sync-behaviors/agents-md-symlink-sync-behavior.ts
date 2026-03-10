@@ -3,14 +3,10 @@ import {
   agentsMdSymlinkSync,
   type AgentsMdSymlinkOptions,
 } from '../../common/agents-md-symlink-sync.js';
+import { syncManifest } from '../../common/sync-manifest.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
-/** Custom data registered by this behavior (paths created for teardown). */
-export interface AgentsMdSymlinkCustomData {
-  paths: string[];
-}
-
-/** Sync behavior that manages sourceFile→targetFile symlink lifecycle (e.g. AGENTS.md→CLAUDE.md). */
+/** Sync behavior that manages sourceFile→targetFile symlink lifecycle (e.g. AGENTS.md→CLAUDE.md). Central teardown unlinks symlinks. */
 export class AgentsMdSymlinkSyncBehavior extends SyncBehaviorBase<AgentsMdSymlinkOptions> {
   constructor(options?: AgentsMdSymlinkOptions) {
     super(options);
@@ -24,30 +20,19 @@ export class AgentsMdSymlinkSyncBehavior extends SyncBehaviorBase<AgentsMdSymlin
     const key = context.currentBehaviorManifestKey ?? 'agentsMdSymlink';
     context.registerContentToMmaappssSyncManifest(context.agentName, key, {
       options: context.currentBehaviorOptionsForManifest,
-      customData: { paths: result.value } satisfies AgentsMdSymlinkCustomData,
+      symlinks: result.value,
     });
     return ok(undefined);
   }
 
+  /** When behavior is disabled during sync, teardown this entry (unlink symlinks). */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     const entry = context.manifestContent;
-    if (entry && typeof entry === 'object' && entry.customData) {
-      return agentsMdSymlinkSync.clearFromContents(
-        context.repoRoot,
-        entry.customData as AgentsMdSymlinkCustomData
-      );
-    }
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
     return ok(undefined);
   }
 
-  override clearRun(context: SyncBehaviorContext): Result<void, Error> {
-    const entry = context.manifestContent;
-    if (entry && typeof entry === 'object' && entry.customData) {
-      return agentsMdSymlinkSync.clearFromContents(
-        context.repoRoot,
-        entry.customData as AgentsMdSymlinkCustomData
-      );
-    }
+  override clearRun(): Result<void, Error> {
     return ok(undefined);
   }
 }

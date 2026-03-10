@@ -11,10 +11,6 @@ export const claudeAgentPresetConfig = {
     ENV_VAR: 'MMAAPPSS_MARKETPLACE_CLAUDE',
     /** Comment line above gitignore entry for CLAUDE.md. */
     GITIGNORE_COMMENT: '\n# mmaappss: symlinked from AGENTS.md for Claude\n',
-    /** Gitignore entry for symlinked CLAUDE.md. */
-    GITIGNORE_ENTRY: 'CLAUDE.md',
-    /** Manifest key for marketplace/settings (claude). */
-    MANIFEST_KEY: 'claude',
     /** Path to Claude plugin marketplace.json. */
     MARKETPLACE_FILE: '.claude-plugin/marketplace.json',
     /** Target dir for symlinked plugin rules. */

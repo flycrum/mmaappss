@@ -3,8 +3,9 @@ import { err, ok, Result } from 'neverthrow';
 import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
+import { pathHelpers } from '../../common/path-helpers.js';
 import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
-import { presetConstants } from '../presets/agent-presets/preset-constants.js';
+import { presetConstants } from '../presets/agent-preset-constants.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Options for syncing and tearing down agent settings files. */
@@ -50,7 +51,7 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const filePath = path.join(repoRoot, options.settingsFile);
+    const filePath = pathHelpers.joinRepo(repoRoot, options.settingsFile);
     if (!fs.existsSync(filePath)) return ok(undefined);
 
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
@@ -95,7 +96,7 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
       enabledPlugins,
     };
 
-    const filePath = path.join(context.repoRoot, options.settingsFile);
+    const filePath = pathHelpers.joinRepo(context.repoRoot, options.settingsFile);
     const res = jsonPatch.readJson<Record<string, unknown>>(filePath);
     let existing: Record<string, unknown>;
     if (res.isErr()) {

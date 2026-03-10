@@ -1,6 +1,6 @@
 import type { DefineAgentInput } from '../../marketplaces-config.js';
+import { presetConstants } from '../agent-preset-constants.js';
 import { claudeAgentPresetConfig } from './claude-agent-preset.config.js';
-import { presetConstants } from './preset-constants.js';
 
 const C = claudeAgentPresetConfig.CONSTANTS;
 
@@ -14,12 +14,12 @@ export const claudeAgentPreset: DefineAgentInput<'claude'> = {
         sourceFile: C.SOURCE_FILE,
         targetFile: C.TARGET_FILE,
         gitignoreComment: C.GITIGNORE_COMMENT,
-        gitignoreEntry: C.GITIGNORE_ENTRY,
+        gitignoreEntry: C.TARGET_FILE,
       },
     },
     localMarketplaceSync: {
       options: {
-        manifestKey: C.MANIFEST_KEY,
+        manifestKey: C.AGENT_NAME,
         marketplaceFile: C.MARKETPLACE_FILE,
         marketplaceName: presetConstants.DEFAULT_MARKETPLACE_NAME,
         sourceFormat: 'prefixed',
@@ -33,7 +33,7 @@ export const claudeAgentPreset: DefineAgentInput<'claude'> = {
     },
     settingsSync: {
       options: {
-        manifestKey: C.MANIFEST_KEY,
+        manifestKey: C.AGENT_NAME,
         marketplaceName: presetConstants.DEFAULT_MARKETPLACE_NAME,
         settingsFile: C.SETTINGS_FILE,
       },

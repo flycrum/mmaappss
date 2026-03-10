@@ -207,19 +207,24 @@ export class AgentAdapterBase {
     };
     getLogger().info({ agent: this.agentConfig.name, enabled }, 'adapter lifecycle run');
 
+    const manifestByBehavior = options?.manifestByBehavior ?? {};
     if (enabled && this.syncBehaviorsToClearInstances.length > 0) {
       const clearContext: SyncBehaviorContext = {
         ...context,
         enabled: false,
         marketplaces: [],
       };
-      for (const behavior of this.syncBehaviorsToClearInstances) {
-        const clearResult = behavior.clearRun(clearContext);
+      const defs = this.agentConfig.syncBehaviorsToClear ?? [];
+      for (let i = 0; i < this.syncBehaviorsToClearInstances.length; i++) {
+        const def = defs[i];
+        const key = def?.manifestKey ?? `custom_clear_${i}`;
+        (clearContext as SyncBehaviorContext & { manifestContent?: unknown }).manifestContent =
+          manifestByBehavior[key];
+        const clearResult = this.syncBehaviorsToClearInstances[i]!.clearRun(clearContext);
         if (clearResult.isErr()) return err(clearResult.error);
       }
     }
 
-    const manifestByBehavior = options?.manifestByBehavior ?? {};
     const setBehaviorContext = (index: number): void => {
       const def = this.agentConfig.syncBehaviors[index];
       const key = def?.manifestKey ?? `custom_${index}`;

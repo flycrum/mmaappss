@@ -4,8 +4,9 @@ import { err, ok, Result } from 'neverthrow';
 import fs from 'node:fs';
 import path from 'node:path';
 import { jsonPatch } from '../../common/json-patch.js';
+import { pathHelpers } from '../../common/path-helpers.js';
 import type { DiscoveredMarketplace, PluginManifestKey } from '../../common/types.js';
-import { presetConstants } from '../presets/agent-presets/preset-constants.js';
+import { presetConstants } from '../presets/agent-preset-constants.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
 /** Marketplace plugin entry written into `marketplace.json`. */
@@ -95,7 +96,7 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     const options = this.options;
     if (!options) return ok(undefined);
 
-    const filePath = path.join(repoRoot, options.marketplaceFile);
+    const filePath = pathHelpers.joinRepo(repoRoot, options.marketplaceFile);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
     if (res.isErr()) {
       if (res.error.message.includes('ENOENT')) return ok(undefined);
@@ -139,7 +140,7 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
       return ok({ name: '', owner: { name: presetConstants.MARKETPLACE_OWNER }, plugins: [] });
 
     const manifestKey = options.manifestKey ?? context.agentName;
-    const filePath = path.join(context.repoRoot, options.marketplaceFile);
+    const filePath = pathHelpers.joinRepo(context.repoRoot, options.marketplaceFile);
     const canonical = this.buildMarketplaceJson(context.marketplaces, manifestKey);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
 

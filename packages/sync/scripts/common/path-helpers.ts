@@ -30,6 +30,13 @@ export const pathHelpers = {
     return pathHelpers.resolveRepoRootFromPackageRoot(pathHelpers.packageRoot);
   },
   /**
+   * Join repo root with one or more path segments. Use for repo-relative paths (e.g. options.rulesDir, options.settingsFile).
+   */
+  joinRepo(repoRoot: string, ...segments: string[]): string {
+    return path.join(repoRoot, ...segments);
+  },
+
+  /**
    * Resolve repo root from a package root path. When packageRoot contains node_modules, returns the directory that contains that node_modules; otherwise returns packageRoot/../..
    * Exposed for testing.
    */

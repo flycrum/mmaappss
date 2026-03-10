@@ -195,6 +195,45 @@ export const syncFs = {
   },
 
   /**
+   * Remove a single path if it exists: unlink file/symlink, or rmSync recursive for directory. Idempotent; ignores ENOENT.
+   */
+  removePathIfExists(fullPath: string): void {
+    try {
+      const st = fs.lstatSync(fullPath);
+      if (st.isSymbolicLink() || st.isFile()) {
+        fs.unlinkSync(fullPath);
+      } else if (st.isDirectory()) {
+        fs.rmSync(fullPath, { recursive: true, force: true });
+      }
+    } catch {
+      // ignore (e.g. ENOENT)
+    }
+  },
+
+  /**
+   * After removing a path, prune its parent directory if empty, then repeat for ancestors until stopAtDir or a non-empty dir.
+   * Use after removePathIfExists so empty dirs (e.g. .cursor/rules/pluginName) are removed. stopAtDir is typically repo root.
+   */
+  pruneEmptyParentDirs(removedPath: string, stopAtDir: string): void {
+    let parentDir = path.dirname(removedPath);
+    const stopNormalized = path.resolve(stopAtDir);
+    while (parentDir) {
+      try {
+        if (!fs.existsSync(parentDir)) break;
+        const parentNormalized = path.resolve(parentDir);
+        if (parentNormalized === stopNormalized) break;
+        const rel = path.relative(stopNormalized, parentNormalized);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) break;
+        if (fs.readdirSync(parentDir).length !== 0) break;
+        fs.rmdirSync(parentDir);
+        parentDir = path.dirname(parentDir);
+      } catch {
+        break;
+      }
+    }
+  },
+
+  /**
    * Unlink each path (repoRoot + relPath). Uses lstatSync so broken symlinks are removed (existsSync returns false for them). Idempotent; ignores missing or errors.
    */
   unlinkPaths(repoRoot: string, relPaths: string[]): void {

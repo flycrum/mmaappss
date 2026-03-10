@@ -6,13 +6,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { MmaappssConfig } from './config-helpers.js';
+import { syncFs } from './sync-fs.js';
 
 /**
  * One sync behavior's entry in the unified manifest.
  * options = serializable behavior options (from definition); customData = runtime data the behavior registered.
+ * symlinks / fsAutoRemoval = paths (relative to repo root) that the runner auto-removes during clear; fsManualRemoval = paths we touch but do not auto-delete.
  * Use true when the behavior is active but has nothing to store (e.g. no options or customData).
  */
-export type SyncManifestEntry = true | { options?: Record<string, unknown>; customData?: unknown };
+export type SyncManifestEntry =
+  | true
+  | {
+      /** Runtime data the behavior registered. */
+      customData?: unknown;
+      /** Paths (relative to repo root) to delete during clear: files/symlinks unlinked, dirs rmSync recursive. */
+      fsAutoRemoval?: string[];
+      /** Paths we touch but do not auto-delete (e.g. .claude/settings.json). Reference only. */
+      fsManualRemoval?: string[];
+      /** Serializable behavior options (from definition). */
+      options?: Record<string, unknown>;
+      /** Paths (relative to repo root) that are symlinks; unlinked during clear. */
+      symlinks?: string[];
+    };
 
 /** Full manifest: agent -> behavior manifestKey -> entry. */
 export type SyncManifest = Record<string, Record<string, SyncManifestEntry>>;
@@ -70,5 +85,31 @@ export const syncManifest = {
   ): void {
     if (!manifest[agent]) manifest[agent] = {};
     manifest[agent][syncBehavior] = entry;
+  },
+
+  /**
+   * Teardown one manifest entry: unlink symlinks, remove fsAutoRemoval paths (file/symlink unlink, dir rmSync). Idempotent.
+   */
+  teardownEntry(repoRoot: string, entry: SyncManifestEntry): void {
+    if (entry === true || typeof entry !== 'object') return;
+    for (const rel of entry.symlinks ?? []) {
+      const full = path.join(repoRoot, rel);
+      syncFs.unlinkIfExists(full);
+      syncFs.pruneEmptyParentDirs(full, repoRoot);
+    }
+    for (const rel of entry.fsAutoRemoval ?? []) {
+      const full = path.join(repoRoot, rel);
+      syncFs.removePathIfExists(full);
+      syncFs.pruneEmptyParentDirs(full, repoRoot);
+    }
+  },
+
+  /**
+   * Teardown all behavior entries for one agent: for each entry run teardownEntry. Call before adapter.clear() so path/symlink removal is central.
+   */
+  teardownAgentEntries(repoRoot: string, manifestByAgent: Record<string, SyncManifestEntry>): void {
+    for (const entry of Object.values(manifestByAgent)) {
+      this.teardownEntry(repoRoot, entry);
+    }
   },
 };

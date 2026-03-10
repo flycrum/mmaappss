@@ -1,9 +1,7 @@
 import { err, ok } from 'neverthrow';
+import { syncManifest } from '../../../common/sync-manifest.js';
 import type { DefineAgentInput } from '../../marketplaces-config.js';
-import {
-  cursorAgentPresetConfig,
-  type CursorContentSyncManifest,
-} from './cursor-agent-preset.config.js';
+import { cursorAgentPresetConfig } from './cursor-agent-preset.config.js';
 
 const C = cursorAgentPresetConfig.CONSTANTS;
 
@@ -17,41 +15,34 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
         customHandler: {
           clear(context) {
             const entry = context.manifestContent;
-            if (
-              entry &&
-              typeof entry === 'object' &&
-              entry.customData &&
-              typeof entry.customData === 'object'
-            ) {
-              return cursorAgentPresetConfig.clearCursorContentFromContents(
-                context.repoRoot,
-                entry.customData as CursorContentSyncManifest
-              );
-            }
+            if (entry && typeof entry === 'object')
+              syncManifest.teardownEntry(context.repoRoot, entry);
+            cursorAgentPresetConfig.pruneCursorContentDirs(context.repoRoot);
             return ok(undefined);
           },
           sync(context) {
             const entry = context.manifestContent;
-            const clearFromContents: CursorContentSyncManifest | undefined =
-              entry && typeof entry === 'object' && entry.customData
-                ? (entry.customData as CursorContentSyncManifest)
-                : undefined;
+            if (entry && typeof entry === 'object') {
+              syncManifest.teardownEntry(context.repoRoot, entry);
+            }
+            cursorAgentPresetConfig.pruneCursorContentDirs(context.repoRoot);
             const result = cursorAgentPresetConfig.syncCursorContent(
               context.repoRoot,
               context.marketplaces,
-              context.tsConfig,
-              { clearFromContents }
+              context.tsConfig
             );
             if (result.isErr()) return err(result.error);
             const key = context.currentBehaviorManifestKey ?? 'localPluginsContentSync';
+            const v = result.value;
             context.registerContentToMmaappssSyncManifest(context.agentName, key, {
               options: context.currentBehaviorOptionsForManifest,
-              customData: result.value,
+              symlinks: [...v.commands, ...v.skills, ...v.agents],
+              fsAutoRemoval: v.rules,
             });
             return ok(undefined);
           },
         },
-        requiredManifestKey: C.REQUIRED_MANIFEST_KEY,
+        requiredManifestKey: C.AGENT_NAME,
         targetRoot: C.TARGET_ROOT,
       },
     },

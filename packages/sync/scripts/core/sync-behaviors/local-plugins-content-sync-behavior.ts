@@ -1,7 +1,9 @@
 import { ok, Result } from 'neverthrow';
 import path from 'node:path';
 import { isExcluded } from '../../common/excluded-patterns.js';
+import { pathHelpers } from '../../common/path-helpers.js';
 import { syncFs } from '../../common/sync-fs.js';
+import { syncManifest } from '../../common/sync-manifest.js';
 import type { PluginManifestKey } from '../../common/types.js';
 import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behavior-base.js';
 
@@ -83,11 +85,6 @@ export interface LocalPluginsContentSyncBehaviorOptions {
   targetRoot: string;
 }
 
-/** Custom data registered by this behavior (generic strategy: paths for teardown). */
-export interface LocalPluginsContentSyncCustomData {
-  paths: string[];
-}
-
 /** Returns whether a discovered plugin satisfies the required manifest filter. */
 function hasRequiredManifest(
   requiredManifestKey: LocalPluginsContentSyncBehaviorOptions['requiredManifestKey'],
@@ -112,67 +109,60 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     super(options);
   }
 
-  /** Clears generic strategy outputs from unified manifest entry only. */
-  private clearGeneric(context: SyncBehaviorContext): Result<void, Error> {
-    const entry = context.manifestContent;
-    if (entry && typeof entry === 'object' && entry.customData) {
-      const data = entry.customData as LocalPluginsContentSyncCustomData;
-      if (Array.isArray(data.paths)) {
-        syncFs.unlinkPaths(context.repoRoot, data.paths);
-        return ok(undefined);
-      }
-    }
-    return ok(undefined);
-  }
-
-  /** Syncs plugin entries for generic strategy with optional transforms and overrides. */
+  /** Syncs plugin entries for generic strategy with optional transforms and overrides. Registers symlinks and fsAutoRemoval for central teardown. */
   private syncGeneric(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
     if (!options) return ok(undefined);
-    const created: string[] = [];
+    const symlinkPaths: string[] = [];
+    const fsAutoRemovalPaths: string[] = [];
     const excluded = options.excluded ?? context.tsConfig?.excluded;
-    const targetRoot = path.join(context.repoRoot, options.targetRoot);
+    const targetRoot = pathHelpers.joinRepo(context.repoRoot, options.targetRoot);
     syncFs.ensureDir(targetRoot);
+
+    const entry = context.manifestContent;
+    if (entry && typeof entry === 'object') {
+      syncManifest.teardownEntry(context.repoRoot, entry);
+    }
 
     for (const marketplace of context.marketplaces) {
       for (const plugin of marketplace.plugins) {
         const manifestKey = options.requiredManifestKey ?? context.agentName;
         if (!hasRequiredManifest(manifestKey, plugin)) continue;
-        const entries = syncFs.readdirWithTypes(plugin.path);
-        for (const entry of entries) {
-          if (!isIncludedFolder(options.folderSelection, entry.name)) continue;
+        const dirEntries = syncFs.readdirWithTypes(plugin.path);
+        for (const dirEntry of dirEntries) {
+          if (!isIncludedFolder(options.folderSelection, dirEntry.name)) continue;
 
-          const sourcePath = path.join(plugin.path, entry.name);
-          const defaultTarget = path.join(targetRoot, plugin.name, entry.name);
+          const sourcePath = path.join(plugin.path, dirEntry.name);
+          const defaultTarget = path.join(targetRoot, plugin.name, dirEntry.name);
           const localContent: LocalPluginContent = {
             absolutePath: sourcePath,
             agentName: context.agentName,
-            entryName: entry.name,
-            extension: path.extname(entry.name),
-            isDirectory: entry.isDirectory,
-            isFile: entry.isFile,
+            entryName: dirEntry.name,
+            extension: path.extname(dirEntry.name),
+            isDirectory: dirEntry.isDirectory,
+            isFile: dirEntry.isFile,
             pluginName: plugin.name,
             relativePluginPath: plugin.relativePath,
             targetPath: defaultTarget,
-            topLevelEntryName: entry.name,
+            topLevelEntryName: dirEntry.name,
           };
 
           const override = options.processPluginFolderOrFile?.(localContent);
           if (override === false || override?.skip === true) continue;
 
-          const fileName = override?.filename ?? entry.name;
+          const fileName = override?.filename ?? dirEntry.name;
           const targetPath = override?.targetPath ?? path.join(targetRoot, plugin.name, fileName);
           const relativeTarget = path.relative(context.repoRoot, targetPath).replace(/\\/g, '/');
           if (isExcluded(relativeTarget, excluded)) continue;
 
           syncFs.ensureDir(path.dirname(targetPath));
-          if (entry.isDirectory || override?.symlink === true) {
+          if (dirEntry.isDirectory || override?.symlink === true) {
             syncFs.symlinkRelative(sourcePath, targetPath);
-            created.push(relativeTarget);
+            symlinkPaths.push(relativeTarget);
             continue;
           }
 
-          const transformConfig = options.folderTransforms?.[entry.name];
+          const transformConfig = options.folderTransforms?.[dirEntry.name];
           let writePath = targetPath;
           if (transformConfig && transformConfig !== true && transformConfig.transformFilenameFn) {
             const transformed = transformConfig.transformFilenameFn(fileName, 'md');
@@ -189,7 +179,7 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
             contents = transformConfig.transformFileMarkdownFn(contents, localContent);
           }
           syncFs.writeFileUtf8(writePath, contents);
-          created.push(path.relative(context.repoRoot, writePath).replace(/\\/g, '/'));
+          fsAutoRemovalPaths.push(path.relative(context.repoRoot, writePath).replace(/\\/g, '/'));
         }
       }
     }
@@ -197,7 +187,8 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     const key = context.currentBehaviorManifestKey ?? 'localPluginsContentSync';
     context.registerContentToMmaappssSyncManifest(context.agentName, key, {
       options: context.currentBehaviorOptionsForManifest,
-      customData: { paths: created } satisfies LocalPluginsContentSyncCustomData,
+      symlinks: symlinkPaths,
+      fsAutoRemoval: fsAutoRemovalPaths,
     });
     return ok(undefined);
   }
@@ -207,21 +198,21 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
     const options = this.options;
     if (!options) return ok(undefined);
     if (options.customHandler) return options.customHandler.sync(context);
-    const clearResult = this.clearGeneric(context);
-    if (clearResult.isErr()) return clearResult;
     return this.syncGeneric(context);
   }
 
-  /** Sync-phase disabled hook: custom handler or generic clear. */
+  /** When behavior is disabled during sync, run custom clear or teardown this entry. */
   override syncRunDisabled(context: SyncBehaviorContext): Result<void, Error> {
     const options = this.options;
-    if (!options) return ok(undefined);
-    if (options.customHandler) return options.customHandler.clear(context);
-    return this.clearGeneric(context);
+    if (options?.customHandler) return options.customHandler.clear(context);
+    const entry = context.manifestContent;
+    if (entry && typeof entry === 'object') syncManifest.teardownEntry(context.repoRoot, entry);
+    return ok(undefined);
   }
 
-  /** Clear hook that delegates to disabled behavior. */
   override clearRun(context: SyncBehaviorContext): Result<void, Error> {
-    return this.syncRunDisabled(context);
+    const options = this.options;
+    if (options?.customHandler) return options.customHandler.clear(context);
+    return ok(undefined);
   }
 }

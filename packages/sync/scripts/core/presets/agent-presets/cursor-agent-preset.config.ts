@@ -10,9 +10,10 @@ import path from 'node:path';
 import type { MmaappssConfig } from '../../../common/config-helpers.js';
 import { isExcluded } from '../../../common/excluded-patterns.js';
 import { getLogger } from '../../../common/logger.js';
+import { pathHelpers } from '../../../common/path-helpers.js';
 import { syncFs } from '../../../common/sync-fs.js';
 import type { DiscoveredMarketplace } from '../../../common/types.js';
-import { presetConstants } from './preset-constants.js';
+import { presetConstants } from '../agent-preset-constants.js';
 
 export interface CursorContentSyncManifest {
   rules: string[];
@@ -64,35 +65,17 @@ export const cursorAgentPresetConfig = {
     CURSOR_RULES_FRONTMATTER,
     /** Env var that enables/disables cursor marketplace sync. */
     ENV_VAR: 'MMAAPPSS_MARKETPLACE_CURSOR',
-    /** Plugin manifest key used to filter cursor-enabled plugins. */
-    REQUIRED_MANIFEST_KEY: 'cursor' as const,
     /** Root output dir for cursor content (rules, commands, skills, agents). */
     TARGET_ROOT: '.cursor',
   } as const,
 
   /**
-   * Remove all synced Cursor content using stored manifest content (e.g. from unified sync manifest).
+   * Prune empty plugin content subdirs under .cursor (rules, commands, skills, agents). Call after central teardown has removed paths.
    */
-  clearCursorContentFromContents(
-    repoRoot: string,
-    contents: CursorContentSyncManifest
-  ): Result<void, Error> {
-    try {
-      const manifest = normalizeCursorContentSyncManifest(contents);
-      const allPaths = [
-        ...manifest.rules,
-        ...manifest.commands,
-        ...manifest.skills,
-        ...manifest.agents,
-      ];
-      syncFs.unlinkPaths(repoRoot, allPaths);
-      const cursorDir = path.join(repoRoot, this.CONSTANTS.TARGET_ROOT);
-      for (const sub of presetConstants.PLUGIN_CONTENT_DIRS) {
-        syncFs.pruneEmptySubdirsThenParent(path.join(cursorDir, sub));
-      }
-      return ok(undefined);
-    } catch (e) {
-      return err(e instanceof Error ? e : new Error(String(e)));
+  pruneCursorContentDirs(repoRoot: string): void {
+    const cursorDir = pathHelpers.joinRepo(repoRoot, this.CONSTANTS.TARGET_ROOT);
+    for (const sub of presetConstants.PLUGIN_CONTENT_DIRS) {
+      syncFs.pruneEmptySubdirsThenParent(path.join(cursorDir, sub));
     }
   },
 
@@ -106,14 +89,8 @@ export const cursorAgentPresetConfig = {
   syncCursorContent(
     repoRoot: string,
     marketplaces: DiscoveredMarketplace[],
-    config?: Pick<MmaappssConfig, 'excluded'> | null,
-    options?: { clearFromContents?: CursorContentSyncManifest }
+    config?: Pick<MmaappssConfig, 'excluded'> | null
   ): Result<CursorContentSyncManifest, Error> {
-    if (options?.clearFromContents) {
-      const clearResult = this.clearCursorContentFromContents(repoRoot, options.clearFromContents);
-      if (clearResult.isErr()) return err(clearResult.error);
-    }
-
     const allowedPluginNames = new Set(
       marketplaces.flatMap((m) =>
         m.plugins
@@ -121,7 +98,7 @@ export const cursorAgentPresetConfig = {
           .map((p) => p.name)
       )
     );
-    const cursorDir = path.join(repoRoot, this.CONSTANTS.TARGET_ROOT);
+    const cursorDir = pathHelpers.joinRepo(repoRoot, this.CONSTANTS.TARGET_ROOT);
     for (const sub of presetConstants.PLUGIN_CONTENT_DIRS) {
       const parent = path.join(cursorDir, sub);
       if (!syncFs.pathExists(parent)) continue;
