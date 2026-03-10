@@ -40,7 +40,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(configHelpers.general.getMarketplaceEnabled(ROOT, null, 'claude')).toBe(false);
   });
 
-  it('env overrides config: ENV_CLAUDE=true wins over false', () => {
+  it('when tsConfig present, env ignored: TS false wins', () => {
     vi.stubEnv(VARS.ENV_CLAUDE, 'true');
     expect(
       configHelpers.general.getMarketplaceEnabled(
@@ -48,10 +48,10 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
         { marketplacesEnabled: { claude: false } },
         'claude'
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('env overrides config: ENV_CLAUDE=false wins over true', () => {
+  it('when tsConfig present, env ignored: TS true wins', () => {
     vi.stubEnv(VARS.ENV_CLAUDE, 'false');
     expect(
       configHelpers.general.getMarketplaceEnabled(
@@ -59,10 +59,10 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
         { marketplacesEnabled: { claude: true } },
         'claude'
       )
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it('ENV_ALL=false disables all agents regardless of per-agent setting', () => {
+  it('when tsConfig present, ENV_ALL ignored', () => {
     vi.stubEnv(VARS.ENV_ALL, 'false');
     vi.stubEnv(VARS.ENV_CLAUDE, 'true');
     expect(
@@ -71,10 +71,10 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
         { marketplacesEnabled: { claude: true } },
         'claude'
       )
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it('ENV_ALL=true with per-agent env: both must be true', () => {
+  it('when tsConfig present, per-agent env ignored', () => {
     vi.stubEnv(VARS.ENV_ALL, 'true');
     vi.stubEnv(VARS.ENV_CLAUDE, 'false');
     expect(
@@ -83,7 +83,12 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
         { marketplacesEnabled: { claude: true } },
         'claude'
       )
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it('when tsConfig null, env enables agent', () => {
+    vi.stubEnv(VARS.ENV_CLAUDE, 'true');
+    expect(configHelpers.general.getMarketplaceEnabled(ROOT, null, 'claude')).toBe(true);
   });
 
   it('preset agent object entry is treated as enabled', () => {
@@ -144,14 +149,19 @@ describe('configHelpers.general.getLoggingEnabled', () => {
     expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: false })).toBe(false);
   });
 
-  it('env overrides tsConfig: ENV_LOGGING=true wins over loggingEnabled: false', () => {
+  it('when tsConfig present, env ignored: TS false wins', () => {
     vi.stubEnv(VARS.ENV_LOGGING, 'true');
-    expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: false })).toBe(true);
+    expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: false })).toBe(false);
   });
 
-  it('env overrides tsConfig: ENV_LOGGING=false wins over loggingEnabled: true', () => {
+  it('when tsConfig present, env ignored: TS true wins', () => {
     vi.stubEnv(VARS.ENV_LOGGING, 'false');
-    expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: true })).toBe(false);
+    expect(configHelpers.general.getLoggingEnabled(ROOT, { loggingEnabled: true })).toBe(true);
+  });
+
+  it('when tsConfig null, env enables logging', () => {
+    vi.stubEnv(VARS.ENV_LOGGING, 'true');
+    expect(configHelpers.general.getLoggingEnabled(ROOT, null)).toBe(true);
   });
 });
 

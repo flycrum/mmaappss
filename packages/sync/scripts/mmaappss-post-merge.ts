@@ -13,8 +13,8 @@ async function main(): Promise<void> {
   let tsConfig: MmaappssConfig | null = null;
   try {
     const repoRoot = pathHelpers.repoRoot;
-    configHelpers.env.loadEnv(repoRoot);
     tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+    if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
     enabled = configHelpers.general.getPostMergeSyncEnabled(repoRoot, tsConfig);
   } catch (err) {
     console.error('Post-merge config error:', err);

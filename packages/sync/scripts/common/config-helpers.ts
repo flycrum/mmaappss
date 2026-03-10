@@ -1,6 +1,6 @@
 /**
- * Config loading: env (dotenv from root) + optional TypeScript config.
- * Precedence: process env overrides file; env overrides TS config.
+ * Config loading: TypeScript config when present; otherwise env (dotenv from root).
+ * When mmaappss.config.ts exists and loads, env files are not loaded and env vars do not override.
  */
 
 import { config as loadDotenv } from 'dotenv';
@@ -28,21 +28,21 @@ export const configHelpers = {
   /** General config resolution (enable flags, logging, etc.). */
   general: {
     /**
-     * Resolve whether file logging is enabled. Env MMAAPPSS_LOGGING_ENABLED overrides TS config.
+     * Resolve whether file logging is enabled. When TS config is present, only TS is used; otherwise env.
      */
     getLoggingEnabled(_root: string, tsConfig: MmaappssConfig | null): boolean {
+      if (tsConfig !== null) return tsConfig.loggingEnabled ?? false;
       const envVal = process.env[configHelpers.env.VARS.ENV_LOGGING];
-      const defaultVal = tsConfig?.loggingEnabled ?? false;
-      return parseBool(envVal, defaultVal);
+      return parseBool(envVal, false);
     },
 
     /**
-     * Resolve whether post-merge sync is enabled (for git hook). Env MMAAPPSS_POST_MERGE_SYNC_ENABLED overrides TS config.
+     * Resolve whether post-merge sync is enabled (for git hook). When TS config is present, only TS is used; otherwise env.
      */
     getPostMergeSyncEnabled(_root: string, tsConfig: MmaappssConfig | null): boolean {
+      if (tsConfig !== null) return tsConfig.postMergeSyncEnabled ?? false;
       const envVal = process.env[configHelpers.env.VARS.ENV_POST_MERGE_SYNC];
-      const defaultVal = tsConfig?.postMergeSyncEnabled ?? false;
-      return parseBool(envVal, defaultVal);
+      return parseBool(envVal, false);
     },
 
     /**
@@ -62,7 +62,7 @@ export const configHelpers = {
 
     /**
      * Resolve marketplace enable flags for a given agent.
-     * Env overrides TS config; MMAAPPSS_MARKETPLACE_ALL acts as master switch.
+     * When TS config is present, only TS config is used; otherwise env vars apply.
      *
      * @param root - Repo root path (for env loading context)
      * @param tsConfig - Loaded mmaappss.config.ts or null
@@ -74,10 +74,11 @@ export const configHelpers = {
       tsConfig: MmaappssConfig | null,
       agent: Agent | DefinedAgent
     ): boolean {
-      const { VARS } = configHelpers.env;
-      const allEnv = process.env[VARS.ENV_ALL];
       const agentName = typeof agent === 'string' ? agent : agent.name;
       const resolvedAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
+      if (tsConfig !== null) return Boolean(resolvedAgents[agentName]);
+      const { VARS } = configHelpers.env;
+      const allEnv = process.env[VARS.ENV_ALL];
       const defaultPer = Boolean(resolvedAgents[agentName]);
       const presetEnvVar = (agentPresets as Record<string, { envVar?: string }>)[agentName]?.envVar;
       const envVar = typeof agent === 'object' && agent.envVar ? agent.envVar : presetEnvVar;
@@ -120,13 +121,12 @@ export const configHelpers = {
   /** TypeScript config file loading. */
   ts: {
     /**
-     * Load env from root, then optionally load mmaappss.config.ts from root.
+     * Load mmaappss.config.ts from root only. Does not load .env; callers load env when this returns null.
      *
      * @param root - Repo root path
-     * @returns Config object or null if no mmaappss.config.ts exists
+     * @returns Config object or null if no mmaappss.config.ts exists or load failed
      */
     async loadConfig(root: string): Promise<MmaappssConfig | null> {
-      configHelpers.env.loadEnv(root);
       const configPath = path.join(root, 'mmaappss.config.ts');
       try {
         // Cache-bust so overwritten config (e.g. in integration tests) is reloaded

@@ -41,9 +41,8 @@ function flushLogger(): Promise<void> {
  */
 export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Error>> {
   const repoRoot = pathHelpers.repoRoot;
-  configHelpers.env.loadEnv(repoRoot);
-
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+  if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
   const enabledAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
   setLoggerContext(repoRoot, tsConfig);
   const log = getLogger();
@@ -81,9 +80,8 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
  */
 export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], Error>> {
   const repoRoot = pathHelpers.repoRoot;
-  configHelpers.env.loadEnv(repoRoot);
-
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
+  if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
   const enabledAgents = marketplacesConfig.resolveEnabledAgents(tsConfig);
   setLoggerContext(repoRoot, tsConfig);
   const log = getLogger();

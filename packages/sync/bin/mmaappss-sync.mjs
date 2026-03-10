@@ -16,10 +16,10 @@ const packageRoot = path.resolve(__dirname, '..');
 const scriptPath = path.join(packageRoot, 'scripts/mmaappss-sync-all.ts');
 const require = createRequire(import.meta.url);
 const tsxLoader = require.resolve('tsx');
-
 const result = spawnSync(process.execPath, ['--import', `file://${tsxLoader}`, scriptPath], {
   stdio: 'inherit',
   cwd: process.cwd(),
   env: { ...process.env, MMAAPPSS_REPO_ROOT: process.cwd() },
 });
+
 process.exit(result.status ?? 1);
