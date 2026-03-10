@@ -99,7 +99,7 @@ flowchart TB
 
 ## Integration tests
 
-Integration tests live under **scripts/integration-test/** and are **not part of vitest**. They back up agent dirs, run sync or clear, and assert filesystem outcomes. See [scripts/integration-test/README.md](../../scripts/integration-test/README.md) for how they work, default steps, and the data-flow diagram.
+Integration tests live under **scripts-integration-tests/** and are **not part of vitest**. They use config-driven test cases (clear, inject config, sync, assert manifest and paths). See [scripts-integration-tests/README.md](../../scripts-integration-tests/README.md).
 
 ---
 

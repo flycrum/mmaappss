@@ -22,19 +22,6 @@ export interface CursorContentSyncManifest {
   agents: string[];
 }
 
-/** Ensure manifest has arrays for rules, commands, skills, agents (coerce invalid/missing to []). */
-function normalizeCursorContentSyncManifest(parsed: unknown): CursorContentSyncManifest {
-  const obj = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
-  const arr = (x: unknown): string[] =>
-    Array.isArray(x) ? x.filter((e): e is string => typeof e === 'string') : [];
-  return {
-    rules: arr(obj.rules),
-    commands: arr(obj.commands),
-    skills: arr(obj.skills),
-    agents: arr(obj.agents),
-  };
-}
-
 /**
  * Strip optional YAML frontmatter from markdown content and return body only.
  * If no frontmatter (no leading ---), returns content as-is.

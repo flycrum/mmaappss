@@ -11,6 +11,7 @@
     "mmaappss:sync:test": "pnpm -F @mmaappss/sync run mmaappss:sync:test",
     "mmaappss:sync:clear": "pnpm -F @mmaappss/sync run mmaappss:sync:clear",
     "test": "turbo run test",
+    "test:integrations": "pnpm -F @mmaappss/sync run test:integrations",
     "type-check": "turbo run type-check"
   },
   "devDependencies": {

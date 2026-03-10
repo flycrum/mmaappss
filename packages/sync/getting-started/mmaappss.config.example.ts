@@ -6,7 +6,7 @@
 import { marketplacesConfig } from '@mmaappss/sync/config';
 
 const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig({
-  marketplacesEnabled: {
+  agentsConfig: {
     claude: true,
     cursor: true,
     codex: true,

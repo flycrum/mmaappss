@@ -1,4 +1,8 @@
-# Integration tests
+# Integration tests (old / deprecated)
+
+**Deprecated.** This folder holds the previous adapter-based integration tests. Use the new config-driven tests in **scripts-integration-tests/** instead (`pnpm -F @mmaappss/sync run test:integrations`).
+
+---
 
 Integration tests for marketplace sync and clear (Claude, Cursor, Codex). **Not part of vitest** — run via package scripts (e.g. `pnpm -F @mmaappss/sync run mmaappss:sync:test`).
 

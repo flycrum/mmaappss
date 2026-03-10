@@ -321,7 +321,7 @@ export abstract class IntegrationTestAdapterBase {
         try {
           if (fs.existsSync(configPath)) fs.renameSync(configPath, configBackupPath);
           const fullConfig = {
-            marketplacesEnabled: {
+            agentsConfig: {
               claude: true,
               cursor: true,
               codex: true,

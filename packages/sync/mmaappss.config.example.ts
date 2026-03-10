@@ -21,7 +21,7 @@ let mmaappssConfigExample: ReturnType<typeof marketplacesConfig.defineMarketplac
 switch (exampleConfigMode) {
   case 'basic':
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig({
-      marketplacesEnabled: {
+      agentsConfig: {
         claude: true,
         cursor: true,
         codex: true,
@@ -34,7 +34,7 @@ switch (exampleConfigMode) {
 
   case 'defaults-only':
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig({
-      marketplacesEnabled: {
+      agentsConfig: {
         claude: true,
         cursor: true,
         codex: true,
@@ -44,7 +44,7 @@ switch (exampleConfigMode) {
 
   case 'disable-preset':
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig({
-      marketplacesEnabled: {
+      agentsConfig: {
         claude: false,
         cursor: true,
         codex: true,
@@ -56,7 +56,7 @@ switch (exampleConfigMode) {
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig(
       ({ config, defineAgent, agentPresets }) =>
         config({
-          marketplacesEnabled: {
+          agentsConfig: {
             claude: defineAgent({
               ...agentPresets.claude,
               name: 'claude',
@@ -77,7 +77,7 @@ switch (exampleConfigMode) {
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig(
       ({ config, defineAgent, agentPresets }) =>
         config({
-          marketplacesEnabled: {
+          agentsConfig: {
             claude: true,
             cursor: defineAgent({
               ...agentPresets.cursor,
@@ -183,7 +183,7 @@ switch (exampleConfigMode) {
     mmaappssConfigExample = marketplacesConfig.defineMarketplacesConfig(
       ({ config, defineAgent, syncBehaviorPresets }) =>
         config({
-          marketplacesEnabled: {
+          agentsConfig: {
             custom: {
               acme: defineAgent({
                 name: 'acme',

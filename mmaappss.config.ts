@@ -12,7 +12,7 @@ const configMode = 'basic' as ConfigMode;
 
 if (configMode === 'basic') {
   mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(() => ({
-    marketplacesEnabled: {
+    agentsConfig: {
       claude: true,
       cursor: true,
       codex: true,
@@ -25,7 +25,7 @@ if (configMode === 'basic') {
   mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
     ({ config, defineAgent, agentPresets }) =>
       config({
-        marketplacesEnabled: {
+        agentsConfig: {
           claude: defineAgent({
             ...agentPresets.claude,
             name: 'claude',
@@ -44,7 +44,7 @@ if (configMode === 'basic') {
   mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
     ({ config, defineAgent, agentPresets }) =>
       config({
-        marketplacesEnabled: {
+        agentsConfig: {
           claude: true,
           cursor: defineAgent({
             ...agentPresets.cursor,

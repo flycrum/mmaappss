@@ -7,8 +7,8 @@ import type { Exact } from 'type-fest';
 import { expectTypeOf, test } from 'vitest';
 import {
   marketplacesConfig,
+  type AgentsConfig,
   type MarketplacesConfig,
-  type MarketplacesEnabledConfig,
 } from './marketplaces-config.js';
 
 // ---- type-fest Exact<ParameterType, InputType> ----
@@ -25,27 +25,27 @@ test('Exact rejects excess keys (parameter position)', () => {
 // ---- defineMarketplacesConfig object form: valid config ----
 test('defineMarketplacesConfig object form accepts valid config', () => {
   const config = marketplacesConfig.defineMarketplacesConfig({
-    marketplacesEnabled: { claude: true, cursor: true, codex: true },
+    agentsConfig: { claude: true, cursor: true, codex: true },
     excluded: ['.cursor/foo.md'],
   });
   expectTypeOf(config).toMatchTypeOf<MarketplacesConfig>();
-  expectTypeOf(config).toHaveProperty('marketplacesEnabled');
+  expectTypeOf(config).toHaveProperty('agentsConfig');
   expectTypeOf(config).toHaveProperty('excluded');
 });
 
-test('defineMarketplacesConfig object form return has marketplacesEnabled shape', () => {
+test('defineMarketplacesConfig object form return has agentsConfig shape', () => {
   const config = marketplacesConfig.defineMarketplacesConfig({
-    marketplacesEnabled: { claude: true },
+    agentsConfig: { claude: true },
     excluded: [],
   });
-  expectTypeOf(config.marketplacesEnabled).toMatchTypeOf<MarketplacesEnabledConfig | undefined>();
+  expectTypeOf(config.agentsConfig).toMatchTypeOf<AgentsConfig | undefined>();
 });
 
 // ---- defineMarketplacesConfig object form: excess property must error ----
 test('defineMarketplacesConfig object form rejects excess property', () => {
   marketplacesConfig.defineMarketplacesConfig({
-    // @ts-expect-error - excess property marketplacesEnabledBadName not in MarketplacesConfig
-    marketplacesEnabledBadName: { claude: true },
+    // @ts-expect-error - excess property agentsConfigBadName not in MarketplacesConfig
+    agentsConfigBadName: { claude: true },
     excluded: [],
   });
 });
@@ -53,18 +53,18 @@ test('defineMarketplacesConfig object form rejects excess property', () => {
 // ---- defineMarketplacesConfig creator (no-arg callback): () => ({ ... }) ----
 test('defineMarketplacesConfig creator form accepts valid config', () => {
   const config = marketplacesConfig.defineMarketplacesConfig(() => ({
-    marketplacesEnabled: { claude: true, cursor: true },
+    agentsConfig: { claude: true, cursor: true },
     excluded: [],
   }));
   expectTypeOf(config).toMatchTypeOf<MarketplacesConfig>();
-  expectTypeOf(config).toHaveProperty('marketplacesEnabled');
+  expectTypeOf(config).toHaveProperty('agentsConfig');
 });
 
 test('defineMarketplacesConfig creator form rejects excess property in return object', () => {
   // TReturn extends Exact<MarketplacesConfig, TReturn> must force this to error (negative test).
-  // @ts-expect-error - creator return has excess property marketplacesEnabledBadName not in MarketplacesConfig
+  // @ts-expect-error - creator return has excess property agentsConfigBadName not in MarketplacesConfig
   marketplacesConfig.defineMarketplacesConfig(() => ({
-    marketplacesEnabledBadName: {
+    agentsConfigBadName: {
       claude: true,
       cursor: true,
       codex: true,
@@ -76,19 +76,19 @@ test('defineMarketplacesConfig creator form rejects excess property in return ob
 test('defineMarketplacesConfig callback form accepts valid config', () => {
   const config = marketplacesConfig.defineMarketplacesConfig((helpers) =>
     helpers.config({
-      marketplacesEnabled: { claude: true, cursor: true },
+      agentsConfig: { claude: true, cursor: true },
       excluded: [],
     })
   );
   expectTypeOf(config).toMatchTypeOf<MarketplacesConfig>();
-  expectTypeOf(config).toHaveProperty('marketplacesEnabled');
+  expectTypeOf(config).toHaveProperty('agentsConfig');
 });
 
 test('defineMarketplacesConfig callback form rejects excess property when using config()', () => {
   marketplacesConfig.defineMarketplacesConfig((helpers) =>
     helpers.config({
-      // @ts-expect-error - excess property marketplacesEnabledBadName not in MarketplacesConfig
-      marketplacesEnabledBadName: { claude: true },
+      // @ts-expect-error - excess property agentsConfigBadName not in MarketplacesConfig
+      agentsConfigBadName: { claude: true },
       excluded: [],
     })
   );

@@ -80,7 +80,7 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     );
 
     const result = adapter.run(pathHelpers.repoRoot, {
-      marketplacesEnabled: {
+      agentsConfig: {
         claude: true,
       },
     });
@@ -108,7 +108,7 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     );
 
     const result = adapter.run(pathHelpers.repoRoot, {
-      marketplacesEnabled: {
+      agentsConfig: {
         claude: false,
       },
     });

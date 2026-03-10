@@ -104,14 +104,14 @@ export interface DefineAgentHelpers {
   syncBehaviorPresets: typeof syncBehaviorPresets;
 }
 
-/** Supported config input shape for each marketplacesEnabled agent entry. */
+/** Supported config input shape for each agentsConfig agent entry. */
 type AgentEntryInput<TName extends string = string> =
   | boolean
   | DefinedAgent<TName>
   | DefineAgentInput<TName>;
 
-/** Top-level marketplaces enabled map for presets and custom agents. */
-export interface MarketplacesEnabledConfig {
+/** Top-level agents config map for presets and custom agents. */
+export interface AgentsConfig {
   /** Claude preset entry: `true` for default, `false` for disabled, or an override object. */
   claude?: AgentEntryInput<'claude'>;
   /** Codex preset entry: `true` for default, `false` for disabled, or an override object. */
@@ -124,12 +124,12 @@ export interface MarketplacesEnabledConfig {
 
 /** Full mmaappss config shape used by `defineMarketplacesConfig`. */
 export interface MarketplacesConfig {
+  /** Agent enablement and override definitions. */
+  agentsConfig?: AgentsConfig;
   /** Excluded path patterns used by discovery and sync behaviors. */
   excluded?: string[];
   /** Enables structured file logging when true. */
   loggingEnabled?: boolean;
-  /** Agent enablement and override definitions. */
-  marketplacesEnabled?: MarketplacesEnabledConfig;
   /** Enables post-merge sync hook behavior when true. */
   postMergeSyncEnabled?: boolean;
   /** Agent names to run during post-merge sync. */
@@ -336,7 +336,7 @@ export const marketplacesConfig = {
   /** Resolves all enabled preset and custom agents into a runtime lookup map. */
   resolveEnabledAgents(config: MarketplacesConfig | null): Record<string, DefinedAgent> {
     const out: Record<string, DefinedAgent> = {};
-    const enabled = config?.marketplacesEnabled;
+    const enabled = config?.agentsConfig;
     if (!enabled) return out;
 
     const presetNames: PresetAgentName[] = [...presetAgents];

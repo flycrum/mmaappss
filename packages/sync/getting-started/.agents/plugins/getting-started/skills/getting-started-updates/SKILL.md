@@ -25,4 +25,4 @@ Use this skill when the user wants to refresh sample plugins or templates in the
 ## Notes
 
 - Never overwrite user customizations without explicit confirmation
-- Prefer merge (append new MMAAPPSS_* vars, merge marketplacesEnabled) over full replace for config
+- Prefer merge (append new MMAAPPSS_* vars, merge agentsConfig) over full replace for config

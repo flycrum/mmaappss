@@ -25,7 +25,7 @@ describe('marketplacesConfig', () => {
   it('resolveEnabledAgents supports custom agent records', () => {
     const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(({ config, defineAgent }) =>
       config({
-        marketplacesEnabled: {
+        agentsConfig: {
           custom: {
             acme: defineAgent({
               name: 'acme',

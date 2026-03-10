@@ -20,7 +20,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        { marketplacesEnabled: { claude: true } },
+        { agentsConfig: { claude: true } },
         'claude'
       )
     ).toBe(true);
@@ -30,7 +30,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        { marketplacesEnabled: { claude: false } },
+        { agentsConfig: { claude: false } },
         'claude'
       )
     ).toBe(false);
@@ -45,7 +45,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        { marketplacesEnabled: { claude: false } },
+        { agentsConfig: { claude: false } },
         'claude'
       )
     ).toBe(false);
@@ -56,7 +56,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        { marketplacesEnabled: { claude: true } },
+        { agentsConfig: { claude: true } },
         'claude'
       )
     ).toBe(true);
@@ -68,7 +68,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        { marketplacesEnabled: { claude: true } },
+        { agentsConfig: { claude: true } },
         'claude'
       )
     ).toBe(true);
@@ -80,7 +80,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
     expect(
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
-        { marketplacesEnabled: { claude: true } },
+        { agentsConfig: { claude: true } },
         'claude'
       )
     ).toBe(true);
@@ -96,7 +96,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
         {
-          marketplacesEnabled: {
+          agentsConfig: {
             claude: {
               name: 'claude',
               syncBehaviorPresets: {},
@@ -113,7 +113,7 @@ describe('configHelpers.general.getMarketplaceEnabled', () => {
       configHelpers.general.getMarketplaceEnabled(
         ROOT,
         {
-          marketplacesEnabled: {
+          agentsConfig: {
             custom: {
               acme: {
                 name: 'acme',
@@ -198,10 +198,10 @@ describe('configHelpers.general.getPostMergeSyncMarketplaces', () => {
     ).toEqual(['claude', 'cursor', 'codex']);
   });
 
-  it('includes custom agent names from marketplacesEnabled', () => {
+  it('includes custom agent names from agentsConfig', () => {
     expect(
       configHelpers.general.getPostMergeSyncMarketplaces(ROOT, {
-        marketplacesEnabled: {
+        agentsConfig: {
           custom: {
             acme: { name: 'acme', syncBehaviorPresets: {} },
           },

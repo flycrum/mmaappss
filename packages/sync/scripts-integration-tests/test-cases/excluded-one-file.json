@@ -1,0 +1,17 @@
+{
+  "claude": {
+    "agentsMdSymlink": true,
+    "localMarketplaceSync": true,
+    "rulesSymlink": true,
+    "settingsSync": true
+  },
+  "cursor": {
+    "localPluginsContentSync": true
+  },
+  "codex": {
+    "markdownSectionSync": true
+  },
+  "testagent": {
+    "markdownSectionSync": true
+  }
+}

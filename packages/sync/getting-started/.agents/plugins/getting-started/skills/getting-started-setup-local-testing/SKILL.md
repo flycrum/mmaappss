@@ -29,7 +29,7 @@ Collect these **inputs** in order using **AskQuestion**. For choice fields, pres
 
 **Config:**
 - Env: Create or append to `<target>/.env` from `packages/sync/getting-started/env.example`. For add-to-existing, append only missing MMAAPPSS_* lines.
-- TypeScript: If greenfield, write `<target>/mmaappss.config.ts` from `packages/sync/getting-started/mmaappss.config.example.ts`. If add-to-existing, merge marketplacesEnabled (ensure claude/cursor/codex enabled).
+- TypeScript: If greenfield, write `<target>/mmaappss.config.ts` from `packages/sync/getting-started/mmaappss.config.example.ts`. If add-to-existing, merge agentsConfig (ensure claude/cursor/codex enabled).
 
 **Script:** Add to target package.json: `"mmaappss:sync": "mmaappss-sync"`.
 
@@ -53,5 +53,5 @@ The bin (`mmaappss-sync`) is built to work when the package is **pnpm linked**: 
 ## Edge cases
 
 - Target has no package.json: skill can say "target should be a pnpm project"; link/add may create one or fail
-- Config merge for add-to-existing: append env; for TS, ensure marketplacesEnabled includes claude/cursor/codex
+- Config merge for add-to-existing: append env; for TS, ensure agentsConfig includes claude/cursor/codex
 - Agent cannot read/write target: complete wizard, then output exact commands and file contents (or paths to copy) for the user

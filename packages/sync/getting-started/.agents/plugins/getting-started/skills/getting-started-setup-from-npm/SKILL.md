@@ -24,7 +24,7 @@ Use this skill when the developer wants to set up @mmaappss/sync from npm — ei
 
 **Config:**
 - Env: Create or append to `<target>/.env` from `node_modules/@mmaappss/sync/getting-started/env.example`. Append only missing MMAAPPSS_* for add-to-existing.
-- TypeScript: If greenfield, write `<target>/mmaappss.config.ts` from `node_modules/@mmaappss/sync/getting-started/mmaappss.config.example.ts` (imports from `@mmaappss/sync/config`). If add-to-existing, merge marketplacesEnabled.
+- TypeScript: If greenfield, write `<target>/mmaappss.config.ts` from `node_modules/@mmaappss/sync/getting-started/mmaappss.config.example.ts` (imports from `@mmaappss/sync/config`). If add-to-existing, merge agentsConfig.
 
 **Script:** Add to target package.json: `"mmaappss:sync": "mmaappss-sync"`.
 

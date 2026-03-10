@@ -47,7 +47,7 @@ export const configHelpers = {
 
     /**
      * Resolve list of agents to sync in post-merge. Uses postMergeSyncMarketplaces from config; defaults to presetAgents if missing or invalid.
-     * Only agent names that runSync can resolve (preset names or custom agents from marketplacesEnabled) pass; others are dropped.
+     * Only agent names that runSync can resolve (preset names or custom agents from agentsConfig) pass; others are dropped.
      */
     getPostMergeSyncMarketplaces(_root: string, tsConfig: MmaappssConfig | null): Agent[] {
       const raw = tsConfig?.postMergeSyncMarketplaces;
