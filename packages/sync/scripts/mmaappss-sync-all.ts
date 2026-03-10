@@ -1,12 +1,12 @@
 /**
- * Master sync: run all marketplace syncs (Claude, Cursor, Codex).
+ * Master sync: run sync for all enabled agents and clear for disabled agents.
+ * Uses union of preset agents, config-enabled agents, and agents in the existing manifest.
  */
 
-import { presetAgents } from './common/preset-agents.js';
 import { runSync } from './core/sync-runner.js';
 
 async function main(): Promise<void> {
-  const result = await runSync([...presetAgents]);
+  const result = await runSync();
   if (result.isErr()) {
     console.error(result.error.message);
     process.exit(1);

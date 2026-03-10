@@ -27,7 +27,7 @@ const PATHS = {
   CURSOR_PLUGIN_DIR: '.cursor-plugin',
   CURSOR_SYNC_MANIFEST: '.mmaappss-cursor-sync.json',
   MARKETPLACE_JSON: 'marketplace.json',
-  MMAAPPSS_PLUGINS_NAME: 'mmaappss-plugins',
+  MMAAPPSS_PLUGINS_NAME: 'mmaappss-sync',
   SETTINGS_JSON: 'settings.json',
 } as const;
 

@@ -1,6 +1,6 @@
 /**
  * Sync runner: orchestrates marketplace sync for one or more agents.
- * Thin entrypoints call runSync(agents).
+ * Thin entrypoints call runSync(agents) or runSync() / runClear() for "all" (union set).
  */
 
 import { err, ok, Result } from 'neverthrow';
@@ -8,7 +8,12 @@ import path from 'node:path';
 import { configHelpers } from '../common/config-helpers.js';
 import { getLogger, setLoggerContext } from '../common/logger.js';
 import { pathHelpers } from '../common/path-helpers.js';
-import { syncManifest, type SyncManifestEntry } from '../common/sync-manifest.js';
+import { presetAgents } from '../common/preset-agents.js';
+import {
+  syncManifest,
+  type SyncManifest,
+  type SyncManifestEntry,
+} from '../common/sync-manifest.js';
 import type { Agent, SyncOutcome } from '../common/types.js';
 import { AgentAdapterBase } from './agent-adapter-base.js';
 import { marketplacesConfig, type DefinedAgent } from './marketplaces-config.js';
@@ -27,6 +32,16 @@ function getAgentConfig(
   );
 }
 
+/** Union of preset agents, config-enabled agents, and agents present in the manifest. Deduped so each agent is processed once. */
+function getAgentsToProcess(
+  enabledAgents: Record<string, DefinedAgent>,
+  manifest: SyncManifest
+): Agent[] {
+  return [
+    ...new Set<Agent>([...presetAgents, ...Object.keys(enabledAgents), ...Object.keys(manifest)]),
+  ];
+}
+
 /** Flushes pending logger writes before process exit or early return. */
 function flushLogger(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
@@ -38,10 +53,11 @@ function flushLogger(): Promise<void> {
 }
 
 /**
- * Run marketplace sync for the given agents.
- * Loads config from repo root; each agent runs enable or disable based on config.
+ * Run marketplace sync for the given agents (or all agents when omitted).
+ * When agents is omitted, processes the union of preset agents, config-enabled agents, and agents in the existing manifest (each processed once).
+ * For each agent: sync if enabled in config, otherwise clear (teardown). Agents only in the manifest (no config) are skipped (no DefinedAgent).
  */
-export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Error>> {
+export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], Error>> {
   const repoRoot = pathHelpers.repoRoot;
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
   if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
@@ -56,36 +72,54 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
 
   setLoggerContext(repoRoot, tsConfig);
   const log = getLogger();
-  log.info(
-    { configSource: tsConfig ? 'mmaappss.config.ts' : 'env/defaults', agents },
-    'sync started'
-  );
 
   const manifestPath = syncManifest.getManifestPath(repoRoot, tsConfig);
   const manifest = syncManifest.load(manifestPath);
+  const agentsToProcess = agents ?? getAgentsToProcess(enabledAgents, manifest);
+  log.info(
+    { configSource: tsConfig ? 'mmaappss.config.ts' : 'env/defaults', agents: agentsToProcess },
+    'sync started'
+  );
+
   const register = (agent: string, syncBehavior: string, entry: SyncManifestEntry) =>
     syncManifest.registerContent(manifest, agent, syncBehavior, entry);
 
   const outcomes: SyncOutcome[] = [];
 
-  for (const agent of agents) {
+  for (const agent of agentsToProcess) {
     const agentConfig = getAgentConfig(agent, enabledAgents);
     if (!agentConfig) {
-      outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
+      if (agent in manifest) {
+        log.debug({ agent }, 'skipping manifest-only agent (no config to sync or clear)');
+      }
       continue;
     }
     const adapter = new AgentAdapterBase(agentConfig);
+    const isEnabled = agent in enabledAgents;
 
-    const result = adapter.run(repoRoot, tsConfig, {
-      manifestByBehavior: manifest[agent] ?? {},
-      registerContentToMmaappssSyncManifest: register,
-    });
-    if (result.isErr()) {
-      log.error({ err: result.error, agent }, 'sync agent failed');
-      await flushLogger();
-      return err(result.error);
+    if (isEnabled) {
+      const result = adapter.run(repoRoot, tsConfig, {
+        manifestByBehavior: manifest[agent] ?? {},
+        registerContentToMmaappssSyncManifest: register,
+      });
+      if (result.isErr()) {
+        log.error({ err: result.error, agent }, 'sync agent failed');
+        await flushLogger();
+        return err(result.error);
+      }
+      outcomes.push(result.value);
+    } else {
+      const result = adapter.clear(repoRoot, tsConfig, {
+        manifestByBehavior: manifest[agent] ?? {},
+      });
+      if (result.isErr()) {
+        log.error({ err: result.error, agent }, 'clear agent failed');
+        await flushLogger();
+        return err(result.error);
+      }
+      outcomes.push(result.value);
+      delete manifest[agent];
     }
-    outcomes.push(result.value);
   }
 
   syncManifest.write(manifestPath, manifest);
@@ -99,9 +133,11 @@ export async function runSync(agents: Agent[]): Promise<Result<SyncOutcome[], Er
 }
 
 /**
- * Force teardown (clear) for the given agents. Ignores config; runs disable logic only.
+ * Force teardown (clear) for the given agents (or all when omitted).
+ * When agents is omitted, processes the union of preset agents, config-enabled agents, and agents in the existing manifest (each cleared once).
+ * Agents only in the manifest (no config) are skipped (no DefinedAgent to run clear).
  */
-export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], Error>> {
+export async function runClear(agents?: Agent[]): Promise<Result<SyncOutcome[], Error>> {
   const repoRoot = pathHelpers.repoRoot;
   const tsConfig = await configHelpers.ts.loadConfig(repoRoot);
   if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
@@ -109,17 +145,20 @@ export async function runClear(agents: Agent[]): Promise<Result<SyncOutcome[], E
 
   setLoggerContext(repoRoot, tsConfig);
   const log = getLogger();
-  log.info({ agents }, 'clear started');
 
   const manifestPath = syncManifest.getManifestPath(repoRoot, tsConfig);
   const manifest = syncManifest.load(manifestPath);
+  const agentsToProcess = agents ?? getAgentsToProcess(enabledAgents, manifest);
+  log.info({ agents: agentsToProcess }, 'clear started');
 
   const outcomes: SyncOutcome[] = [];
 
-  for (const agent of agents) {
+  for (const agent of agentsToProcess) {
     const agentConfig = getAgentConfig(agent, enabledAgents);
     if (!agentConfig) {
-      outcomes.push({ agent, success: false, message: `Unknown agent: ${agent}` });
+      if (agent in manifest) {
+        log.debug({ agent }, 'skipping manifest-only agent (no config to clear)');
+      }
       continue;
     }
     const adapter = new AgentAdapterBase(agentConfig);

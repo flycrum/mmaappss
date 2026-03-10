@@ -1,12 +1,12 @@
 /**
- * Clear (teardown) all marketplace sync state for configured preset agents (presetAgents).
+ * Clear (teardown) all marketplace sync state.
+ * Uses union of preset agents, config-enabled agents, and agents in the existing manifest.
  */
 
-import { presetAgents } from './common/preset-agents.js';
 import { runClear } from './core/sync-runner.js';
 
 async function main(): Promise<void> {
-  const result = await runClear([...presetAgents]);
+  const result = await runClear();
   if (result.isErr()) {
     console.error(result.error.message);
     process.exit(1);

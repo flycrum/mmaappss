@@ -39,4 +39,4 @@ Two distinct concepts:
 - **install:** `pnpm install`
 - **commands:** `pnpm run type-check` | `lint` | `format`
 - **layout:** `configs/` = shared configs (eslint, prettier, typescript, vitest, vite); `packages/sync/` = scripts
-- **run a script:** `pnpm exec tsx path/to/script.ts` or via package script (e.g. `pnpm run mmaappss:sync:claude:sync`)
+- **run a script:** `pnpm exec tsx path/to/script.ts` or via package script (e.g. `pnpm run mmaappss:sync` in `packages/sync`)

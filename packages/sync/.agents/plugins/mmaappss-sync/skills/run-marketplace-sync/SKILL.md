@@ -31,17 +31,11 @@ pnpm run <script>
 
 | Script | What it does |
 |--------|----------------|
-| `mmaappss:sync:all` | Sync all agents (Claude, Cursor, Codex) |
-| `mmaappss:sync:claude:sync` | Sync Claude only |
-| `mmaappss:sync:cursor:sync` | Sync Cursor only |
-| `mmaappss:sync:codex:sync` | Sync Codex only |
-| `mmaappss:sync:clear:all` | Clear all agents (teardown manifests/symlinks) |
-| `mmaappss:sync:claude:clear` | Clear Claude only |
-| `mmaappss:sync:cursor:clear` | Clear Cursor only |
-| `mmaappss:sync:codex:clear` | Clear Codex only |
+| `mmaappss:sync` | Sync all enabled agents and clear disabled ones (union of preset, config-enabled, and manifest agents) |
+| `mmaappss:sync:clear` | Clear all agents in the same union set |
 | `mmaappss:post-merge` | Sync all only if `postMergeSyncEnabled` (for git hooks) |
 
-**Tests (integration):** `mmaappss:sync:all:test`, `...:claude:sync:test`, `...:cursor:sync:test`, `...:codex:sync:test`, and `mmaappss:sync:clear:all:test` / `...:claude:clear:test`, etc.
+**Tests (integration):** `mmaappss:sync:test` (sync integration test, all agents), `mmaappss:sync:clear:test` (clear integration test, all agents).
 
 ## Config
 

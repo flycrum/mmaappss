@@ -73,7 +73,7 @@ export default {
 Example (bash):
 
 ```bash
-MMAAPPSS_LOGGING_ENABLED=true pnpm run mmaappss:sync:cursor:sync
+MMAAPPSS_LOGGING_ENABLED=true pnpm run mmaappss:sync
 ```
 
 ### Option 3: `.env` or `.envrc.local`
