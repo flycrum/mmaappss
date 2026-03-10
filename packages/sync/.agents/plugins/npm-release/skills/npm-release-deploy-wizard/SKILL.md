@@ -12,17 +12,27 @@ Use this skill when the developer wants to **publish or release** the package to
 - User says "publish to npm", "release", "deploy the package", "cut a release", or "publish beta"
 - User asks for version bump or release steps
 
+## Pre-flight: must be on main
+
+**Always release from `main`, not a feature branch.**
+
+- Reason: npm publish is permanent — the version tag must point to a commit on `main` for clean traceability; tagging a feature branch commit that later gets squash-merged leaves the tag pointing to an orphaned commit
+- If on a feature branch: stop, remind the user to squash-merge the PR into `main` first, then checkout `main` and pull before continuing
+
+Check: `git rev-parse --abbrev-ref HEAD` → if not `main`, abort and instruct.
+
 ## Wizard flow
 
-1. **Version bump:** Use **AskQuestion**: "Version bump?" with options: `major` | `minor` | `patch` | `prerelease` (e.g. beta) | `custom (specify)`. If custom, ask for the exact version string (e.g. `0.2.0-beta.0`).
-2. **Prerelease id (if prerelease):** If they chose prerelease, ask for identifier: `beta` | `alpha` or custom. Default `beta`.
-3. **Dist-tag:** Use **AskQuestion**: "Publish as dist-tag?" → `beta` | `latest`. Default `beta` for 0.x prereleases, `latest` for stable.
-4. **Confirm:** Show the planned version and tag; confirm before running any destructive commands.
-5. **Run steps (in order):**
+1. **Branch check:** Confirm on `main` (see Pre-flight above).
+2. **Version bump:** Use **AskQuestion**: "Version bump?" with options: `major` | `minor` | `patch` | `prerelease` (e.g. beta) | `custom (specify)`. If custom, ask for the exact version string (e.g. `0.2.0-beta.0`).
+3. **Prerelease id (if prerelease):** If they chose prerelease, ask for identifier: `beta` | `alpha` or custom. Default `beta`.
+4. **Dist-tag:** Use **AskQuestion**: "Publish as dist-tag?" → `beta` | `latest`. Default `beta` for 0.x prereleases, `latest` for stable.
+5. **Confirm:** Show the planned version and tag; confirm before running any destructive commands.
+6. **Run steps (in order):**
    - From **packages/sync**: run tests and type-check (`pnpm run test`, `pnpm run type-check`).
-   - Run `npm version <version>` (e.g. `npm version 0.1.0-beta.2` or `npm version patch`). For prerelease with id: `npm version prerelease --preid=beta`.
+   - Run `npm version <version>` (e.g. `npm version 0.1.0-beta.2` or `npm version patch`). For prerelease with id: `npm version prerelease --preid=beta`. Note: `npm version` creates a version bump commit; for prereleases the git tag is NOT auto-created — add it manually after publish.
    - Run `npm publish --tag <tag>` (e.g. `npm publish --tag beta`).
-   - Remind to push: `git push` and `git push --tags` (or `git push --follow-tags`).
+   - Push: `git push && git push --tags`. The release tag ends up on `main` pointing to the version bump commit.
 
 ## Reference
 
