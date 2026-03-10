@@ -15,6 +15,13 @@ import { printLine } from './utils/print-line.js';
 
 const TEST_CASES_DIR = 'test-cases';
 
+/** Count leading whitespace in a chalk-formatted string (strips ANSI codes first). */
+function countLeadingSpacesFromFormatted(formatted: string): number {
+  const ansi = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g');
+  const plain = formatted.replace(ansi, '');
+  return (plain.match(/^(\s*)/)?.[1] ?? '').length;
+}
+
 async function main(): Promise<void> {
   const caseNameArg = process.argv[2];
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -52,11 +59,13 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(chalk.cyan('\n Integration tests\n'));
+  console.log(chalk.cyan(`\n Integration test cases (${tsFiles.length})\n`));
+
   let passedCount = 0;
   let failedCount = 0;
-  let errorLines = 0;
-  let totalErrors = 0;
+  let totalErrorCount = 0;
+  const maxLinesPerError = 10;
+  const doShowCodeTicks = false;
 
   for (const file of tsFiles.sort()) {
     const base = path.basename(file, '.ts');
@@ -77,12 +86,45 @@ async function main(): Promise<void> {
       console.log(chalk.green('  ✓'), base);
       passedCount++;
     } else {
-      console.log(chalk.red('  ✗'), base);
+      console.log(chalk.red('  ✗'), `${base} (${result.errors.length} errors)`);
       failedCount++;
-      errorLines += result.errorLines.length;
-      if (result.errorCount !== undefined) totalErrors += result.errorCount;
-      for (const err of result.errorLines) {
-        console.log(printLine.getFormatted(err));
+      totalErrorCount += result.errors.length;
+
+      // if (result.manifestDiff && result.errors.length > 0) {
+      //   console.log(
+      //     printLine.getFormatted(
+      //       printLine.create('red', 4, `${base}: manifest diff (extra/missing/mismatched)`)
+      //     )
+      //   );
+      // }
+
+      for (const group of result.errors) {
+        if (doShowCodeTicks) {
+          console.log(printLine.getFormatted(printLine.create('dim', 4, '```')));
+        }
+        const limit = group.length <= maxLinesPerError ? group.length : maxLinesPerError - 1;
+        for (let i = 0; i < limit; i++) {
+          console.log(printLine.getFormatted(group[i]));
+          if (group.length > maxLinesPerError && i === maxLinesPerError - 2) {
+            const firstSkippedFormatted = printLine.getFormatted(group[maxLinesPerError - 1]);
+            console.log(
+              printLine.getFormatted(
+                printLine.create(
+                  'dim',
+                  countLeadingSpacesFromFormatted(firstSkippedFormatted),
+                  '...'
+                )
+              )
+            );
+          }
+        }
+        if (group.length > maxLinesPerError) {
+          console.log(printLine.getFormatted(group[group.length - 1]));
+        }
+        if (doShowCodeTicks) {
+          console.log(printLine.getFormatted(printLine.create('dim', 4, '```')));
+        }
+        console.log(printLine.getFormatted(printLine.create('dim', 4, '')));
       }
     }
   }
@@ -93,11 +135,9 @@ async function main(): Promise<void> {
     process.exit(0);
   }
   const failedStr =
-    totalErrors > 0
-      ? ` ${failedCount} failed (${totalErrors} errors${errorLines > 0 ? `, ${errorLines} lines` : ''})`
-      : errorLines > 0
-        ? ` ${failedCount} failed (${errorLines} lines)`
-        : ` ${failedCount} failed`;
+    totalErrorCount > 0
+      ? ` ${failedCount} failed (${totalErrorCount} errors)`
+      : ` ${failedCount} failed`;
   console.log(
     chalk.cyan('test-cases:'),
     chalk.red(failedStr),

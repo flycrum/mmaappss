@@ -7,31 +7,29 @@ import path from 'node:path';
 import type { PrintLine } from './utils/print-line.js';
 
 export interface RunOneTestCaseOptions {
-  /** Test case name (used for logging and error messages). */
-  name: string;
-  /** Path to the test case TS file. */
-  testCaseTsPath: string;
   /** Path to the expected manifest JSON file. */
   expectedManifestPath: string;
-  /** True if the clear script should be run first. */
-  runClearFirst: boolean;
-  /** Monorepo root (config and discovery). */
-  repoRoot: string;
+  /** Test case name (used for logging and error messages). */
+  name: string;
   /** Output root (sandbox) where sync writes. */
   outputRoot: string;
+  /** Monorepo root (config and discovery). */
+  repoRoot: string;
+  /** True if the clear script should be run first. */
+  runClearFirst: boolean;
   /** Path to the scripts directory. */
   scriptsDir: string;
+  /** Path to the test case TS file. */
+  testCaseTsPath: string;
 }
 
 export interface RunOneTestCaseResult {
+  /** One logical error = array of output lines. Grouped so harness can cap lines per error. */
+  errors: PrintLine[][];
+  /** Manifest diff report (added/removed/modified paths). Omitted when passed or when only error groups are tracked. */
+  manifestDiff?: { added: string[]; removed: string[]; modified: string[] };
   /** True if no errors were found. */
   passed: boolean;
-  /** Array of error lines (with color and indents). */
-  errorLines: PrintLine[];
-  /** Number of logical errors (e.g. manifest diff items, missing paths). Omitted when passed or when only error lines are tracked. */
-  errorCount?: number;
-  /** Manifest diff report (added/removed/modified paths). Omitted when passed or when only error lines are tracked. */
-  manifestDiff?: { added: string[]; removed: string[]; modified: string[] };
 }
 
 export const integrationTestCaseRunnerConfig = {
