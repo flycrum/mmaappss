@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runOneTestCase } from './integration-test-case-runner.js';
+import { printLine } from './utils/print-line.js';
 
 const TEST_CASES_DIR = 'test-cases';
 
@@ -51,9 +52,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(chalk.cyan('\n Integration Tests\n'));
+  console.log(chalk.cyan('\n Integration tests\n'));
   let passedCount = 0;
   let failedCount = 0;
+  let errorLines = 0;
+  let totalErrors = 0;
 
   for (const file of tsFiles.sort()) {
     const base = path.basename(file, '.ts');
@@ -76,14 +79,10 @@ async function main(): Promise<void> {
     } else {
       console.log(chalk.red('  ✗'), base);
       failedCount++;
-      for (const err of result.errors) {
-        if (err.startsWith('  + ') || err.startsWith('  - ') || err.startsWith('  ~ ')) {
-          if (err.startsWith('  + ')) console.log(chalk.green(err));
-          else if (err.startsWith('  - ')) console.log(chalk.red(err));
-          else console.log(chalk.yellow(err));
-        } else {
-          console.log(chalk.red('    '), err);
-        }
+      errorLines += result.errorLines.length;
+      if (result.errorCount !== undefined) totalErrors += result.errorCount;
+      for (const err of result.errorLines) {
+        console.log(printLine.getFormatted(err));
       }
     }
   }
@@ -93,7 +92,17 @@ async function main(): Promise<void> {
     console.log(chalk.green(` ${passedCount} passed\n`));
     process.exit(0);
   }
-  console.log(chalk.red(` ${failedCount} failed`), chalk.gray(`, ${passedCount} passed\n`));
+  const failedStr =
+    totalErrors > 0
+      ? ` ${failedCount} failed (${totalErrors} errors${errorLines > 0 ? `, ${errorLines} lines` : ''})`
+      : errorLines > 0
+        ? ` ${failedCount} failed (${errorLines} lines)`
+        : ` ${failedCount} failed`;
+  console.log(
+    chalk.cyan('test-cases:'),
+    chalk.red(failedStr),
+    chalk.gray(`, ${passedCount} passed\n`)
+  );
   process.exit(1);
 }
 

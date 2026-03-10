@@ -1,58 +1,33 @@
 /**
- * Structure diff for manifest: compare agent names and behavior keys only (not values).
+ * Recursive manifest diff: compares expected vs actual at every depth (keys and values).
+ * Stops descending when a key is added/removed or a value is modified to avoid noisy output.
+ * Object key order is ignored; array order is significant.
  */
 
-export interface ManifestDiffReport {
-  added: string[];
-  removed: string[];
-  modified: string[];
-}
+import {
+  compareAtDepth,
+  type ManifestDiffReport,
+  type RunDiffOptions,
+} from './diff-manifest.config.js';
 
-function shallowKeys(obj: unknown): string[] {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return [];
-  return Object.keys(obj as Record<string, unknown>).sort();
-}
+export type { ManifestDiffReport, RunDiffOptions };
 
 /**
- * Namespaced manifest-diff utilities for integration tests.
+ * Recursively diff expected vs actual manifest (any depth).
+ * At each depth compares keys (added/removed) and values (modified); does not special-case levels.
+ * Object key order is ignored; array element order is significant.
+ * Stops descending under a key once that key is reported as added, removed, or modified.
+ *
+ * @param expected - Expected manifest (or subtree)
+ * @param actual - Actual manifest (or subtree)
+ * @param options - structureOnly: only compare keys (added/removed), never report modified
+ * @returns Report with dot/bracket paths: added (in actual only), removed (in expected only), modified (same path, different value)
  */
 export const diffManifest = {
-  /**
-   * Compare expected vs actual manifest structure (agents and behavior keys). Returns added, removed, modified paths (dot-notation).
-   */
-  diff(
-    expected: Record<string, Record<string, unknown>>,
-    actual: Record<string, Record<string, unknown>>
-  ): ManifestDiffReport {
-    return this.runDiff(expected, actual);
-  },
-
-  runDiff(
-    expected: Record<string, Record<string, unknown>>,
-    actual: Record<string, Record<string, unknown>>
-  ): ManifestDiffReport {
-    const added: string[] = [];
-    const removed: string[] = [];
-    const modified: string[] = [];
-    const expectedAgents = shallowKeys(expected);
-    const actualAgents = shallowKeys(actual);
-    for (const a of actualAgents) {
-      if (!expectedAgents.includes(a)) {
-        added.push(a);
-      } else {
-        const eBehaviors = shallowKeys((expected as Record<string, Record<string, unknown>>)[a]);
-        const aBehaviors = shallowKeys((actual as Record<string, Record<string, unknown>>)[a]);
-        for (const b of aBehaviors) {
-          if (!eBehaviors.includes(b)) added.push(`${a}.${b}`);
-        }
-        for (const b of eBehaviors) {
-          if (!aBehaviors.includes(b)) removed.push(`${a}.${b}`);
-        }
-      }
-    }
-    for (const a of expectedAgents) {
-      if (!actualAgents.includes(a)) removed.push(a);
-    }
-    return { added, removed, modified };
+  run(expected: unknown, actual: unknown, options?: RunDiffOptions): ManifestDiffReport {
+    const structureOnly = options?.structureOnly ?? false;
+    const report: ManifestDiffReport = { added: [], removed: [], modified: [] };
+    compareAtDepth(expected, actual, '', report, structureOnly);
+    return report;
   },
 };

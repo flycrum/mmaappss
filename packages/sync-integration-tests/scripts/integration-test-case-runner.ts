@@ -13,8 +13,44 @@ import {
 } from './integration-test-case-runner.config.js';
 import { diffManifest } from './utils/diff-manifest.js';
 import { fileAssertions } from './utils/file-assertions.js';
+import { printLine, type PrintLine } from './utils/print-line.js';
 
 export type { RunOneTestCaseOptions, RunOneTestCaseResult };
+
+/** Parse dot/bracket path (e.g. "a.b[0].c") and return value at that path, or undefined. */
+function getValueAtPath(obj: unknown, pathStr: string): unknown {
+  if (pathStr === '') return obj;
+  const segments = pathStr.split('.');
+  let current: unknown = obj;
+  for (const seg of segments) {
+    if (current === undefined || current === null) return undefined;
+    const bracket = seg.indexOf('[');
+    if (bracket >= 0) {
+      const key = seg.slice(0, bracket);
+      const rest = seg.slice(bracket);
+      if (key) current = (current as Record<string, unknown>)[key];
+      const indexMatch = rest.match(/\[(\d+)\]/);
+      if (indexMatch && current !== undefined && current !== null)
+        current = Array.isArray(current) ? current[Number(indexMatch[1])] : undefined;
+    } else {
+      current =
+        typeof current === 'object' && !Array.isArray(current)
+          ? (current as Record<string, unknown>)[seg]
+          : undefined;
+    }
+  }
+  return current;
+}
+
+/** Pretty-print value as JSON (indent 2). */
+function formatValue(val: unknown): string {
+  return JSON.stringify(val, null, 2);
+}
+
+/** Return JSON lines (with 2-space indent from formatValue) for code block display. */
+function codeBlockLines(val: unknown): string[] {
+  return formatValue(val).split('\n');
+}
 
 function runScript(
   scriptName: string,
@@ -43,7 +79,7 @@ export async function runOneTestCase(
     outputRoot,
     scriptsDir,
   } = options;
-  const errors: string[] = [];
+  const errors: PrintLine[] = [];
 
   if (!fs.existsSync(outputRoot)) {
     fs.mkdirSync(path.dirname(outputRoot), { recursive: true });
@@ -51,8 +87,8 @@ export async function runOneTestCase(
 
   const sandboxTemplate = path.join(path.dirname(outputRoot), 'sandbox-template');
   if (!fs.existsSync(sandboxTemplate)) {
-    errors.push(`${name}: sandbox-template missing: ${sandboxTemplate}`);
-    return { passed: false, errors };
+    printLine.pushError(errors, 'red', 4, `${name}: sandbox-template missing: ${sandboxTemplate}`);
+    return { passed: false, errorLines: errors, errorCount: 1 };
   }
 
   const configFilePath = path.join(repoRoot, runnerConfig.CONSTANTS.CONFIG_FILE);
@@ -91,9 +127,14 @@ export async function runOneTestCase(
   try {
     fs.cpSync(sandboxTemplate, outputRoot, { recursive: true });
   } catch (e) {
-    errors.push(`${name}: failed to clone sandbox-template: ${(e as Error).message}`);
+    printLine.pushError(
+      errors,
+      'red',
+      4,
+      `${name}: failed to clone sandbox-template: ${(e as Error).message}`
+    );
     restoreConfig();
-    return { passed: false, errors };
+    return { passed: false, errorLines: errors, errorCount: 1 };
   }
 
   if (runClearFirst) {
@@ -105,10 +146,15 @@ export async function runOneTestCase(
       if (fs.existsSync(configFilePath)) fs.renameSync(configFilePath, configBackupPath);
       fs.writeFileSync(configFilePath, clearStubContent, 'utf8');
     } catch (e) {
-      errors.push(`${name}: failed to write clear stub: ${(e as Error).message}`);
+      printLine.pushError(
+        errors,
+        'red',
+        4,
+        `${name}: failed to write clear stub: ${(e as Error).message}`
+      );
       restoreConfig();
       cleanupSandbox();
-      return { passed: false, errors };
+      return { passed: false, errorLines: errors, errorCount: 1 };
     }
     const clearResult = await runScript('mmaappss-sync-clear-all.ts', env, scriptsDir);
     try {
@@ -118,10 +164,10 @@ export async function runOneTestCase(
       // best effort
     }
     if (clearResult !== 0) {
-      errors.push(`${name}: clear script exited with ${clearResult}`);
+      printLine.pushError(errors, 'red', 4, `${name}: clear script exited with ${clearResult}`);
       restoreConfig();
       cleanupSandbox();
-      return { passed: false, errors };
+      return { passed: false, errorLines: errors, errorCount: 1 };
     }
   }
 
@@ -130,49 +176,109 @@ export async function runOneTestCase(
     if (fs.existsSync(configFilePath)) fs.renameSync(configFilePath, configBackupPath);
     fs.writeFileSync(configFilePath, stubContent, 'utf8');
   } catch (e) {
-    errors.push(`${name}: failed to write stub config: ${(e as Error).message}`);
+    printLine.pushError(
+      errors,
+      'red',
+      4,
+      `${name}: failed to write stub config: ${(e as Error).message}`
+    );
     restoreConfig();
     cleanupSandbox();
-    return { passed: false, errors };
+    return { passed: false, errorLines: errors, errorCount: 1 };
   }
 
   const syncExitCode = await runScript('mmaappss-sync-all.ts', env, scriptsDir);
   restoreConfig();
 
   if (syncExitCode !== 0) {
-    errors.push(`${name}: sync script exited with ${syncExitCode}`);
+    printLine.pushError(errors, 'red', 4, `${name}: sync script exited with ${syncExitCode}`);
     cleanupSandbox();
-    return { passed: false, errors };
+    return { passed: false, errorLines: errors, errorCount: 1 };
   }
 
   const manifestPath = path.join(outputRoot, '.mmaappss', 'sync-manifest.json');
   if (!fs.existsSync(expectedManifestPath)) {
-    errors.push(`${name}: expected manifest file missing: ${expectedManifestPath}`);
+    printLine.pushError(
+      errors,
+      'red',
+      4,
+      `${name}: expected manifest file missing: ${expectedManifestPath}`
+    );
     cleanupSandbox();
-    return { passed: false, errors };
+    return { passed: false, errorLines: errors, errorCount: 1 };
   }
 
   let expected: Record<string, Record<string, unknown>>;
   try {
     expected = JSON.parse(fs.readFileSync(expectedManifestPath, 'utf8'));
   } catch (e) {
-    errors.push(`${name}: invalid expected JSON: ${(e as Error).message}`);
+    printLine.pushError(
+      errors,
+      'red',
+      4,
+      `${name}: invalid expected JSON: ${(e as Error).message}`
+    );
     cleanupSandbox();
-    return { passed: false, errors };
+    return { passed: false, errorLines: errors, errorCount: 1 };
   }
 
   const actual = syncManifest.load(manifestPath) as Record<string, Record<string, unknown>>;
-  const diff = diffManifest.runDiff(expected, actual);
+  const diff = diffManifest.run(expected, actual, { structureOnly: false });
+  const codeIndent = 4;
   if (diff.added.length > 0 || diff.removed.length > 0 || diff.modified.length > 0) {
-    errors.push(`${name}: manifest diff (extra/missing/mismatched)`);
+    printLine.pushError(errors, 'red', 4, `${name}: manifest diff (extra/missing/mismatched)`);
     if (diff.added.length) {
-      for (const p of diff.added) errors.push(`   - ${p} (missing value)`);
+      for (const p of diff.added) {
+        printLine.pushError(errors, 'red', 4, `- Missing key`);
+        const val = getValueAtPath(actual, p);
+        printLine.pushError(errors, 'cyan', codeIndent, `> actual: ${p}`);
+        printLine.pushError(errors, 'dim', codeIndent, '```');
+        for (const line of codeBlockLines(val)) {
+          printLine.pushError(errors, 'dim', codeIndent, line);
+        }
+        printLine.pushError(errors, 'dim', codeIndent, '```', true);
+      }
     }
     if (diff.removed.length) {
-      for (const p of diff.removed) errors.push(`   + ${p} (unexpected extra value)`);
+      for (const p of diff.removed) {
+        printLine.pushError(errors, 'green', 4, `+ Unexpected extra key`);
+        const val = getValueAtPath(expected, p);
+        printLine.pushError(errors, 'cyan', codeIndent, `> actual: ${p}`);
+        printLine.pushError(errors, 'dim', codeIndent, '```');
+        for (const line of codeBlockLines(val)) {
+          printLine.pushError(errors, 'dim', codeIndent, line);
+        }
+        printLine.pushError(errors, 'dim', codeIndent, '```', true);
+      }
     }
     if (diff.modified.length) {
-      for (const p of diff.modified) errors.push(`   ~ ${p} (mismatched value)`);
+      for (const p of diff.modified) {
+        printLine.pushError(errors, 'yellow', 4, `~ Mismatched value`);
+        const expectedVal = getValueAtPath(expected, p);
+        const actualVal = getValueAtPath(actual, p);
+        printLine.pushError(
+          errors,
+          'cyan',
+          codeIndent,
+          `> expected from key: ${p} (as defined in test case json file: '${path.basename(expectedManifestPath)}')`
+        );
+        printLine.pushError(errors, 'dim', codeIndent, '```');
+        for (const line of codeBlockLines(expectedVal)) {
+          printLine.pushError(errors, 'dim', codeIndent, line);
+        }
+        printLine.pushError(errors, 'dim', codeIndent, '```');
+        printLine.pushError(
+          errors,
+          'cyan',
+          codeIndent,
+          `> actual from key: ${p} (as generated by the sync process: 'sync-manifest.json')`
+        );
+        printLine.pushError(errors, 'dim', codeIndent, '```');
+        for (const line of codeBlockLines(actualVal)) {
+          printLine.pushError(errors, 'dim', codeIndent, line);
+        }
+        printLine.pushError(errors, 'dim', codeIndent, '```', true);
+      }
     }
   }
 
@@ -190,20 +296,28 @@ export async function runOneTestCase(
   });
   if (fileReport.missing.length > 0) {
     for (const p of fileReport.missing) {
-      errors.push(`${name}: path should exist: ${p}`);
+      printLine.pushError(errors, 'red', 4, `${name}: path should exist: ${p}`);
     }
   }
   if (fileReport.extra.length > 0) {
     for (const p of fileReport.extra) {
-      errors.push(`${name}: path not in manifest (extra): ${p}`);
+      printLine.pushError(errors, 'red', 4, `${name}: path not in manifest (extra): ${p}`);
     }
   }
 
   cleanupSandbox();
 
+  const errorCount =
+    diff.added.length +
+    diff.removed.length +
+    diff.modified.length +
+    fileReport.missing.length +
+    fileReport.extra.length;
+
   return {
     passed: errors.length === 0,
-    errors,
+    errorLines: errors,
+    ...(errorCount > 0 && { errorCount }),
     manifestDiff:
       diff.added.length || diff.removed.length || diff.modified.length
         ? { added: diff.added, removed: diff.removed, modified: diff.modified }
