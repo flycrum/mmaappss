@@ -14,26 +14,27 @@ Use this skill when you need to **run a single integration test case** by name (
 
 ## How to run
 
-Single entry point: **harness** with optional case name. From **`packages/sync-integration-tests`**:
+From **packages/sync-integration-tests**:
 
 ```bash
-# Run one case by name
-pnpm exec tsx scripts/integration-test-harness.ts <case-name>
+# One case (note: use -- to pass the case name to the script)
+pnpm run test -- <case-name>
 
-# Run all cases (no arg)
-pnpm exec tsx scripts/integration-test-harness.ts
+# All cases (no arg)
+pnpm run test
 ```
 
-Examples:
+Or directly: `pnpm exec tsx scripts/integration-test-harness.ts <case-name>`.
+
+From **monorepo root** with filter:
 
 ```bash
-pnpm exec tsx scripts/integration-test-harness.ts basic
-pnpm exec tsx scripts/integration-test-harness.ts disable-claude-rules
-pnpm exec tsx scripts/integration-test-harness.ts excluded-one-file
+pnpm -F @mmaappss/sync-integration-tests run test -- basic
 ```
 
-The harness clones sandbox-template to sandbox per case, runs clear, injects that case's config at repo root, runs sync with output root = sandbox, asserts manifest diff and paths, restores config, removes sandbox. Exit code 0 only if the case(s) pass.
+Examples: `pnpm run test -- basic`, `pnpm run test -- disable-claude-rules`, `pnpm run test -- excluded-one-file`.
 
 ## Reference
 
-- Case names are the base name of files in `packages/sync-integration-tests/scripts/test-cases/` (e.g. `basic` for `basic.ts` / `basic.json`).
+- Harness behavior and case names: [references/integration-tests-overview.md](../references/integration-tests-overview.md)
+- Case names = base name of files in `packages/sync-integration-tests/scripts/test-cases/` (e.g. `basic` for `basic.ts` / `basic.json`).

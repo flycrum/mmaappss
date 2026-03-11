@@ -9,9 +9,11 @@ import type { PrintLine } from './utils/print-line.js';
 export interface RunOneTestCaseOptions {
   /** Path to the expected manifest JSON file. */
   expectedManifestPath: string;
+  /** When true, do not delete the output root on failure (harness renames it to failed-${name}). */
+  keepSandboxOnFailure?: boolean;
   /** Test case name (used for logging and error messages). */
   name: string;
-  /** Output root (sandbox) where sync writes. */
+  /** Output root (active sandbox, e.g. sandboxes/.tests/current) where sync writes. */
   outputRoot: string;
   /** Monorepo root (config and discovery). */
   repoRoot: string;

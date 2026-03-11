@@ -29,3 +29,6 @@ CLAUDE.md
 AGENTS.override.md
 # Root-level mmaappss config (optional; copy from mmaappss.config.example.ts)
 mmaappss.config.ts
+
+# Integration test run artifacts (sandboxes/.tests/current and failed-*)
+packages/sync-integration-tests/sandboxes/.tests/

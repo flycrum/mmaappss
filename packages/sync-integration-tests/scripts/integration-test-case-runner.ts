@@ -1,5 +1,5 @@
 /**
- * Runs a single integration test case: clone sandbox-template to sandbox, clear, sync with output root = sandbox, assert manifest and paths, destroy sandbox.
+ * Runs a single integration test case: clone sandbox-template to output root (e.g. sandboxes/.tests/current), clear, sync, assert manifest and paths. On success removes output root; on failure optionally keeps it for harness to rename to failed-${name}.
  */
 
 import { syncManifest } from '@mmaappss/sync/sync-manifest';
@@ -16,6 +16,11 @@ import { fileAssertions } from './utils/file-assertions.js';
 import { printLine, type PrintLine } from './utils/print-line.js';
 
 export type { RunOneTestCaseOptions, RunOneTestCaseResult };
+
+/** sandbox-template lives at sandboxes/sandbox-template; outputRoot is sandboxes/.tests/current. */
+function getSandboxTemplateRoot(outputRoot: string): string {
+  return path.join(path.dirname(path.dirname(outputRoot)), 'sandbox-template');
+}
 
 /** Parse dot/bracket path (e.g. "a.b[0].c") and return value at that path, or undefined. */
 function getValueAtPath(obj: unknown, pathStr: string): unknown {
@@ -78,6 +83,7 @@ export async function runOneTestCase(
     repoRoot,
     outputRoot,
     scriptsDir,
+    keepSandboxOnFailure = false,
   } = options;
   const errorGroups: PrintLine[][] = [];
 
@@ -85,7 +91,7 @@ export async function runOneTestCase(
     fs.mkdirSync(path.dirname(outputRoot), { recursive: true });
   }
 
-  const sandboxTemplate = path.join(path.dirname(outputRoot), 'sandbox-template');
+  const sandboxTemplate = getSandboxTemplateRoot(outputRoot);
   if (!fs.existsSync(sandboxTemplate)) {
     const g: PrintLine[] = [];
     printLine.pushError(g, 'red', 4, `${name}: sandbox-template missing: ${sandboxTemplate}`);
@@ -116,6 +122,10 @@ export async function runOneTestCase(
     }
   };
 
+  const maybeCleanup = (): void => {
+    if (!keepSandboxOnFailure) cleanupSandbox();
+  };
+
   const restoreConfig = (): void => {
     try {
       if (fs.existsSync(configFilePath)) fs.unlinkSync(configFilePath);
@@ -139,6 +149,7 @@ export async function runOneTestCase(
     );
     errorGroups.push(g);
     restoreConfig();
+    maybeCleanup();
     return { passed: false, errors: errorGroups };
   }
 
@@ -160,7 +171,7 @@ export async function runOneTestCase(
       );
       errorGroups.push(g);
       restoreConfig();
-      cleanupSandbox();
+      maybeCleanup();
       return { passed: false, errors: errorGroups };
     }
     const clearResult = await runScript('mmaappss-sync-clear-all.ts', env, scriptsDir);
@@ -175,7 +186,7 @@ export async function runOneTestCase(
       printLine.pushError(g, 'red', 4, `${name}: clear script exited with ${clearResult}`);
       errorGroups.push(g);
       restoreConfig();
-      cleanupSandbox();
+      maybeCleanup();
       return { passed: false, errors: errorGroups };
     }
   }
@@ -194,7 +205,7 @@ export async function runOneTestCase(
     );
     errorGroups.push(g);
     restoreConfig();
-    cleanupSandbox();
+    maybeCleanup();
     return { passed: false, errors: errorGroups };
   }
 
@@ -205,7 +216,7 @@ export async function runOneTestCase(
     const g: PrintLine[] = [];
     printLine.pushError(g, 'red', 4, `${name}: sync script exited with ${syncExitCode}`);
     errorGroups.push(g);
-    cleanupSandbox();
+    maybeCleanup();
     return { passed: false, errors: errorGroups };
   }
 
@@ -219,7 +230,7 @@ export async function runOneTestCase(
       `${name}: expected manifest file missing: ${expectedManifestPath}`
     );
     errorGroups.push(g);
-    cleanupSandbox();
+    maybeCleanup();
     return { passed: false, errors: errorGroups };
   }
 
@@ -230,7 +241,7 @@ export async function runOneTestCase(
     const g: PrintLine[] = [];
     printLine.pushError(g, 'red', 4, `${name}: invalid expected JSON: ${(e as Error).message}`);
     errorGroups.push(g);
-    cleanupSandbox();
+    maybeCleanup();
     return { passed: false, errors: errorGroups };
   }
 
@@ -292,7 +303,7 @@ export async function runOneTestCase(
   }
 
   const manifestRels = fileAssertions.collectManifestRelativePaths(actual);
-  const templateRootForAssert = path.join(path.dirname(outputRoot), 'sandbox-template');
+  const templateRootForAssert = getSandboxTemplateRoot(outputRoot);
   const fileReport = fileAssertions.assertSandboxPaths(outputRoot, manifestRels, {
     templateRoot: fs.existsSync(templateRootForAssert) ? templateRootForAssert : undefined,
     excludeExtraPrefixes: [
@@ -318,7 +329,8 @@ export async function runOneTestCase(
     }
   }
 
-  cleanupSandbox();
+  if (errorGroups.length === 0) cleanupSandbox();
+  else maybeCleanup();
 
   return {
     passed: errorGroups.length === 0,

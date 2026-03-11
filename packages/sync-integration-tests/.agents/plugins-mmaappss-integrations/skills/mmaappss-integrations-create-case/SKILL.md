@@ -21,10 +21,12 @@ Use this skill when you need to **add a new integration test case** (a new confi
 
 2. **Add** `scripts/test-cases/<name>.ts`: export a single `testCase` from `defineIntegrationTestCase({ config: mmaappssConfig, description: '...', jsonPath: 'test-cases/<name>.json' })`. Provide a required `description`. Build `mmaappssConfig` with `marketplacesConfig.defineMarketplacesConfig(...)` from `@mmaappss/sync/config`. Each case should include the three preset agents and a fourth custom agent in `agentsConfig.custom`.
 
-3. **Add** `scripts/test-cases/<name>.json`: expected agent/behavior structure (keys only; values can be `true`). You can run sync once with your config and copy the generated manifest structure to form the expected JSON.
+3. **Add** `scripts/test-cases/<name>.json`: expected agent/behavior structure. You can run sync once with your config and copy the generated manifest from `sandboxes/.tests/current/.mmaappss/sync-manifest.json` (or from `sandboxes/.tests/failed-<name>/` after a run) to form the expected JSON. Keys and structure must match; see overview for diff-manifest rules (e.g. array order).
 
-4. **Run the new case**: from `packages/sync-integration-tests`, run `pnpm exec tsx scripts/integration-test-harness.ts <name>`.
+4. **Run the new case**: from `packages/sync-integration-tests`, run `pnpm run test -- <name>`. If it fails, use the **debug-case** skill to fix the expected JSON.
 
 ## Reference
 
-- Test case format: [README.md](../../../README.md). Runner asserts manifest diff (added/removed/modified) and filesystem (match, missing, extra).
+- Harness, test case layout, and run commands: [references/integration-tests-overview.md](../references/integration-tests-overview.md)
+- Test case format and runner assertions: package [README.md](../../../README.md). Runner asserts manifest diff (added/removed/modified) and filesystem (match, missing, extra).
+- If the new case fails: use the **debug-case** skill to compare expected vs actual and update the `.json`.

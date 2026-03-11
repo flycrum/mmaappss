@@ -7,9 +7,9 @@
         "gitignoreComment": "\n# mmaappss: symlinked from AGENTS.md for Claude\n",
         "gitignoreEntry": "CLAUDE.md"
       },
-      "symlinks": ["CLAUDE.md"]
+      "symlinks": ["CLAUDE.md", "packages/app/CLAUDE.md"]
     },
-    "local2MarketplaceSync": {
+    "localMarketplaceSync": {
       "options": {
         "manifestKey": "claude",
         "marketplaceFile": ".claude-plugin/marketplace.json",
@@ -83,6 +83,7 @@
       },
       "symlinks": [
         ".cursor/commands/git/git-commit-staged-files.md",
+        ".cursor/commands/git/git-pr-fillout-template.md",
         ".cursor/commands/pino-logger/pino-logger-tail-log.md",
         ".cursor/skills/mmaappss-sync/mmaappss-add-new-plugin",
         ".cursor/skills/mmaappss-sync/run-marketplace-sync",
