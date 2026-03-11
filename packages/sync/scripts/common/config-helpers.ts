@@ -3,6 +3,7 @@
  * When mmaappss.config.ts exists and loads, env files are not loaded and env vars do not override.
  */
 
+import chalk from 'chalk';
 import { config as loadDotenv } from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -137,7 +138,10 @@ export const configHelpers = {
         if (fs.existsSync(configPath)) {
           const msg = err instanceof Error ? err.message : String(err);
           console.warn(
-            `[mmaappss] Could not load mmaappss.config.ts from ${configPath}: ${msg}. Using env/defaults only.`
+            chalk.cyan('[mmaappss]'),
+            chalk.yellow(
+              `Could not load mmaappss.config.ts from ${configPath}: ${msg}. Using env/defaults only.`
+            )
           );
         }
         return null;

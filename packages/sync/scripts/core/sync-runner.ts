@@ -3,6 +3,7 @@
  * Thin entrypoints call runSync(agents) or runSync() / runClear() for "all" (union set).
  */
 
+import chalk from 'chalk';
 import { err, ok, Result } from 'neverthrow';
 import path from 'node:path';
 import { configHelpers } from '../common/config-helpers.js';
@@ -70,10 +71,15 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
         : repoRoot;
 
   const enabledAgentList = Object.values(enabledAgents);
+  const prefix = chalk.cyan('[mmaappss]');
   if (enabledAgentList.length === 0) {
-    console.log('[mmaappss] ❌ no agents enabled in config');
+    console.log(prefix, chalk.red('❌ no agents enabled in config'));
   } else {
-    console.log('[mmaappss] 🤖 enabled agents:', enabledAgentList.map((a) => a.name).join(', '));
+    console.log(
+      prefix,
+      chalk.dim('🤖 enabled agents:'),
+      chalk.white(enabledAgentList.map((a) => a.name).join(', '))
+    );
   }
 
   setLoggerContext(repoRoot, tsConfig, outputRoot);
@@ -134,8 +140,10 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
 
   syncManifest.write(manifestPath, manifest);
   console.log(
-    '[mmaappss] 📄 sync manifest updated (enabled agents and registered behaviors):',
-    path.resolve(manifestPath)
+    chalk.cyan('[mmaappss]'),
+    chalk.green('📄 sync manifest updated'),
+    chalk.dim('(enabled agents and registered behaviors):'),
+    chalk.gray(path.resolve(manifestPath))
   );
   log.info({ outcomes }, 'sync completed');
   await flushLogger();
@@ -195,7 +203,11 @@ export async function runClear(agents?: Agent[]): Promise<Result<SyncOutcome[], 
   }
 
   syncManifest.write(manifestPath, manifest);
-  console.log('[mmaappss] 📄 sync manifest cleared:', path.resolve(manifestPath));
+  console.log(
+    chalk.cyan('[mmaappss]'),
+    chalk.green('📄 sync manifest cleared:'),
+    chalk.gray(path.resolve(manifestPath))
+  );
   log.info({ outcomes }, 'clear completed');
   await flushLogger();
   return ok(outcomes);
