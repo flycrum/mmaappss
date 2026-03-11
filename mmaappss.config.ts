@@ -8,7 +8,7 @@ import { marketplacesConfig } from './packages/sync/scripts/core/marketplaces-co
 const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(({ config, defineAgent }) =>
   config({
     agentsConfig: {
-      claude: false,
+      claude: true,
       cursor: true,
       codex: true,
       custom: {

@@ -87,6 +87,7 @@ Focus here is **local marketplaces** (repo-as-marketplace), not public Cursor Ma
           <li><code>.claude-plugin/marketplace.json</code></li>
           <li>script to sync</li>
           <li>symlink rules</li>
+          <li>sync invalidates Claude's local plugin cache so source changes apply without bumping version</li>
         </ul>
         <a href="https://code.claude.com/docs/en/plugin-marketplaces">Create and distribute a plugin marketplace</a>
       </td>

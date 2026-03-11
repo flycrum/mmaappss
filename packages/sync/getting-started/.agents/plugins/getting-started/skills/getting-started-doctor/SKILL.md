@@ -21,9 +21,11 @@ Use this skill when sync fails, outputs are missing or outdated, or the user nee
 4. **Check plugins** — Verify `.agents/plugins/` has at least one plugin (e.g. git). Check plugin manifests (.cursor-plugin, .claude-plugin).
 5. **Run sync** — Run `mmaappss-sync` and capture stdout/stderr. If it fails, report the error.
 6. **Compare outputs** — After successful sync, check .claude-plugin/marketplace.json, .cursor rules/manifest, AGENTS.override.md. Report what exists vs missing.
-7. **Suggest fixes** — Based on findings: missing config → add from getting-started templates; missing plugin → copy sample; version mismatch → suggest upgrade or reinstall.
+7. **Stale Claude plugin content** — If Claude shows old or removed commands/skills after sync, see [references/troubleshooting.md#claude-local-plugin-cache](references/troubleshooting.md#claude-local-plugin-cache).
+8. **Suggest fixes** — Based on findings: missing config → add from getting-started templates; missing plugin → copy sample; version mismatch → suggest upgrade or reinstall.
 
 ## Reference
 
 - Templates: `node_modules/@mmaappss/sync/getting-started/` (plugins/git, env.example, mmaappss.config.example.ts)
 - Pino logging: Enable with MMAAPPSS_LOGGING_ENABLED=true for file logs (see pino-logger plugin)
+- Claude local plugin cache / stale content: [references/troubleshooting.md](references/troubleshooting.md#claude-local-plugin-cache)

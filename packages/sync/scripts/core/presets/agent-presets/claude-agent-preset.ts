@@ -17,6 +17,11 @@ export const claudeAgentPreset: DefineAgentInput<'claude'> = {
         gitignoreEntry: C.TARGET_FILE,
       },
     },
+    claudeLocalPluginCacheBust: {
+      options: {
+        marketplaceFile: C.MARKETPLACE_FILE,
+      },
+    },
     localMarketplaceSync: {
       options: {
         manifestKey: C.AGENT_NAME,
