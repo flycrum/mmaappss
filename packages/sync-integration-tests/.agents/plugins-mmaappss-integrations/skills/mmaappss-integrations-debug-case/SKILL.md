@@ -20,7 +20,7 @@ Read [references/integration-tests-overview.md](../references/integration-tests-
 
 ## Debug flow (single test)
 
-1. **Produce the failed artifact** (if not already): run the failing case so the harness renames `current` to `failed-<name>`.
+1. **Produce the failed artifact** first, always run the failing case so the harness renames `current` to `failed-<name>`.
    - From package: `pnpm run test -- <name>` (e.g. `pnpm run test -- basic`). From root: `pnpm -F @mmaappss/sync-integration-tests run test -- <name>`.
    - Or: `pnpm exec tsx scripts/integration-test-harness.ts <name>` from `packages/sync-integration-tests`.
 
