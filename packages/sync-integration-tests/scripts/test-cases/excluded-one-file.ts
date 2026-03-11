@@ -1,5 +1,5 @@
 /**
- * Excluded path test case: one excluded path; all presets plus one custom agent enabled.
+ * Excluded path test case: one excluded path (sandbox); all presets enabled.
  */
 
 import { marketplacesConfig } from '@mmaappss/sync/config';
@@ -16,16 +16,15 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
           testagent: defineAgent({
             ...agentPresets.codex,
             name: 'testagent',
-            syncBehaviorPresets: { ...agentPresets.codex.syncBehaviorPresets },
           }),
         },
       },
-      excluded: ['.cursor/commands/git/git-pr-fillout-template.md'],
+      excluded: ['.cursor/commands/root/root-hello.md'],
     })
 );
 
 export const testCase = defineIntegrationTestCase({
   config: mmaappssConfig,
-  description: 'One excluded path; all presets plus one custom agent enabled.',
+  description: 'One excluded path (sandbox root plugin command); all presets enabled.',
   jsonPath: 'test-cases/excluded-one-file.json',
 });

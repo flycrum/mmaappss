@@ -15,11 +15,14 @@ Use this skill when you need to **add a new integration test case** (a new confi
 ## How to create
 
 1. **Look at examples** in `packages/sync-integration-tests/scripts/test-cases/`:
-   - `basic.ts` / `basic.json` — all presets + one custom agent
-   - `disable-claude-rules.ts` / `disable-claude-rules.json` — claude with rulesSymlink disabled
-   - `excluded-one-file.ts` / `excluded-one-file.json` — one excluded path
+   - `basic.ts` / `basic.json` — all three presets + one codex-like custom agent (`testagent`)
+   - `disable-claude-rules.ts` / `disable-claude-rules.json` — claude with rulesSymlink disabled + custom agent
+   - `excluded-one-file.ts` / `excluded-one-file.json` — one excluded path (distinct manifest)
+   - `excluded-packages.ts` / `excluded-packages.json` — exclude by segment (e.g. `packages`); distinct manifest
+   - `excluded-plugin-git-path.ts` / `excluded-plugin-git-path.json` — exclude whole plugin by path; distinct manifest
+   - `excluded-nonexistent.ts` / `excluded-nonexistent.json` — harmless nonexistent path (same manifest as basic)
 
-2. **Add** `scripts/test-cases/<name>.ts`: export a single `testCase` from `defineIntegrationTestCase({ config: mmaappssConfig, description: '...', jsonPath: 'test-cases/<name>.json' })`. Provide a required `description`. Build `mmaappssConfig` with `marketplacesConfig.defineMarketplacesConfig(...)` from `@mmaappss/sync/config`. Each case should include the three preset agents and a fourth custom agent in `agentsConfig.custom`.
+2. **Add** `scripts/test-cases/<name>.ts`: export a single `testCase` from `defineIntegrationTestCase({ config: mmaappssConfig, description: '...', jsonPath: 'test-cases/<name>.json' })`. Provide a required `description`. Build `mmaappssConfig` with `marketplacesConfig.defineMarketplacesConfig(...)` from `@mmaappss/sync/config`. **Standard agents**: Include the three preset agents (claude, cursor, codex) and one custom agent that mirrors Codex—e.g. `custom: { testagent: defineAgent({ ...agentPresets.codex, name: 'testagent' }) }`. Omit the custom agent only when the case explicitly tests “no custom” or “disabled” (e.g. `disabled`).
 
 3. **Add** `scripts/test-cases/<name>.json`: expected agent/behavior structure. You can run sync once with your config and copy the generated manifest from `sandboxes/.tests/current/.mmaappss/sync-manifest.json` (or from `sandboxes/.tests/failed-<name>/` after a run) to form the expected JSON. Keys and structure must match; see overview for diff-manifest rules (e.g. array order).
 

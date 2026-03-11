@@ -1,5 +1,5 @@
 /**
- * Basic test case: all three preset agents enabled plus one custom agent (codex-like); sandbox plugins: root + nested.
+ * Excluded non-existent path: excluded ['.agents/plugins/does-not-exist'] should be harmless.
  */
 
 import { marketplacesConfig } from '@mmaappss/sync/config';
@@ -19,12 +19,12 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
           }),
         },
       },
+      excluded: ['.agents/plugins/does-not-exist'],
     })
 );
 
 export const testCase = defineIntegrationTestCase({
   config: mmaappssConfig,
-  description:
-    'All three preset agents plus one codex-like custom agent; discovery limited to sandbox (root + nested plugins).',
-  jsonPath: 'test-cases/basic.json',
+  description: 'Excluded non-existent path; sync unchanged.',
+  jsonPath: 'test-cases/excluded-nonexistent.json',
 });

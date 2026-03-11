@@ -1,5 +1,5 @@
 /**
- * Disable Claude rules test case: claude only with rulesSymlink disabled; cursor and codex disabled.
+ * Disable Claude rules test case: claude with rulesSymlink disabled + one custom agent (codex-like); cursor and codex disabled.
  */
 
 import { marketplacesConfig } from '@mmaappss/sync/config';
@@ -19,12 +19,18 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
         }),
         cursor: false,
         codex: false,
+        custom: {
+          testagent: defineAgent({
+            ...agentPresets.codex,
+            name: 'testagent',
+          }),
+        },
       },
     })
 );
 
 export const testCase = defineIntegrationTestCase({
   config: mmaappssConfig,
-  description: 'Claude only with rulesSymlink disabled; cursor and codex disabled.',
+  description: 'Claude with rulesSymlink disabled plus one codex-like custom agent; cursor and codex disabled.',
   jsonPath: 'test-cases/disable-claude-rules.json',
 });

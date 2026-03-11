@@ -1,5 +1,6 @@
 /**
- * Basic test case: all three preset agents enabled plus one custom agent (codex-like); sandbox plugins: root + nested.
+ * Exclude plugin by path: excluded ['.agents/plugins/root'] (sandbox root plugin).
+ * Root plugin content should be absent from cursor and claude manifests.
  */
 
 import { marketplacesConfig } from '@mmaappss/sync/config';
@@ -19,12 +20,12 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
           }),
         },
       },
+      excluded: ['.agents/plugins/root'],
     })
 );
 
 export const testCase = defineIntegrationTestCase({
   config: mmaappssConfig,
-  description:
-    'All three preset agents plus one codex-like custom agent; discovery limited to sandbox (root + nested plugins).',
-  jsonPath: 'test-cases/basic.json',
+  description: 'Exclude plugin by path .agents/plugins/root; assert root plugin content removed.',
+  jsonPath: 'test-cases/excluded-plugin-git-path.json',
 });

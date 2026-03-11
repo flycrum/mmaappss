@@ -99,7 +99,7 @@ flowchart TB
 
 ## Integration tests
 
-Integration tests live in **packages/sync-integration-tests** (separate package, sandbox-based). They use config-driven test cases and output root so all writes go to a sandbox. See [packages/sync-integration-tests/README.md](../../../sync-integration-tests/README.md).
+Integration tests live in **packages/sync-integration-tests** (separate package, sandbox-based). The harness uses the sandbox as repo root (`MMAAPPSS_REPO_ROOT`) so discovery is limited to sandbox plugins; config is injected into the sandbox. See [packages/sync-integration-tests/README.md](../../../sync-integration-tests/README.md).
 
 ---
 

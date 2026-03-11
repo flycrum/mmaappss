@@ -92,7 +92,7 @@ async function main(): Promise<void> {
       testCaseTsPath,
       expectedManifestPath,
       runClearFirst: true,
-      repoRoot: path.resolve(integrationTestsRoot, '..', '..'),
+      repoRoot: currentSandboxPath,
       outputRoot: currentSandboxPath,
       scriptsDir,
       keepSandboxOnFailure: true,

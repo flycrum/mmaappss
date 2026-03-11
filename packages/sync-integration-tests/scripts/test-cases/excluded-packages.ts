@@ -1,5 +1,6 @@
 /**
- * Basic test case: all three preset agents enabled plus one custom agent (codex-like); sandbox plugins: root + nested.
+ * Excluded [packages]: plugins under packages/ (e.g. getting-started) excluded from discovery.
+ * Expected manifest has no getting-started plugin content.
  */
 
 import { marketplacesConfig } from '@mmaappss/sync/config';
@@ -19,12 +20,12 @@ const mmaappssConfig = marketplacesConfig.defineMarketplacesConfig(
           }),
         },
       },
+      excluded: ['packages'],
     })
 );
 
 export const testCase = defineIntegrationTestCase({
   config: mmaappssConfig,
-  description:
-    'All three preset agents plus one codex-like custom agent; discovery limited to sandbox (root + nested plugins).',
-  jsonPath: 'test-cases/basic.json',
+  description: 'Excluded [packages]; nested plugin (under packages/app) excluded from sync.',
+  jsonPath: 'test-cases/excluded-packages.json',
 });
