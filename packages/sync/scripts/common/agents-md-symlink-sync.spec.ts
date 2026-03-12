@@ -106,7 +106,8 @@ describe('agents-md-symlink-sync', () => {
       fs.writeFileSync(path.join(repoRoot, 'AGENTS.md'), '# Root');
       const r1 = agentsMdSymlinkSync.sync(repoRoot, null, CLAUDE_STYLE_OPTIONS);
       const r2 = agentsMdSymlinkSync.sync(repoRoot, null, CLAUDE_STYLE_OPTIONS);
-      expect(r1.isOk() && r2.isOk()).toBe(true);
+      expect(r1.isOk()).toBe(true);
+      expect(r2.isOk()).toBe(true);
       expect(fs.readlinkSync(path.join(repoRoot, 'CLAUDE.md'))).toBe('AGENTS.md');
     });
   });

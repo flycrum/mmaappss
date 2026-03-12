@@ -35,7 +35,7 @@ Collect these **inputs** in order using **AskQuestion**. For choice fields, pres
 
 **Install (run these, do not only suggest):**
 - If link: (1) From mmaappss repo `packages/sync`, run `pnpm link --global`. (2) From target root, run `pnpm link @mmaappss/sync`.
-- If pack: Run `npm pack` in `packages/sync`, then in target `pnpm add file:.../mmaappss-sync-0.1.0-beta.1.tgz` (use actual tgz path).
+- If pack: Run `npm pack` in `packages/sync`; use the tgz filename that npm pack prints (e.g. `mmaappss-sync-*.tgz`). From target root run `pnpm add file:<path-to-tgz>/<actual-tgz-filename>` with the real path and the filename produced by pack.
 
 ## Verify (run and report)
 

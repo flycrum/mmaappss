@@ -219,10 +219,11 @@ describe('rulesSync', () => {
         true
       );
       expect(syncResult.isOk()).toBe(true);
+      if (syncResult.isErr()) throw syncResult.error;
       expect(fs.existsSync(path.join(rulesTargetDir, 'myplugin'))).toBe(true);
 
       const result = rulesSync.clearRulesFromContents(repoRoot, rulesTargetDir, {
-        rules: syncResult.isOk() ? syncResult.value : [],
+        rules: syncResult.value,
       });
 
       expect(result.isOk()).toBe(true);

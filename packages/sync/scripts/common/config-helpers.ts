@@ -15,7 +15,7 @@ import { parseBool } from './parse-bool.js';
 import { presetAgents } from './preset-agents.js';
 import type { Agent } from './types.js';
 
-const DEFAULT_POST_MERGE_MARKETPLACES: Agent[] = ['claude', 'cursor', 'codex'];
+export const DEFAULT_POST_MERGE_MARKETPLACES: string[] = ['claude', 'cursor', 'codex'];
 
 /**
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
@@ -50,14 +50,14 @@ export const configHelpers = {
      * Resolve list of agents to sync in post-merge. Uses postMergeSyncMarketplaces from config; defaults to presetAgents if missing or invalid.
      * Only agent names that runSync can resolve (preset names or custom agents from agentsConfig) pass; others are dropped.
      */
-    getPostMergeSyncMarketplaces(_root: string, tsConfig: MmaappssConfig | null): Agent[] {
+    getPostMergeSyncMarketplaces(_root: string, tsConfig: MmaappssConfig | null): string[] {
       const raw = tsConfig?.postMergeSyncMarketplaces;
       if (!Array.isArray(raw) || raw.length === 0) return [...DEFAULT_POST_MERGE_MARKETPLACES];
       const enabled = marketplacesConfig.resolveEnabledAgents(tsConfig);
       const knownAgents = new Set<string>([...Object.keys(enabled), ...presetAgents]);
       const filtered = raw
         .map((a) => (typeof a === 'string' ? a.trim() : ''))
-        .filter((s): s is Agent => s.length > 0 && knownAgents.has(s));
+        .filter((s): s is string => s.length > 0 && knownAgents.has(s));
       return filtered.length > 0 ? filtered : [...DEFAULT_POST_MERGE_MARKETPLACES];
     },
 

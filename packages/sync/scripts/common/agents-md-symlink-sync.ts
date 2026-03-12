@@ -132,6 +132,8 @@ export const agentsMdSymlinkSync = {
    * Skips directories where targetFile already exists as a regular file.
    * Returns created paths for caller to register to unified manifest.
    * When outputRoot is set, walk and writes are under outputRoot (paths returned relative to outputRoot).
+   *
+   * **Clean slate:** This function overwrites the manifest with only the paths created this run. To avoid orphaned symlinks (e.g. from dirs now excluded or without sourceFile), callers must call `clearFromContents(repoRoot, { paths: storedPaths }, outputRoot)` with the previously stored manifest paths before calling `sync`, then register the new `created` paths to the manifest after sync.
    */
   sync(
     repoRoot: string,

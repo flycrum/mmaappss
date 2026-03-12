@@ -64,7 +64,7 @@ function discoverPluginsInDir(pluginsDir: string, relativePluginsPath: string): 
     const manifestPath = firstPresentManifest[1];
     const absoluteManifestPath = path.join(pluginPath, manifestPath);
     const manifest = loadManifest(absoluteManifestPath);
-    const relativePath = path.join(relativePluginsPath, ent.name);
+    const relativePath = path.join(relativePluginsPath, ent.name).replace(/\\/g, '/');
 
     plugins.push({
       description: manifest?.description,
@@ -85,7 +85,16 @@ function findPluginsDirs(repoRoot: string, config: MmaappssConfig | null): strin
   const found: string[] = [];
 
   function walk(dir: string): void {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (e) {
+      getLogger().warn(
+        { dir, err: e instanceof Error ? e.message : String(e) },
+        'readdir failed, skipping'
+      );
+      return;
+    }
     for (const ent of entries) {
       if (!ent.isDirectory()) continue;
       const fullPath = path.join(dir, ent.name);

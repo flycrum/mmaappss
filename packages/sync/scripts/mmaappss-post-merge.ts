@@ -9,10 +9,10 @@ import { pathHelpers } from './common/path-helpers.js';
 import { runSync } from './core/sync-runner.js';
 
 async function main(): Promise<void> {
+  const repoRoot = pathHelpers.repoRoot;
   let enabled = false;
   let tsConfig: MmaappssConfig | null = null;
   try {
-    const repoRoot = pathHelpers.repoRoot;
     tsConfig = await configHelpers.ts.loadConfig(repoRoot);
     if (tsConfig === null) configHelpers.env.loadEnv(repoRoot);
     enabled = configHelpers.general.getPostMergeSyncEnabled(repoRoot, tsConfig);
@@ -23,7 +23,6 @@ async function main(): Promise<void> {
   if (!enabled) {
     process.exit(0);
   }
-  const repoRoot = pathHelpers.repoRoot;
   const marketplaces = configHelpers.general.getPostMergeSyncMarketplaces(repoRoot, tsConfig);
   const result = await runSync(marketplaces);
   if (result.isErr()) {

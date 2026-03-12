@@ -101,6 +101,18 @@ export class AgentAdapterBase {
   /** Mutable state shared across adapter and behavior lifecycle steps. */
   private readonly sharedState: Map<string, unknown>;
 
+  /**
+   * Factory that instantiates the adapter and its sync behaviors inside try/catch.
+   * Returns a Result so constructor errors (e.g. from behaviorClass) are captured instead of throwing.
+   */
+  static create(agentConfig: DefinedAgent): Result<AgentAdapterBase, Error> {
+    try {
+      return ok(new AgentAdapterBase(agentConfig));
+    } catch (e) {
+      return err(e instanceof Error ? e : new Error(String(e)));
+    }
+  }
+
   /** Creates one adapter instance for a resolved agent configuration. */
   constructor(agentConfig: DefinedAgent) {
     this.agentConfig = agentConfig;

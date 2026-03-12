@@ -17,11 +17,11 @@ export type MmaappssLogger = pino.Logger;
 
 let instance: MmaappssLogger | null = null;
 let previousLogFd: number | null = null;
-let previousDestination: { flush?: () => void; end?: () => void } | null = null;
+let previousDestination: { flushSync?: () => void; end?: () => void } | null = null;
 
 function closePreviousLogger(): void {
   if (previousDestination != null) {
-    if (typeof previousDestination.flush === 'function') previousDestination.flush();
+    if (typeof previousDestination.flushSync === 'function') previousDestination.flushSync();
     if (typeof previousDestination.end === 'function') previousDestination.end();
     previousDestination = null;
   }
@@ -63,7 +63,7 @@ export function setLoggerContext(
     const dest = pino.destination(fd);
     const newInstance = pino({ name: 'mmaappss', level: 'debug', base: undefined }, dest);
     if (hasExistingResources) closePreviousLogger();
-    previousDestination = dest as unknown as { flush?: () => void; end?: () => void };
+    previousDestination = dest as unknown as { flushSync?: () => void; end?: () => void };
     previousLogFd = fd;
     instance = newInstance;
     fd = null;

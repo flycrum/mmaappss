@@ -99,7 +99,7 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     const filePath = pathHelpers.joinRepo(outputRoot, options.marketplaceFile);
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
     if (res.isErr()) {
-      if (res.error.message.includes('ENOENT')) return ok(undefined);
+      if ((res.error as NodeJS.ErrnoException).code === 'ENOENT') return ok(undefined);
       return err(res.error);
     }
 
@@ -145,9 +145,9 @@ export class MarketplaceJsonSyncBehavior extends SyncBehaviorBase<MarketplaceJso
     const res = jsonPatch.readJson<MarketplaceJson>(filePath);
 
     if (res.isErr()) {
-      if (res.error.message.includes('ENOENT')) {
+      if ((res.error as NodeJS.ErrnoException).code === 'ENOENT') {
         const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.mkdirSync(dir, { recursive: true });
         const writeRes = jsonPatch.writeJson(filePath, canonical);
         return writeRes.isErr() ? err(writeRes.error) : ok(canonical);
       }

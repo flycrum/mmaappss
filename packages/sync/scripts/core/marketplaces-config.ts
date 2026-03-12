@@ -158,7 +158,7 @@ function isClassRef(value: unknown): value is SyncBehaviorClassRef {
 
 /** Type guard for non-null object values. */
 function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** Resolves one preset sync-behavior entry into a normalized sync behavior definition. */
@@ -326,7 +326,7 @@ export const marketplacesConfig = {
     if (isDefinedAgent(entry)) {
       return {
         ...entry,
-        name: entry.name ?? entryName,
+        name: entry.name,
       };
     }
     return marketplacesConfig.defineAgent({

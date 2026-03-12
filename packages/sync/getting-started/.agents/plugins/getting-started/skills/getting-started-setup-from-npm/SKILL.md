@@ -1,6 +1,6 @@
 ---
 name: getting-started-setup-from-npm
-description: Initial setup of @mmaappss/sync as part of or after npm install. Use when the user has run pnpm add @mmaappss/sync and needs config, sample plugin, and script.
+description: Initial setup of @mmaappss/sync before or after npm install. Use when the user wants to add @mmaappss/sync and needs install (if not done), config, sample plugin, and script.
 ---
 
 # Setup @mmaappss/sync from npm
@@ -13,10 +13,12 @@ Use this skill when the developer wants to set up @mmaappss/sync from npm — ei
 
 ## Wizard flow
 
+**AskQuestion:** Use `AskQuestion` to indicate an explicit user prompt. Format: `AskQuestion: "<prompt>" → option1 | option2`.
+
 1. **Target project** — Use current repo (cwd) or prompt for path if different.
-2. **Npm install** — AskQuestion: "Is @mmaappss/sync already installed in the target?" → `Yes` | `No`. If No, from target root run `pnpm add @mmaappss/sync` (or npm/yarn equivalent) before wire-up.
-3. **Config style** — AskQuestion: "mmaappss config?" → `Environment variables` (.env) | `TypeScript` (mmaappss.config.ts).
-4. **Target state** — AskQuestion or infer: greenfield vs add alongside existing (.agents, mmaappss.config.ts, or MMAAPPSS_* env).
+2. **Npm install** — AskQuestion: "Is @mmaappss/sync already installed in the target?" → Yes | No. If No, from target root run `pnpm add @mmaappss/sync` (or npm/yarn equivalent) before wire-up.
+3. **Config style** — AskQuestion: "mmaappss config?" → Environment variables (.env) | TypeScript (mmaappss.config.ts).
+4. **Target state** — AskQuestion: "Target state?" → Greenfield | Existing (infer from .agents, mmaappss.config.ts, or MMAAPPSS_* env).
 
 ## Wire-up steps
 
@@ -30,4 +32,4 @@ Use this skill when the developer wants to set up @mmaappss/sync from npm — ei
 
 ## Verify
 
-From target root: run `pnpm exec mmaappss-sync`. Check Claude, Cursor, and Codex outputs; report OK/missing.
+From target root: run `pnpm exec mmaappss-sync`. Verify that configuration files are generated for Claude, Cursor, and Codex in `.agents/` (or specify expected output paths). Report any missing outputs.

@@ -18,7 +18,7 @@ describe('parseBool', () => {
     expect(parseBool('YES', false)).toBe(true);
   });
 
-  it('returns false for "false" and other non-truthy strings', () => {
+  it("returns false for 'false', '0', and 'no' (case-insensitive)", () => {
     expect(parseBool('false', true)).toBe(false);
     expect(parseBool('0', true)).toBe(false);
     expect(parseBool('no', true)).toBe(false);
@@ -34,11 +34,11 @@ describe('parseBool', () => {
     expect(parseBool('', false)).toBe(false);
   });
 
-  it('does not trim: strings with surrounding whitespace do not match and return false', () => {
-    expect(parseBool(' true ', false)).toBe(false);
-    expect(parseBool(' true ', true)).toBe(false);
-    expect(parseBool(' 1 ', false)).toBe(false);
-    expect(parseBool(' 1 ', true)).toBe(false);
+  it('trims input: strings with surrounding whitespace match after trim', () => {
+    expect(parseBool(' true ', false)).toBe(true);
+    expect(parseBool(' true ', true)).toBe(true);
+    expect(parseBool(' 1 ', false)).toBe(true);
+    expect(parseBool('yes ', false)).toBe(true);
   });
 
   it('returns false for arbitrary non-boolean strings (not defaultValue)', () => {
@@ -46,8 +46,8 @@ describe('parseBool', () => {
     expect(parseBool('foo', false)).toBe(false);
   });
 
-  it('throws when value is null at runtime (e.g. from JSON)', () => {
-    expect(() => parseBool(null as unknown as string | undefined, true)).toThrow(TypeError);
-    expect(() => parseBool(null as unknown as string | undefined, true)).toThrow(/toLowerCase/);
+  it('returns defaultValue when null at runtime (e.g. from JSON)', () => {
+    expect(parseBool(null as unknown as string | undefined, true)).toBe(true);
+    expect(parseBool(null as unknown as string | undefined, false)).toBe(false);
   });
 });

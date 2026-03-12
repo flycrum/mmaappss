@@ -32,12 +32,12 @@
      - Remove `refs/heads/`
      - Convert `origin/team/X` -> `team/X` (e.g. strip remote prefix)
    - Validate each candidate:
-     - Exists: `git branch -a | grep "CANDIDATE"`
+     - Exists: `git branch -a | grep -F "CANDIDATE"`
      - Reachability: `git merge-base HEAD CANDIDATE` succeeds
    - Pick first valid candidate from newest reflog entries
 
    b. **Merge-base branch tip match**
-   - `git merge-base HEAD main` as baseline anchor if needed
+   - `git merge-base HEAD main`
    - Collect branch candidates:
      - `git for-each-ref --format='%(refname:short)' refs/heads refs/remotes`
    - For each candidate not equal to `CURRENT_BRANCH`:
@@ -65,7 +65,7 @@
 4. **Analyze for PR narrative**
    - Identify primary problem solved and approach used
    - Group changes by theme/component
-   - Note config/flags/toggles/feature flags if present (e.g. trebuchets as internal jargon)
+   - Note config/flags/toggles/feature flags if present
    - Extract testing actions from changed areas
    - Detect deploy-impacting changes (env, migrations, infra, breaking behavior)
 

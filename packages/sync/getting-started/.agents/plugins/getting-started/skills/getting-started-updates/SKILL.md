@@ -16,11 +16,11 @@ Use this skill when the user wants to refresh sample plugins or templates in the
 ## Update steps
 
 1. **Identify target** — Use cwd or prompt for project path.
-2. **Compare source** — List `node_modules/@mmaappss/sync/getting-started/` (plugins/, env.example, mmaappss.config.example.ts).
-3. **Compare target** — List target `.agents/plugins/`, .env, mmaappss.config.ts.
+2. **Compare source** — List `node_modules/@mmaappss/sync/getting-started/` (`plugins/`, `env.example`, `mmaappss.config.example.ts`).
+3. **Compare target** — List target `.agents/plugins/`, `.env`, `mmaappss.config.ts`.
 4. **Suggest additions** — If getting-started has plugins not in target (e.g. new sample), offer to copy. Do not overwrite existing plugins without user confirmation.
 5. **Suggest config refresh** — If env.example or mmaappss.config.example.ts changed, show diff and offer to merge or replace (user chooses).
-6. **Run sync** — After any changes, run mmaappss-sync and verify outputs.
+6. **Run sync** — After any changes, run `mmaappss-sync` (CLI from @mmaappss/sync; e.g. `npx mmaappss-sync` or `pnpm exec mmaappss-sync`) and verify outputs.
 
 ## Notes
 

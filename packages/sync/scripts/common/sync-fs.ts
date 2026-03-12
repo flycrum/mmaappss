@@ -164,9 +164,12 @@ export const syncFs = {
 
   /**
    * Symlink sourcePath at linkPath using a relative path from linkPath to sourcePath.
-   * Removes any existing file, symlink, or directory at linkPath first so symlink creation does not fail with EEXIST. Throws on error.
+   * Validates sourcePath exists before creating so broken symlinks are not created. Removes any existing file, symlink, or directory at linkPath first so symlink creation does not fail with EEXIST. Throws on error.
    */
   symlinkRelative(sourcePath: string, linkPath: string): void {
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error(`symlinkRelative: sourcePath does not exist: ${sourcePath}`);
+    }
     try {
       const st = fs.lstatSync(linkPath);
       if (st.isSymbolicLink() || st.isFile()) {
@@ -183,14 +186,15 @@ export const syncFs = {
   },
 
   /**
-   * Unlink a single file or symlink if it exists. Uses lstatSync so broken symlinks are removed. No-op if path is missing. Idempotent.
+   * Unlink a single file or symlink if it exists. Uses lstatSync so broken symlinks are removed. No-op if filePath is missing (ENOENT). Rethrows other errors (e.g. EACCES, EPERM). Idempotent.
    */
   unlinkIfExists(filePath: string): void {
     try {
       fs.lstatSync(filePath);
       fs.unlinkSync(filePath);
-    } catch {
-      // ignore (e.g. ENOENT)
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException).code;
+      if (code !== 'ENOENT') throw e;
     }
   },
 

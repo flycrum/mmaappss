@@ -35,8 +35,7 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
     marketplaces: DiscoveredMarketplace[],
     manifestKey?: PluginManifestKey
   ): string[] {
-    const options = this.options;
-    if (!options) return [];
+    if (!this.options) return [];
     return uniq(
       marketplaces.flatMap((marketplace) =>
         marketplace.plugins
@@ -107,16 +106,20 @@ export class SettingsSyncBehavior extends SyncBehaviorBase<SettingsSyncBehaviorO
       existing = res.value ?? {};
     }
 
+    const asPlainObject = (v: unknown): Record<string, unknown> =>
+      typeof v === 'object' && v !== null && !Array.isArray(v)
+        ? (v as Record<string, unknown>)
+        : {};
+
+    const existingExtraKnownMarketplaces = asPlainObject(existing.extraKnownMarketplaces);
+    const existingEnabledPlugins = asPlainObject(existing.enabledPlugins);
+    const patchExtraKnownMarketplaces = asPlainObject(patch.extraKnownMarketplaces);
+    const patchEnabledPlugins = asPlainObject(patch.enabledPlugins);
+
     const merged = {
       ...existing,
-      extraKnownMarketplaces: {
-        ...((existing.extraKnownMarketplaces as object) ?? {}),
-        ...patch.extraKnownMarketplaces,
-      },
-      enabledPlugins: {
-        ...((existing.enabledPlugins as Record<string, unknown>) ?? {}),
-        ...patch.enabledPlugins,
-      },
+      extraKnownMarketplaces: { ...existingExtraKnownMarketplaces, ...patchExtraKnownMarketplaces },
+      enabledPlugins: { ...existingEnabledPlugins, ...patchEnabledPlugins },
     };
 
     const dir = path.dirname(filePath);

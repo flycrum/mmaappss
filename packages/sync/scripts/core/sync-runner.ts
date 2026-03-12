@@ -106,7 +106,13 @@ export async function runSync(agents?: Agent[]): Promise<Result<SyncOutcome[], E
       }
       continue;
     }
-    const adapter = new AgentAdapterBase(agentConfig);
+    const adapterResult = AgentAdapterBase.create(agentConfig);
+    if (adapterResult.isErr()) {
+      log.error({ err: adapterResult.error, agent }, 'adapter creation failed');
+      await flushLogger();
+      return err(adapterResult.error);
+    }
+    const adapter = adapterResult.value;
     const isEnabled = agent in enabledAgents;
 
     if (isEnabled) {
@@ -185,7 +191,13 @@ export async function runClear(agents?: Agent[]): Promise<Result<SyncOutcome[], 
       }
       continue;
     }
-    const adapter = new AgentAdapterBase(agentConfig);
+    const adapterResult = AgentAdapterBase.create(agentConfig);
+    if (adapterResult.isErr()) {
+      log.error({ err: adapterResult.error, agent }, 'adapter creation failed');
+      await flushLogger();
+      return err(adapterResult.error);
+    }
+    const adapter = adapterResult.value;
     const manifestByBehavior = manifest[agent] ?? {};
     syncManifest.teardownAgentEntries(outputRoot, manifestByBehavior);
 

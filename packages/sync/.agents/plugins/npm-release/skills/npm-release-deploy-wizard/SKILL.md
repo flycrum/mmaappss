@@ -29,8 +29,8 @@ Check: `git rev-parse --abbrev-ref HEAD` → if not `main`, abort and instruct.
 4. **Dist-tag:** Use **AskQuestion**: "Publish as dist-tag?" → `beta` | `latest`. Default `beta` for 0.x prereleases, `latest` for stable.
 5. **Confirm:** Show the planned version and tag; confirm before running any destructive commands.
 6. **Run steps (in order):**
-   - From **packages/sync**: run tests and type-check (`pnpm run test`, `pnpm run type-check`).
-   - Run `npm version <version>` (e.g. `npm version 0.1.0-beta.2` or `npm version patch`). For prerelease with id: `npm version prerelease --preid=beta`. Note: `npm version` creates a version bump commit; for prereleases the git tag is NOT auto-created — add it manually after publish.
+   - From **packages/sync**: run tests and type-check (`pnpm test`, `pnpm type-check`).
+   - Run `npm version <version>` (e.g. `npm version 0.1.0-beta.2` or `npm version patch`). For prerelease with id: `npm version prerelease --preid=beta`. Note: `npm version` creates a version bump commit and a git tag by default for all version types (including prereleases) unless `--no-git-tag-version` is passed; use that flag only for workflows that need to skip tag creation.
    - Run `npm publish --tag <tag>` (e.g. `npm publish --tag beta`).
    - Push: `git push && git push --tags`. The release tag ends up on `main` pointing to the version bump commit.
 

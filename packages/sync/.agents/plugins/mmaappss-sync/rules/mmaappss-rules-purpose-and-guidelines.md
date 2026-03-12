@@ -19,4 +19,8 @@
 - Commands = step lists; put context in rules
 - Skills = purpose + when to use; no essays
 
+**Example:**
+- DRY: ❌ rule file pastes full "How to run sync" from README → ✅ rule says "Run sync: see [README](../README.md)#usage"
+- Concise: ❌ "You should run pnpm lint before you commit your changes so that the codebase stays consistent." → ✅ "Run pnpm lint before committing"
+
 Base new plugins on the mmaappss plugin layout and this convention. See [mmaappss plugin README](../README.md). See also [mmaappss-file-naming.md](./mmaappss-file-naming.md).

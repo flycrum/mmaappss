@@ -37,5 +37,6 @@ describe('isExcluded', () => {
     expect(isExcluded('file.md', ['*.md'])).toBe(true);
     expect(isExcluded('.cursor/commands/git/file.md', ['*.md'])).toBe(false); // * is one segment
     expect(isExcluded('.agents/plugins/git', ['.agents/plugins/*'])).toBe(true);
+    expect(isExcluded('.cursor/commands/git/file.md', ['**/*.md'])).toBe(true); // ** matches across segments
   });
 });

@@ -7,7 +7,7 @@ import type { Result } from 'neverthrow';
 import { markdownSection } from '../../../common/markdown-section.js';
 
 /** Regex for orphan ### X marketplace blocks (no backticks in heading) from the old format. */
-const LEGACY_ORPHAN_BLOCK_START = /^###\s+[^`]+marketplace\s*$/;
+const LEGACY_ORPHAN_BLOCK_START = /^###\s+[^`]+marketplace\s*$/i;
 
 /**
  * Codex preset config: section headings and legacy markdown cleanup.

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { jsonPatch } from './json-patch.js';
 
 describe('json-patch', () => {
@@ -87,6 +87,42 @@ describe('json-patch', () => {
       expect(result.isOk()).toBe(true);
       expect(fs.existsSync(filePath)).toBe(true);
       expect(JSON.parse(fs.readFileSync(filePath, 'utf8'))).toEqual(data);
+    });
+
+    it('overwrites existing file when target already exists', () => {
+      const filePath = path.join(tmpDir, 'existing.json');
+      fs.writeFileSync(filePath, '{"old": true}');
+
+      const data = { overwritten: true };
+      const result = jsonPatch.writeJson(filePath, data);
+
+      expect(result.isOk()).toBe(true);
+      expect(JSON.parse(fs.readFileSync(filePath, 'utf8'))).toEqual(data);
+    });
+
+    it('returns err for circular reference in data', () => {
+      const filePath = path.join(tmpDir, 'circ.json');
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+
+      const result = jsonPatch.writeJson(filePath, circular);
+
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('surfaces permission error when fs.writeFileSync throws EACCES', () => {
+      const filePath = path.join(tmpDir, 'noaccess.json');
+      const writeSpy = vi.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => {
+        const e = new Error('Permission denied') as NodeJS.ErrnoException;
+        e.code = 'EACCES';
+        throw e;
+      });
+
+      const result = jsonPatch.writeJson(filePath, { foo: 1 });
+
+      writeSpy.mockRestore();
+      expect(result.isErr()).toBe(true);
+      expect((result._unsafeUnwrapErr() as NodeJS.ErrnoException).code).toBe('EACCES');
     });
   });
 

@@ -1,6 +1,6 @@
 ---
 name: Run mmaappss local marketplace sync scripts
-description: Invoke mmaappss sync or clear scripts so local marketplace manifests and plugin discovery stay up to date. Use when adding/editing plugins, after pull, or when user asks to sync marketplaces.
+description: Run mmaappss sync or clear to update local marketplace manifests and plugin discovery.
 ---
 
 # Run marketplace sync scripts

@@ -3,7 +3,7 @@ import globals from 'globals';
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
-  { ignores: ['node_modules/**'] },
+  { ignores: ['node_modules/**', 'dist/**', '.turbo/**'] },
   ...config,
   {
     files: ['**/*.ts'],

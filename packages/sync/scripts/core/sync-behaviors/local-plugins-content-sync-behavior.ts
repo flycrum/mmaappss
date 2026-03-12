@@ -168,6 +168,7 @@ export class LocalPluginsContentSyncBehavior extends SyncBehaviorBase<LocalPlugi
             const transformed = transformConfig.transformFilenameFn(fileName, 'md');
             writePath = path.join(path.dirname(targetPath), transformed);
           }
+          localContent.targetPath = writePath;
 
           let contents = override?.fileContents ?? syncFs.readFileUtf8(sourcePath);
           if (

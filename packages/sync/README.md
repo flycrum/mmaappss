@@ -17,9 +17,9 @@
 - support local marketplaces and plugins!
 - unify the fragmented state of sharing rules, commands, skills, agents, etc
 - define once, empower developers on teams to use with their preferred coding agent(s)
-- prioritze minimal configurations to get start, but powerful options for when you need them
+- prioritize minimal configurations to get start, but powerful options for when you need them
 - keep it simple dumb-ass (kisda) & don't reinvent the wheel
-- provide a way to group releated rules, commands, skills, agents, etc. together
+- provide a way to group related rules, commands, skills, agents, etc. together
 - leverage available APIs and -- as of the moment I'm typing this -- that's marketplaces and plugins!
 
 ## system overview

@@ -14,8 +14,6 @@ const patchApi = patch.default ?? patch;
 function applyOps(doc: unknown, ops: Operation[]): Result<unknown, Error> {
   if (ops.length === 0) return ok(doc);
   try {
-    const validateErr = patchApi.validate(ops);
-    if (validateErr) throw validateErr;
     const result = patchApi.applyPatch(doc, ops, true, false);
     return ok(result.newDocument ?? doc);
   } catch (e) {

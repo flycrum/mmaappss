@@ -7,8 +7,8 @@ import { SyncBehaviorBase, type SyncBehaviorContext } from './sync-behaviors/syn
 
 class RecordingSyncBehavior extends SyncBehaviorBase {
   constructor(
-    options?: unknown,
-    private readonly calls: string[] = []
+    options: unknown | undefined,
+    private readonly calls: string[]
   ) {
     super(options);
   }
@@ -85,11 +85,13 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
       },
     });
     expect(result.isOk()).toBe(true);
-    expect(calls).toContain('adapter.syncSetupBefore');
-    expect(calls).toContain('adapter.syncRunEnabled');
-    expect(calls).toContain('syncBehavior.syncSetupBefore');
-    expect(calls).toContain('syncBehavior.syncRunEnabled');
-    expect(calls).not.toContain('syncBehavior.syncRunDisabled');
+    const expectedCalls = [
+      'adapter.syncSetupBefore',
+      'syncBehavior.syncSetupBefore',
+      'adapter.syncRunEnabled',
+      'syncBehavior.syncRunEnabled',
+    ];
+    expect(calls).toEqual(expectedCalls);
   });
 
   it('runs disabled sync hook chain and sync behavior disabled hook', () => {
@@ -116,6 +118,7 @@ describe('AgentAdapterBase lifecycle orchestration', () => {
     expect(calls).toContain('adapter.syncRunDisabled');
     expect(calls).toContain('syncBehavior.syncRunDisabled');
     expect(calls).not.toContain('syncBehavior.syncRunEnabled');
+    expect(calls).not.toContain('adapter.syncRunEnabled');
   });
 
   it('runs clear lifecycle hooks and sync behavior clear hook', () => {
