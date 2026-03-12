@@ -1,8 +1,0 @@
-{
-  "extends": "@mmaappss/typescript-config/node.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": [".agents/plugins/mmaappss/scripts", "../../mmaappss.config.ts"],
-  "exclude": ["node_modules"]
-}

@@ -1,0 +1,7 @@
+{
+  "name": "mmaappss-integrations",
+  "version": "0.1.0",
+  "description": "Skills to run and create @mmaappss/sync integration tests (config-driven test cases, sandbox).",
+  "author": { "name": "mmaappss" },
+  "keywords": ["integration", "tests", "mmaappss", "sync"]
+}

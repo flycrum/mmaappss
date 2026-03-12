@@ -1,0 +1,6 @@
+{
+  "name": "getting-started",
+  "version": "0.1.0",
+  "description": "Skills for first-time setup, local testing, doctor, updates, and removal of @mmaappss/sync in consumer projects.",
+  "author": { "name": "mmaappss" }
+}

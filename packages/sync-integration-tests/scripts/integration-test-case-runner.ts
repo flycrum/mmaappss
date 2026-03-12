@@ -1,0 +1,348 @@
+/**
+ * Runs a single integration test case: clone sandbox-template to output root (e.g. sandboxes/.tests/current), clear, sync, assert manifest and paths. On success removes output root; on failure optionally keeps it for harness to rename to failed-${name}.
+ */
+
+import { syncManifest } from '@mmaappss/sync/sync-manifest';
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import {
+  integrationTestCaseRunnerConfig as runnerConfig,
+  type RunOneTestCaseOptions,
+  type RunOneTestCaseResult,
+} from './integration-test-case-runner.config.js';
+import { diffManifest } from './utils/diff-manifest.js';
+import { fileAssertions } from './utils/file-assertions.js';
+import { printLine, type PrintLine } from './utils/print-line.js';
+
+export type { RunOneTestCaseOptions, RunOneTestCaseResult };
+
+/** sandbox-template lives at sandboxes/sandbox-template; outputRoot is sandboxes/.tests/current. */
+function getSandboxTemplateRoot(outputRoot: string): string {
+  return path.join(path.dirname(path.dirname(outputRoot)), 'sandbox-template');
+}
+
+/** Parse dot/bracket path (e.g. "a.b[0].c") and return value at that path, or undefined. */
+function getValueAtPath(obj: unknown, pathStr: string): unknown {
+  if (pathStr === '') return obj;
+  const segments = pathStr.split('.');
+  let current: unknown = obj;
+  for (const seg of segments) {
+    if (current === undefined || current === null) return undefined;
+    const bracket = seg.indexOf('[');
+    if (bracket >= 0) {
+      const key = seg.slice(0, bracket);
+      const rest = seg.slice(bracket);
+      if (key) current = (current as Record<string, unknown>)[key];
+      const indexMatch = rest.match(/\[(\d+)\]/);
+      if (indexMatch && current !== undefined && current !== null)
+        current = Array.isArray(current) ? current[Number(indexMatch[1])] : undefined;
+    } else {
+      current =
+        typeof current === 'object' && !Array.isArray(current)
+          ? (current as Record<string, unknown>)[seg]
+          : undefined;
+    }
+  }
+  return current;
+}
+
+/** Pretty-print value as JSON (indent 2). */
+function formatValue(val: unknown): string {
+  return JSON.stringify(val, null, 2);
+}
+
+/** Return JSON lines (with 2-space indent from formatValue) for code block display. */
+function codeBlockLines(val: unknown): string[] {
+  return formatValue(val).split('\n');
+}
+
+function runScript(
+  scriptName: string,
+  env: NodeJS.ProcessEnv,
+  scriptsDir: string
+): Promise<number> {
+  return new Promise((resolve) => {
+    const child = spawn('npx', ['tsx', path.join(scriptsDir, scriptName)], {
+      cwd: path.join(scriptsDir, '..'),
+      stdio: 'pipe',
+      env,
+    });
+    child.on('close', (code: number | null) => resolve(code ?? 0));
+  });
+}
+
+export async function runOneTestCase(
+  options: RunOneTestCaseOptions
+): Promise<RunOneTestCaseResult> {
+  const {
+    name,
+    testCaseTsPath,
+    expectedManifestPath,
+    runClearFirst,
+    repoRoot,
+    outputRoot,
+    scriptsDir,
+    keepSandboxOnFailure = false,
+  } = options;
+  const errorGroups: PrintLine[][] = [];
+
+  if (!fs.existsSync(outputRoot)) {
+    fs.mkdirSync(path.dirname(outputRoot), { recursive: true });
+  }
+
+  const sandboxTemplate = getSandboxTemplateRoot(outputRoot);
+  if (!fs.existsSync(sandboxTemplate)) {
+    const g: PrintLine[] = [];
+    printLine.pushError(g, 'red', 4, `${name}: sandbox-template missing: ${sandboxTemplate}`);
+    errorGroups.push(g);
+    return { passed: false, errors: errorGroups };
+  }
+
+  const configFilePath = path.join(repoRoot, runnerConfig.CONSTANTS.CONFIG_FILE);
+  const configBackupPath = path.join(
+    repoRoot,
+    runnerConfig.CONSTANTS.CONFIG_FILE + runnerConfig.CONSTANTS.CONFIG_BACKUP_SUFFIX
+  );
+  const relativeImport = path.relative(repoRoot, testCaseTsPath).replace(/\\/g, '/');
+
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    MMAAPPSS_REPO_ROOT: repoRoot,
+  };
+  if (outputRoot !== repoRoot) {
+    env.MMAAPPSS_OUTPUT_ROOT = outputRoot;
+  }
+
+  const cleanupSandbox = (): void => {
+    try {
+      if (fs.existsSync(outputRoot)) {
+        fs.rmSync(outputRoot, { recursive: true });
+      }
+    } catch {
+      // best effort
+    }
+  };
+
+  const maybeCleanup = (): void => {
+    if (!keepSandboxOnFailure) cleanupSandbox();
+  };
+
+  const restoreConfig = (): void => {
+    try {
+      if (fs.existsSync(configFilePath)) fs.unlinkSync(configFilePath);
+      if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configFilePath);
+    } catch {
+      // best effort
+    }
+  };
+
+  cleanupSandbox();
+
+  try {
+    fs.cpSync(sandboxTemplate, outputRoot, { recursive: true });
+  } catch (e) {
+    const g: PrintLine[] = [];
+    printLine.pushError(
+      g,
+      'red',
+      4,
+      `${name}: failed to clone sandbox-template: ${(e as Error).message}`
+    );
+    errorGroups.push(g);
+    restoreConfig();
+    maybeCleanup();
+    return { passed: false, errors: errorGroups };
+  }
+
+  if (runClearFirst) {
+    const clearStubRelative = path
+      .relative(repoRoot, path.join(path.dirname(testCaseTsPath), 'basic.ts'))
+      .replace(/\\/g, '/');
+    const clearStubContent = `// generated by integration test\nimport { testCase } from '${clearStubRelative}';\nexport default testCase.config;\n`;
+    try {
+      if (fs.existsSync(configFilePath)) fs.renameSync(configFilePath, configBackupPath);
+      fs.writeFileSync(configFilePath, clearStubContent, 'utf8');
+    } catch (e) {
+      const g: PrintLine[] = [];
+      printLine.pushError(
+        g,
+        'red',
+        4,
+        `${name}: failed to write clear stub: ${(e as Error).message}`
+      );
+      errorGroups.push(g);
+      restoreConfig();
+      maybeCleanup();
+      return { passed: false, errors: errorGroups };
+    }
+    const clearResult = await runScript('mmaappss-sync-clear-all.ts', env, scriptsDir);
+    try {
+      if (fs.existsSync(configFilePath)) fs.unlinkSync(configFilePath);
+      if (fs.existsSync(configBackupPath)) fs.renameSync(configBackupPath, configFilePath);
+    } catch {
+      // best effort
+    }
+    if (clearResult !== 0) {
+      const g: PrintLine[] = [];
+      printLine.pushError(g, 'red', 4, `${name}: clear script exited with ${clearResult}`);
+      errorGroups.push(g);
+      restoreConfig();
+      maybeCleanup();
+      return { passed: false, errors: errorGroups };
+    }
+  }
+
+  const stubContent = `// generated by integration test\nimport { testCase } from '${relativeImport}';\nexport default testCase.config;\n`;
+  try {
+    if (fs.existsSync(configFilePath)) fs.renameSync(configFilePath, configBackupPath);
+    fs.writeFileSync(configFilePath, stubContent, 'utf8');
+  } catch (e) {
+    const g: PrintLine[] = [];
+    printLine.pushError(
+      g,
+      'red',
+      4,
+      `${name}: failed to write stub config: ${(e as Error).message}`
+    );
+    errorGroups.push(g);
+    restoreConfig();
+    maybeCleanup();
+    return { passed: false, errors: errorGroups };
+  }
+
+  const syncExitCode = await runScript('mmaappss-sync-all.ts', env, scriptsDir);
+  restoreConfig();
+
+  if (syncExitCode !== 0) {
+    const g: PrintLine[] = [];
+    printLine.pushError(g, 'red', 4, `${name}: sync script exited with ${syncExitCode}`);
+    errorGroups.push(g);
+    maybeCleanup();
+    return { passed: false, errors: errorGroups };
+  }
+
+  const manifestPath = path.join(outputRoot, '.mmaappss', 'sync-manifest.json');
+  if (!fs.existsSync(expectedManifestPath)) {
+    const g: PrintLine[] = [];
+    printLine.pushError(
+      g,
+      'red',
+      4,
+      `${name}: expected manifest file missing: ${expectedManifestPath}`
+    );
+    errorGroups.push(g);
+    maybeCleanup();
+    return { passed: false, errors: errorGroups };
+  }
+
+  let expected: Record<string, Record<string, unknown>>;
+  try {
+    expected = JSON.parse(fs.readFileSync(expectedManifestPath, 'utf8'));
+  } catch (e) {
+    const g: PrintLine[] = [];
+    printLine.pushError(g, 'red', 4, `${name}: invalid expected JSON: ${(e as Error).message}`);
+    errorGroups.push(g);
+    maybeCleanup();
+    return { passed: false, errors: errorGroups };
+  }
+
+  const actual = syncManifest.load(manifestPath) as Record<string, Record<string, unknown>>;
+  const diff = diffManifest.run(expected, actual, { structureOnly: false });
+  const codeIndent = 4;
+  if (diff.added.length > 0 || diff.removed.length > 0 || diff.modified.length > 0) {
+    if (diff.added.length) {
+      for (const p of diff.added) {
+        const g: PrintLine[] = [];
+        printLine.pushError(g, 'red', 4, `- Missing key`);
+        const val = getValueAtPath(actual, p);
+        printLine.pushError(g, 'cyan', codeIndent, `> actual: ${p}`);
+        for (const line of codeBlockLines(val)) {
+          printLine.pushError(g, 'dim', codeIndent, line);
+        }
+        errorGroups.push(g);
+      }
+    }
+    if (diff.removed.length) {
+      for (const p of diff.removed) {
+        const g: PrintLine[] = [];
+        printLine.pushError(g, 'green', 4, `+ Unexpected extra key`);
+        const val = getValueAtPath(expected, p);
+        printLine.pushError(g, 'cyan', codeIndent, `> actual: ${p}`);
+        for (const line of codeBlockLines(val)) {
+          printLine.pushError(g, 'dim', codeIndent, line);
+        }
+        errorGroups.push(g);
+      }
+    }
+    if (diff.modified.length) {
+      for (const p of diff.modified) {
+        const g: PrintLine[] = [];
+        printLine.pushError(g, 'yellow', 4, `~ Mismatched value`);
+        const expectedVal = getValueAtPath(expected, p);
+        const actualVal = getValueAtPath(actual, p);
+        printLine.pushError(
+          g,
+          'cyan',
+          codeIndent,
+          `> expected from key: ${p} (as defined in test case json file: '${path.basename(expectedManifestPath)}')`
+        );
+        for (const line of codeBlockLines(expectedVal)) {
+          printLine.pushError(g, 'dim', codeIndent, line);
+        }
+        printLine.pushError(
+          g,
+          'cyan',
+          codeIndent,
+          `> actual from key: ${p} (as generated by the sync process: 'sync-manifest.json')`
+        );
+        for (const line of codeBlockLines(actualVal)) {
+          printLine.pushError(g, 'dim', codeIndent, line);
+        }
+        errorGroups.push(g);
+      }
+    }
+  }
+
+  const manifestRels = fileAssertions.collectManifestRelativePaths(actual);
+  const templateRootForAssert = getSandboxTemplateRoot(outputRoot);
+  const fileReport = fileAssertions.assertSandboxPaths(outputRoot, manifestRels, {
+    templateRoot: fs.existsSync(templateRootForAssert) ? templateRootForAssert : undefined,
+    excludeExtraPrefixes: [
+      '.claude/settings.json',
+      '.claude-plugin',
+      '.gitignore',
+      '.mmaappss',
+      'AGENTS.override.md',
+      '.cursor/commands/root',
+      '.cursor/rules/root',
+      '.claude/rules',
+    ],
+  });
+  if (fileReport.missing.length > 0) {
+    for (const p of fileReport.missing) {
+      const g: PrintLine[] = [];
+      printLine.pushError(g, 'red', 4, `${name}: path should exist: ${p}`);
+      errorGroups.push(g);
+    }
+  }
+  if (fileReport.extra.length > 0) {
+    for (const p of fileReport.extra) {
+      const g: PrintLine[] = [];
+      printLine.pushError(g, 'red', 4, `${name}: path not in manifest (extra): ${p}`);
+      errorGroups.push(g);
+    }
+  }
+
+  if (errorGroups.length === 0) cleanupSandbox();
+  else maybeCleanup();
+
+  return {
+    passed: errorGroups.length === 0,
+    errors: errorGroups,
+    manifestDiff:
+      diff.added.length || diff.removed.length || diff.modified.length
+        ? { added: diff.added, removed: diff.removed, modified: diff.modified }
+        : undefined,
+  };
+}

@@ -12,7 +12,11 @@ export default [
     ignores: ['node_modules/**', 'dist/**', '.turbo/**', '**/dist/**'],
   },
   {
-    files: ['scripts/**/*.ts', 'packages/mmaappss/scripts/**/*.ts'],
+    files: ['scripts/**/*.ts', 'packages/sync/scripts/**/*.ts'],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
+    files: ['**/*.mjs'],
     languageOptions: { globals: { ...globals.node } },
   },
 ];

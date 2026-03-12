@@ -1,0 +1,11 @@
+# CodeRabbit configuration
+# See https://docs.coderabbit.ai/configuration/path-instructions
+
+reviews:
+  path_instructions:
+    # Project terms: do not suggest as typos
+    - path: '**'
+      instructions: |
+        Treat the following as correct project/product terms (not typos). Do not suggest fixing them as spelling errors:
+        - mmaappss
+        - mmaappssConfig

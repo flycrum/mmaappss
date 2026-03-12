@@ -24,19 +24,19 @@
 
 - **pnpm + Turborepo** monorepo
 - `configs/` — shared configs (eslint, prettier, typescript, vitest, vite)
-- `packages/mmaappss/` — scripts and tooling
+- `packages/sync/` — scripts and tooling
 
 ## core vs usage at root (monorepo layout)
 
 Two distinct concepts:
 
-- **Core (source of truth):** The sync system, markdown, and plugin definitions live in **`packages/mmaappss`** (including `.agents/plugins` and the mmaappss driver plugin).
-- **Usage at repo root:** The monorepo root is where the system is *used*: local marketplaces are registered at root (e.g. `.claude-plugin/`, `.cursor-plugin/`). Plugin definitions live in a **single place**: `packages/mmaappss/.agents/plugins/`. Sync runs from repo root and discovery finds both root `.agents/plugins/` (if present) and nested `packages/mmaappss/.agents/plugins/`, so no symlink is needed.
-- [Read the mmaappss package docs](packages/mmaappss/README.md) for plugins, configuration, and sync details.
+- **Core (source of truth):** The sync system, markdown, and plugin definitions live in **`packages/sync`** (including `.agents/plugins` and the mmaappss driver plugin).
+- **Usage at repo root:** The monorepo root is where the system is *used*: local marketplaces are registered at root (e.g. `.claude-plugin/`, `.cursor-plugin/`). Plugin definitions live in a **single place**: `packages/sync/.agents/plugins/`. Sync runs from repo root and discovery finds both root `.agents/plugins/` (if present) and nested `packages/sync/.agents/plugins/`, so no symlink is needed.
+- [Read the mmaappss package docs](packages/sync/README.md) for plugins, configuration, and sync details.
 
 ## development
 
 - **install:** `pnpm install`
 - **commands:** `pnpm run type-check` | `lint` | `format`
-- **layout:** `configs/` = shared configs (eslint, prettier, typescript, vitest, vite); `packages/mmaappss/` = scripts
-- **run a script:** `pnpm exec tsx path/to/script.ts` or via package script (e.g. `pnpm run mmaappss:marketplaces:claude:sync`)
+- **layout:** `configs/` = shared configs (eslint, prettier, typescript, vitest, vite); `packages/sync/` = scripts
+- **run a script:** `pnpm exec tsx path/to/script.ts` or via package script (e.g. `pnpm run mmaappss:sync` in `packages/sync`)

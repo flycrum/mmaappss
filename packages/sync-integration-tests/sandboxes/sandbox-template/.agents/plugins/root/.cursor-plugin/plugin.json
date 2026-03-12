@@ -1,0 +1,5 @@
+{
+  "name": "root",
+  "version": "0.1.0",
+  "description": "Fake root plugin for integration test sandbox."
+}

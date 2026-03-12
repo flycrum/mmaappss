@@ -1,0 +1,5 @@
+{
+  "name": "nested",
+  "version": "0.1.0",
+  "description": "Fake nested plugin under packages/app for integration test sandbox."
+}

@@ -7,19 +7,11 @@
   "scripts": {
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "lint": "eslint .",
-    "mmaappss:marketplaces:all:clear": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:clear",
-    "mmaappss:marketplaces:all:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync",
-    "mmaappss:marketplaces:all:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:all:sync:test",
-    "mmaappss:marketplaces:claude:clear": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:claude:clear",
-    "mmaappss:marketplaces:claude:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:claude:sync",
-    "mmaappss:marketplaces:claude:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:claude:sync:test",
-    "mmaappss:marketplaces:codex:clear": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:codex:clear",
-    "mmaappss:marketplaces:codex:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:codex:sync",
-    "mmaappss:marketplaces:codex:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:codex:sync:test",
-    "mmaappss:marketplaces:cursor:clear": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:clear",
-    "mmaappss:marketplaces:cursor:sync": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync",
-    "mmaappss:marketplaces:cursor:sync:test": "pnpm -F @mmaappss/mmaappss run mmaappss:marketplaces:cursor:sync:test",
+    "mmaappss:sync": "pnpm -F @mmaappss/sync run mmaappss:sync",
+    "mmaappss:sync:test": "pnpm -F @mmaappss/sync run mmaappss:sync:test",
+    "mmaappss:sync:clear": "pnpm -F @mmaappss/sync run mmaappss:sync:clear",
     "test": "turbo run test",
+    "test:integrations": "pnpm -F @mmaappss/sync-integration-tests run test",
     "type-check": "turbo run type-check"
   },
   "devDependencies": {
@@ -29,9 +21,9 @@
     "eslint": "^9.15.0",
     "globals": "^15.12.0",
     "prettier": "^3.4.2",
+    "tsx": "^4.19.0",
     "turbo": "^2.3.0",
-    "typescript": "5.9.3",
-    "tsx": "^4.19.0"
+    "typescript": "5.9.3"
   },
   "packageManager": "pnpm@10.0.0",
   "engines": {

@@ -1,0 +1,7 @@
+{
+  "name": "git",
+  "version": "0.1.0",
+  "description": "Git workflow commands for AI agents: commit staged files, craft message, push with guards.",
+  "author": { "name": "mmaappss" },
+  "keywords": ["git", "commit", "push", "workflow", "agents"]
+}
