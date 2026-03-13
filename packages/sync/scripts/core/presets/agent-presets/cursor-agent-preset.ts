@@ -10,6 +10,7 @@ export const cursorAgentPreset: DefineAgentInput<'cursor'> = {
   envVar: C.ENV_VAR,
   name: C.AGENT_NAME,
   syncBehaviorPresets: {
+    skillsDirectorySync: true,
     localPluginsContentSync: {
       options: {
         customHandler: {

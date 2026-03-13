@@ -8,6 +8,7 @@ export const codexAgentPreset: DefineAgentInput<'codex'> = {
   envVar: C.ENV_VAR,
   name: C.AGENT_NAME,
   syncBehaviorPresets: {
+    skillsDirectorySync: true,
     markdownSectionSync: {
       options: {
         agentsFile: C.AGENTS_OVERRIDE_FILE,

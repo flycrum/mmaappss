@@ -12,6 +12,10 @@
         "packages/app/CLAUDE.md"
       ]
     },
+    "skillsDirectorySync": {
+      "options": {},
+      "symlinks": [".claude/skills/sample-skill"]
+    },
     "localMarketplaceSync": {
       "options": {
         "manifestKey": "claude",
@@ -45,6 +49,10 @@
     }
   },
   "testagent": {
+    "skillsDirectorySync": {
+      "options": {},
+      "symlinks": []
+    },
     "markdownSectionSync": {
       "options": {
         "agentsFile": "AGENTS.override.md",

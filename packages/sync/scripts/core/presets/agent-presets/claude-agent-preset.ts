@@ -36,6 +36,7 @@ export const claudeAgentPreset: DefineAgentInput<'claude'> = {
         syncManifest: C.RULES_SYNC_MANIFEST,
       },
     },
+    skillsDirectorySync: true,
     settingsSync: {
       options: {
         manifestKey: C.AGENT_NAME,

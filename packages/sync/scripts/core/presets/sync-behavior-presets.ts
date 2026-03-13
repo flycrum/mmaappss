@@ -5,6 +5,7 @@ import { MarkdownSectionSyncBehavior } from '../sync-behaviors/markdown-section-
 import { MarketplaceJsonSyncBehavior } from '../sync-behaviors/marketplace-json-sync-behavior.js';
 import { RulesSymlinkSyncBehavior } from '../sync-behaviors/rules-symlink-sync-behavior.js';
 import { SettingsSyncBehavior } from '../sync-behaviors/settings-sync-behavior.js';
+import { SkillsDirectorySyncBehavior } from '../sync-behaviors/skills-directory-sync-behavior.js';
 
 /** Built-in sync behavior presets that map stable names to sync behavior classes. */
 export const syncBehaviorPresets = {
@@ -28,5 +29,8 @@ export const syncBehaviorPresets = {
   },
   settingsSync: {
     behaviorClass: SettingsSyncBehavior,
+  },
+  skillsDirectorySync: {
+    behaviorClass: SkillsDirectorySyncBehavior,
   },
 } as const;

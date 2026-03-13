@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { DefinedAgent, MarketplacesConfig } from '../core/marketplaces-config.js';
+import type { DefinedAgent, MmaappssConfig } from '../core/marketplaces-config.js';
 import { marketplacesConfig } from '../core/marketplaces-config.js';
 import { agentPresets } from '../core/presets/agent-presets.js';
 import { parseBool } from './parse-bool.js';
@@ -20,7 +20,7 @@ export const DEFAULT_POST_MERGE_MARKETPLACES: string[] = ['claude', 'cursor', 'c
 /**
  * TypeScript config shape for mmaappss. Used by mmaappss.config.ts at repo root.
  */
-export type MmaappssConfig = MarketplacesConfig;
+export type { MmaappssConfig };
 
 /**
  * Namespaced config utilities for env loading, TS config, and marketplace enable flags.

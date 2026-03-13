@@ -1,21 +1,17 @@
 /**
- * Recursive discovery of .agents/plugins/ across root and nested directories.
+ * Recursive discovery of plugins dir across root and nested directories.
+ * Plugins path is resolved from config (default .agents/plugins); manifest paths come from preset configs.
  * Respects config.excluded (glob patterns).
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { getResolvedPluginsPath } from '../core/presets/agent-presets/mmaappss-base-preset-options.js';
+import { PRESET_MANIFEST_PATHS } from '../core/presets/agent-presets/preset-manifest-paths.js';
 import type { MmaappssConfig } from './config-helpers.js';
 import { isExcluded } from './excluded-patterns.js';
 import { getLogger } from './logger.js';
 import type { DiscoveredMarketplace, DiscoveredPlugin, PluginManifestKey } from './types.js';
-
-const PLUGINS_SUBDIR = '.agents/plugins';
-const MANIFEST_PATHS: Record<PluginManifestKey, string> = {
-  claude: '.claude-plugin/plugin.json',
-  codex: '.codex-plugin/plugin.json',
-  cursor: '.cursor-plugin/plugin.json',
-};
 
 /** Default segments to exclude from walk (always applied). */
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.turbo', '.next'];
@@ -43,13 +39,15 @@ function loadManifest(
 function discoverPluginsInDir(pluginsDir: string, relativePluginsPath: string): DiscoveredPlugin[] {
   const plugins: DiscoveredPlugin[] = [];
   const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
+  const manifestEntries = Object.entries(PRESET_MANIFEST_PATHS) as Array<
+    [PluginManifestKey, string]
+  >;
 
   for (const ent of entries) {
     if (!ent.isDirectory()) continue;
 
     const pluginPath = path.join(pluginsDir, ent.name);
-    // Priority: claude → codex → cursor, per MANIFEST_PATHS insertion order. The guard below is retained for defensive type narrowing to avoid surprising TS errors.
-    const manifestEntries = Object.entries(MANIFEST_PATHS) as Array<[PluginManifestKey, string]>;
+    // Priority: claude → codex → cursor, per PRESET_MANIFEST_PATHS order.
     const manifests = Object.fromEntries(
       manifestEntries.map(([manifestKey, manifestRelativePath]) => [
         manifestKey,
@@ -83,6 +81,14 @@ function discoverPluginsInDir(pluginsDir: string, relativePluginsPath: string): 
 function findPluginsDirs(repoRoot: string, config: MmaappssConfig | null): string[] {
   const walkPatterns = [...DEFAULT_EXCLUDE, ...(config?.excluded ?? [])];
   const found: string[] = [];
+  const resolvedPluginsPath = getResolvedPluginsPath(config?.basePresetOptions);
+  const segments = resolvedPluginsPath.split('/').filter(Boolean);
+  if (segments.length < 2) {
+    getLogger().warn(
+      { resolvedPluginsPath },
+      'discovery: resolved plugins path has fewer than 2 segments, using default'
+    );
+  }
 
   function walk(dir: string): void {
     let entries: fs.Dirent[];
@@ -100,16 +106,22 @@ function findPluginsDirs(repoRoot: string, config: MmaappssConfig | null): strin
       const fullPath = path.join(dir, ent.name);
       const relativePath = path.relative(repoRoot, fullPath).replace(/\\/g, '/');
       if (isExcluded(relativePath, walkPatterns) || isExcluded(ent.name, walkPatterns)) continue;
-      const pluginsPath = path.join(fullPath, '.agents', 'plugins');
+      const pluginsPath = path.join(fullPath, ...segments);
       if (fs.existsSync(pluginsPath) && fs.statSync(pluginsPath).isDirectory()) {
         found.push(pluginsPath);
       }
-      if (ent.name === 'plugins' && path.basename(dir) === '.agents') continue;
+      if (
+        segments.length >= 2 &&
+        ent.name === segments[segments.length - 1] &&
+        path.basename(dir) === segments[segments.length - 2]
+      ) {
+        continue;
+      }
       walk(fullPath);
     }
   }
 
-  const rootPlugins = path.join(repoRoot, PLUGINS_SUBDIR);
+  const rootPlugins = path.join(repoRoot, ...segments);
   if (fs.existsSync(rootPlugins) && fs.statSync(rootPlugins).isDirectory()) {
     found.unshift(rootPlugins);
   }
@@ -138,10 +150,11 @@ export function discoverMarketplaces(
 
   const excluded = config?.excluded ?? [];
 
+  const resolvedPluginsPath = getResolvedPluginsPath(config?.basePresetOptions);
   for (const pluginsDir of pluginsDirs) {
     const relativePath = path.relative(repoRoot, pluginsDir).replace(/\\/g, '/');
     const label =
-      relativePath === PLUGINS_SUBDIR ? 'Root marketplace' : `${relativePath} marketplace`;
+      relativePath === resolvedPluginsPath ? 'Root marketplace' : `${relativePath} marketplace`;
     const allPlugins = discoverPluginsInDir(pluginsDir, relativePath);
     const plugins = excluded.length
       ? allPlugins.filter(

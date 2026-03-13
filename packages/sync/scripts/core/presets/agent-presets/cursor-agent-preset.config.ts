@@ -14,6 +14,7 @@ import { pathHelpers } from '../../../common/path-helpers.js';
 import { syncFs } from '../../../common/sync-fs.js';
 import type { DiscoveredMarketplace } from '../../../common/types.js';
 import { presetConstants } from '../agent-preset-constants.js';
+import { MmaappssBasePresetOptions } from './mmaappss-base-preset-options.js';
 
 export interface CursorContentSyncManifest {
   rules: string[];
@@ -39,11 +40,21 @@ function stripFrontmatter(content: string): string {
 /** Cursor-specific constants; single source of truth for preset and config. */
 const CURSOR_RULES_FRONTMATTER = '---\nalwaysApply: true\n---\n\n';
 
+/** Cursor preset options: extends base with agent name, manifest path, and native skills dir. */
+export class CursorPresetOptions extends MmaappssBasePresetOptions {
+  AGENT_NAME = 'cursor';
+  /** Where Cursor natively discovers skills; use .agents/skills so default resolved path is no-op. */
+  NATIVE_SKILLS_DIR = '.agents/skills';
+  /** Path to Cursor plugin manifest relative to plugin root. */
+  PLUGIN_MANIFEST_PATH = '.cursor-plugin/plugin.json';
+}
+
 /**
  * Cursor preset config: content sync helpers and manifest type.
  * Single exported object for convenience and consistent access.
  */
 export const cursorAgentPresetConfig = {
+  BASE_PRESET_OPTIONS: new CursorPresetOptions(),
   /** Cursor-only constants; for shared subdirs/extensions use presetConstants. */
   CONSTANTS: {
     /** Runtime agent identifier for cursor. */
@@ -52,6 +63,8 @@ export const cursorAgentPresetConfig = {
     CURSOR_RULES_FRONTMATTER,
     /** Env var that enables/disables cursor marketplace sync. */
     ENV_VAR: 'MMAAPPSS_MARKETPLACE_CURSOR',
+    /** Path to Cursor plugin manifest relative to plugin root. */
+    PLUGIN_MANIFEST_PATH: '.cursor-plugin/plugin.json',
     /** Root output dir for cursor content (rules, commands, skills, agents). */
     TARGET_ROOT: '.cursor',
   } as const,

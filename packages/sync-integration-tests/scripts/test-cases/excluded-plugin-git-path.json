@@ -37,6 +37,10 @@
       },
       "symlinks": []
     },
+    "skillsDirectorySync": {
+      "options": {},
+      "symlinks": [".claude/skills/sample-skill"]
+    },
     "settingsSync": {
       "options": {
         "manifestKey": "claude",
@@ -46,6 +50,10 @@
     }
   },
   "cursor": {
+    "skillsDirectorySync": {
+      "options": {},
+      "symlinks": []
+    },
     "localPluginsContentSync": {
       "options": {
         "customHandler": {},
@@ -57,6 +65,10 @@
     }
   },
   "codex": {
+    "skillsDirectorySync": {
+      "options": {},
+      "symlinks": []
+    },
     "markdownSectionSync": {
       "options": {
         "agentsFile": "AGENTS.override.md",
@@ -67,6 +79,10 @@
     }
   },
   "testagent": {
+    "skillsDirectorySync": {
+      "options": {},
+      "symlinks": []
+    },
     "markdownSectionSync": {
       "options": {
         "agentsFile": "AGENTS.override.md",

@@ -1,6 +1,7 @@
 import type { Exact } from 'type-fest';
 import type { PresetAgentName } from '../common/preset-agents.js';
 import { presetAgents } from '../common/preset-agents.js';
+import type { BasePresetOptionsOverride } from './presets/agent-presets/mmaappss-base-preset-options.js';
 import { agentPresets } from './presets/agent-presets.js';
 import { syncBehaviorPresets } from './presets/sync-behavior-presets.js';
 import type {
@@ -90,11 +91,11 @@ export interface DefineAgentInput<TName extends string = string> {
   }>;
 }
 
-/** Helper object passed to high-level config factories (`defineMarketplacesConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
+/** Helper object passed to high-level config factories (`defineMmaappssConfig`, `defineAgent`). Exported so config files get full type-safety and go-to-definition. */
 export interface DefineAgentHelpers {
   /** Built-in agent presets available for composition and override. */
   agentPresets: typeof agentPresets;
-  /** Wrapper to enforce exact config keys; use as `helpers.config({ ... })` in defineMarketplacesConfig callbacks. */
+  /** Wrapper to enforce exact config keys; use as `helpers.config({ ... })` in defineMmaappssConfig callbacks. */
   config: typeof exactMarketplacesConfig;
   /** Factory for producing a strongly typed and normalized agent definition. */
   defineAgent: <const TName extends string>(
@@ -122,10 +123,12 @@ export interface AgentsConfig {
   custom?: Record<string, AgentEntryInput>;
 }
 
-/** Full mmaappss config shape used by `defineMarketplacesConfig`. */
-export interface MarketplacesConfig {
+/** Full mmaappss config shape used by `defineMmaappssConfig`. */
+export interface MmaappssConfig {
   /** Agent enablement and override definitions. */
   agentsConfig?: AgentsConfig;
+  /** Optional override for path-related base preset options (e.g. AGENTS_SOURCE_DIR, AGENTS_PLUGINS_DIR, AGENTS_SKILLS_DIR). Excludes AGENT_NAME. */
+  basePresetOptions?: BasePresetOptionsOverride;
   /** Excluded path patterns used by discovery and sync behaviors. */
   excluded?: string[];
   /** Enables structured file logging when true. */
@@ -140,11 +143,11 @@ export interface MarketplacesConfig {
   syncOutputRoot?: string;
 }
 
-/** Exact config input: only keys from MarketplacesConfig allowed (type-fest Exact). */
-export type ExactMarketplacesConfigInput<T extends MarketplacesConfig> = Exact<
-  MarketplacesConfig,
-  T
->;
+/** @deprecated Use MmaappssConfig. */
+export type MarketplacesConfig = MmaappssConfig;
+
+/** Exact config input: only keys from MmaappssConfig allowed (type-fest Exact). */
+export type ExactMarketplacesConfigInput<T extends MmaappssConfig> = Exact<MmaappssConfig, T>;
 
 /** Type guard for sync behavior class references (not factory callbacks). */
 function isClassRef(value: unknown): value is SyncBehaviorClassRef {
@@ -223,10 +226,10 @@ function isDefinedAgent(value: unknown): value is DefinedAgent {
 }
 
 /**
- * Wraps config so only keys from MarketplacesConfig are allowed (excess properties are a type error).
+ * Wraps config so only keys from MmaappssConfig are allowed (excess properties are a type error).
  * Callback form uses (helpers, config) => config({ ... }) so config is in parameter position and exact keys are enforced.
  */
-export function exactMarketplacesConfig<T extends MarketplacesConfig>(
+export function exactMarketplacesConfig<T extends MmaappssConfig>(
   config: ExactMarketplacesConfigInput<T>
 ): T {
   return config as T;
@@ -294,24 +297,40 @@ export const marketplacesConfig = {
   },
 
   /**
-   * Defines the top-level marketplaces config.
+   * Defines the top-level mmaappss config.
    * Object form: enforces exact keys (no excess properties).
-   * Callback form: () => ({ ... }) or (helpers) => ({ ... }) or (helpers, config) => config({ ... }).
-   * TReturn extends Exact<MarketplacesConfig, TReturn> so callback return with excess keys is a type error.
+   * Callback form: () => ({ ... }) or (helpers) => ({ ... }).
    */
-  defineMarketplacesConfig<
-    const TConfig extends MarketplacesConfig,
-    TReturn extends Exact<MarketplacesConfig, TReturn> = MarketplacesConfig,
+  defineMmaappssConfig<
+    const TConfig extends MmaappssConfig,
+    TReturn extends Exact<MmaappssConfig, TReturn> = MmaappssConfig,
   >(
     input:
       | ExactMarketplacesConfigInput<TConfig>
       | (() => TReturn)
       | ((helpers: DefineAgentHelpers) => TReturn)
-  ): TConfig extends (...args: unknown[]) => unknown ? MarketplacesConfig : TConfig {
+  ): TConfig extends (...args: unknown[]) => unknown ? MmaappssConfig : TConfig {
     const helpers = buildHelpers();
     const result = typeof input === 'function' ? input(helpers) : input;
     return result as unknown as TConfig extends (...args: unknown[]) => unknown
-      ? MarketplacesConfig
+      ? MmaappssConfig
+      : TConfig;
+  },
+
+  /** @deprecated Use defineMmaappssConfig. */
+  defineMarketplacesConfig<
+    const TConfig extends MmaappssConfig,
+    TReturn extends Exact<MmaappssConfig, TReturn> = MmaappssConfig,
+  >(
+    input:
+      | ExactMarketplacesConfigInput<TConfig>
+      | (() => TReturn)
+      | ((helpers: DefineAgentHelpers) => TReturn)
+  ): TConfig extends (...args: unknown[]) => unknown ? MmaappssConfig : TConfig {
+    return marketplacesConfig.defineMmaappssConfig(input) as TConfig extends (
+      ...args: unknown[]
+    ) => unknown
+      ? MmaappssConfig
       : TConfig;
   },
 
@@ -336,7 +355,7 @@ export const marketplacesConfig = {
   },
 
   /** Resolves all enabled preset and custom agents into a runtime lookup map. */
-  resolveEnabledAgents(config: MarketplacesConfig | null): Record<string, DefinedAgent> {
+  resolveEnabledAgents(config: MmaappssConfig | null): Record<string, DefinedAgent> {
     const out: Record<string, DefinedAgent> = {};
     const enabled = config?.agentsConfig;
     if (!enabled) return out;

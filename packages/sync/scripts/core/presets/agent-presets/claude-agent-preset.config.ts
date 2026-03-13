@@ -3,7 +3,19 @@
  * Used by claude-agent-preset and any Claude-specific sync behavior options.
  */
 
+import { MmaappssBasePresetOptions } from './mmaappss-base-preset-options.js';
+
+/** Claude preset options: extends base with agent name, manifest path, and native skills dir. */
+export class ClaudePresetOptions extends MmaappssBasePresetOptions {
+  AGENT_NAME = 'claude';
+  /** Where Claude natively discovers skills; we sync here when resolved path differs. */
+  NATIVE_SKILLS_DIR = '.claude/skills';
+  /** Path to Claude plugin manifest relative to plugin root. */
+  PLUGIN_MANIFEST_PATH = '.claude-plugin/plugin.json';
+}
+
 export const claudeAgentPresetConfig = {
+  BASE_PRESET_OPTIONS: new ClaudePresetOptions(),
   CONSTANTS: {
     /** Runtime agent identifier for claude. */
     AGENT_NAME: 'claude',
@@ -23,5 +35,7 @@ export const claudeAgentPresetConfig = {
     SOURCE_FILE: 'AGENTS.md',
     /** Target symlink name for Claude (CLAUDE.md). */
     TARGET_FILE: 'CLAUDE.md',
+    /** Path to Claude plugin manifest relative to plugin root. */
+    PLUGIN_MANIFEST_PATH: '.claude-plugin/plugin.json',
   } as const,
 };
